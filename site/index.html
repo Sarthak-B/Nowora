@@ -1095,7 +1095,7 @@ function initSite(){
     const waTab = fd.channel==="whatsapp" ? window.open("about:blank","_blank") : null;
     const lead={id:uid(),ts:new Date().toISOString(),name:fd.name.trim(),business:fd.business.trim(),niche:fd.niche,package:fd.package,phone:fd.phone,email:fd.email,channel:fd.channel,message:fd.message,status:"new",notes:"",source:ref};
     try{await API.lead(lead)}catch(x){/* still let them reach out directly */}
-    track("lead_submit",fd.package);
+    if(!API.live) track("lead_submit",fd.package);
     const text=`Hi ${CFG.owner}, I'm ${lead.name} — ${lead.business} (${lead.niche}). I'd like: ${lead.package}. ${lead.message||""}`.trim();
     f.innerHTML=`<div class="form-done"><b>Thanks, ${esc(lead.name.split(" ")[0])}.</b>Your enquiry is in. ${fd.channel==="whatsapp"?"WhatsApp is opening so you can send it straight to me.":"I'll reply by email soon."}<div style="margin-top:18px"><a class="btn ${fd.channel==="whatsapp"?"btn-wa":"btn-ghost"}" target="_blank" rel="noopener" href="${fd.channel==="whatsapp"?waLink(CFG.whatsapp,text):mailLink(CFG.email,"Website enquiry — "+lead.business,text)}">${fd.channel==="whatsapp"?"Open WhatsApp":"Send by email too"}</a></div></div>`;
     if(waTab){ try{ waTab.opener=null; waTab.location.href=waLink(CFG.whatsapp,text); }catch(e){} }
