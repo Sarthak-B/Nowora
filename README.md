@@ -12,7 +12,7 @@ This repo is the whole studio system I built for it: the public website, a priva
 | --- | --- |
 | **Website** (`site/index.html`) | Single-file site: live "site being built" hero animation, filterable showcase with hover-scroll previews, services, plans with an INR / USD toggle, care plan, scroll-pinned process, FAQ and an enquiry form that hands off to WhatsApp or email. No framework, no build step. |
 | **Owner dashboard** (`site/index.html#admin`) | Live analytics (visitors, WhatsApp/email taps, enquiries, conversion, sources, visitor journey), a lead inbox, an outreach CRM with message templates and a daily target, client and care-plan tracking with onboarding checklists, portfolio uploads, automation health and 12-month goal tracking. |
-| **Backend** (`apps-script/Code.gs`) | Google Apps Script web app on top of Google Sheets. Records events and enquiries, sends instant WhatsApp and email alerts, stores uploads in Google Drive, serves the dashboard behind an admin key, and emails a weekly review. |
+| **Backend** (`apps-script/Code.gs`) | Google Apps Script web app on top of Google Sheets. Records events and enquiries, sends instant WhatsApp and email alerts, stores uploads in Google Drive, serves the dashboard behind an admin key, checks every client site every 5 minutes with instant down/up alerts, and emails a weekly review. |
 | **Automations** (`scripts/`, `.github/workflows/`) | Playwright in GitHub Actions. **Uptime:** every 3 hours, opens each care-plan client site, checks it really renders and alerts on downtime. **Prospect audit:** every morning, scores a prospect's site on desktop and iPhone, lists issues worth fixing and saves a mobile screenshot for the pitch. |
 
 ![Website showcase](docs/showcase.jpg)

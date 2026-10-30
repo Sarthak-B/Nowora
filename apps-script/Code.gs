@@ -9,6 +9,8 @@
  *  - Receives results from the GitHub Actions + Playwright automations
  *  - Emails you a weekly review every Sunday evening
  *
+ *  - Checks every client site every 5 minutes and alerts you the moment one goes down
+ *
  * Setup (5 minutes) — full steps are in README.md
  *  1. Create a new Google Sheet (on your PERSONAL Google account).
  *  2. Extensions → Apps Script → paste this file → Save.
@@ -57,8 +59,11 @@ function setup() {
     p.setProperty('DRIVE_FOLDER_ID', folder.getId());
   }
 
-  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'weeklyReport').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.getProjectTriggers()
+    .filter(t => ['weeklyReport', 'quickCheck'].indexOf(t.getHandlerFunction()) >= 0)
+    .forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('weeklyReport').timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(19).inTimezone(TZ).create();
+  ScriptApp.newTrigger('quickCheck').timeBased().everyMinutes(5).create();
 
   showKeys();
 }
@@ -243,6 +248,52 @@ function automationReport_(body) {
   if (wentDown.length) notify_('Site down: ' + wentDown.length, '🚨 Care-plan site down\n\n' + wentDown.join('\n') + '\n\nChecked ' + Utilities.formatDate(new Date(), TZ, 'd MMM, h:mm a'));
   if (cameBack.length) notify_('Back up: ' + cameBack.join(', '), '✅ Back online: ' + cameBack.join(', '));
   return { ok: true };
+}
+
+/* ============================== 5-minute uptime check ============================== */
+
+/**
+ * Runs every 5 minutes (trigger created by setup). Requests each live / care-plan client site,
+ * retries once before calling it down, updates the Clients tab, and alerts only when a site
+ * changes state (down, or back up). The GitHub Playwright check every 3 hours goes deeper
+ * and confirms the page really renders in a browser.
+ */
+function quickCheck() {
+  const targets = readAll_('Clients').filter(c => c.site && (c.status === 'live' || c.carePlan === 'yes') && c.status !== 'paused');
+  if (!targets.length) return;
+  const now = new Date().toISOString(), wentDown = [], cameBack = [];
+
+  targets.forEach(c => {
+    let r = ping_(c.site);
+    if (!r.up) { Utilities.sleep(10000); r = ping_(c.site); }   // one retry so a blip doesn't page you
+    const state = r.up ? 'up' : 'down';
+    if (state === 'down' && c.uptime !== 'down') wentDown.push(c.business + ' — ' + c.site + ' (' + r.error + ')');
+    if (state === 'up' && c.uptime === 'down') cameBack.push(c.business);
+    upsert_('Clients', { id: c.id, uptime: state, responseMs: r.ms, lastCheck: now });
+  });
+
+  if (wentDown.length) {
+    notify_('Site down: ' + wentDown.length, '🚨 Care-plan site down\n\n' + wentDown.join('\n') + '\n\nChecked ' + Utilities.formatDate(new Date(), TZ, 'd MMM, h:mm a'));
+    append_('Automation', { ts: now, workflow: 'quick-check', status: 'failure', summary: wentDown.length + ' site(s) went down', details: '' });
+  }
+  if (cameBack.length) {
+    notify_('Back up: ' + cameBack.join(', '), '✅ Back online: ' + cameBack.join(', '));
+    append_('Automation', { ts: now, workflow: 'quick-check', status: 'success', summary: 'Back online: ' + cameBack.length + ' site(s)', details: '' });
+  }
+}
+
+function ping_(url) {
+  const u = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+  const t0 = Date.now();
+  try {
+    const res = UrlFetchApp.fetch(u, { muteHttpExceptions: true, followRedirects: true, validateHttpsCertificates: true });
+    const ms = Date.now() - t0, code = res.getResponseCode(), size = res.getContent().length;
+    if (code >= 400) return { up: false, ms: ms, error: 'HTTP ' + code };
+    if (size < 300) return { up: false, ms: ms, error: 'Page came back almost empty' };
+    return { up: true, ms: ms, error: '' };
+  } catch (e) {
+    return { up: false, ms: '', error: String(e.message || e).split('\n')[0].slice(0, 120) };
+  }
 }
 
 /* ============================== weekly review ============================== */
