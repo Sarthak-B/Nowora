@@ -263,8 +263,8 @@ form.lead{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 
 
 .fab{position:fixed;right:28px;bottom:28px;z-index:45;width:62px;height:62px;border-radius:50%;background:#25D366;display:grid;place-items:center;box-shadow:0 18px 36px -12px rgba(7,59,34,.6);transform:scale(0);transition:transform .5s var(--ease)}
-.fab.show{transform:scale(1)}
-.fab:hover{transform:scale(1.08)}
+.fab.visible{transform:scale(1)}
+.fab.visible:hover{transform:scale(1.08)}
 .fab svg{width:30px;height:30px;color:#073B22}
 
 
@@ -1005,7 +1005,7 @@ function initSite(){
 
   /* nav state + fab */
   const nav=$("#nav"), fab=$("#fab");
-  const onScroll=()=>{const y=scrollY; nav.classList.toggle("scrolled",y>20); fab.classList.toggle("show",y>700); processScroll();};
+  const onScroll=()=>{const y=scrollY; nav.classList.toggle("scrolled",y>20); fab.classList.toggle("visible",y>700); processScroll();};
   addEventListener("scroll",onScroll,{passive:true});
 
   /* section views + heading reveals */
