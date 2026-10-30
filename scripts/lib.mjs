@@ -16,6 +16,10 @@ export async function api(payload) {
 }
 
 export async function getTargets() {
+  if (!DRY_RUN && (!ENDPOINT || !KEY)) {
+    console.log('Not configured yet: add STUDIO_ENDPOINT and STUDIO_AUTOMATION_KEY under Settings → Secrets and variables → Actions. Skipping.');
+    process.exit(0);
+  }
   if (DRY_RUN) {
     const sites = (process.env.TEST_SITES || 'https://example.com').split(',');
     return { clients: sites.map((s, i) => ({ id: 'c' + i, business: s, site: s })), prospects: sites.map((s, i) => ({ id: 'p' + i, business: s, website: s })) };
