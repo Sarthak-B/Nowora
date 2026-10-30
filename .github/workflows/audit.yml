@@ -1,0 +1,29 @@
+name: Prospect site audits
+
+on:
+  schedule:
+    - cron: '12 3 * * *'     # 8:42 am IST daily
+  workflow_dispatch:
+
+concurrency: { group: audit, cancel-in-progress: false }
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: Cache Playwright browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+      - name: Audit queued prospect sites
+        run: node scripts/audit.mjs
+        env:
+          STUDIO_ENDPOINT: ${{ secrets.STUDIO_ENDPOINT }}
+          STUDIO_AUTOMATION_KEY: ${{ secrets.STUDIO_AUTOMATION_KEY }}

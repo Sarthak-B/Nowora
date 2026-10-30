@@ -1,0 +1,29 @@
+name: Client uptime checks
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'   # every 3 hours (UTC)
+  workflow_dispatch:
+
+concurrency: { group: uptime, cancel-in-progress: false }
+
+jobs:
+  uptime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: Cache Playwright browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+      - name: Check every care-plan site
+        run: node scripts/uptime.mjs
+        env:
+          STUDIO_ENDPOINT: ${{ secrets.STUDIO_ENDPOINT }}
+          STUDIO_AUTOMATION_KEY: ${{ secrets.STUDIO_AUTOMATION_KEY }}

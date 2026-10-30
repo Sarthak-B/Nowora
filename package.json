@@ -1,0 +1,13 @@
+{
+  "name": "studio-os",
+  "private": true,
+  "type": "module",
+  "description": "Automations for my web studio: client uptime checks and prospect site audits.",
+  "scripts": {
+    "uptime": "node scripts/uptime.mjs",
+    "audit": "node scripts/audit.mjs",
+    "test:uptime": "node scripts/uptime.mjs --dry-run",
+    "test:audit": "node scripts/audit.mjs --dry-run"
+  },
+  "dependencies": { "playwright": "^1.48.0" }
+}
