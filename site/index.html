@@ -789,7 +789,7 @@ body.is-admin{min-width:1280px}
 "use strict";
 
 /* ---------------- config + helpers ---------------- */
-const CFG = Object.assign({}, window.STUDIO_CONFIG, (()=>{try{return JSON.parse(localStorage.getItem("studio_cfg")||"{}")}catch(e){return {}}})());
+const CFG = Object.assign({}, window.STUDIO_CONFIG, (()=>{try{const o=JSON.parse(localStorage.getItem("studio_cfg")||"{}");return {endpoint:o.endpoint||window.STUDIO_CONFIG.endpoint,siteUrl:o.siteUrl||window.STUDIO_CONFIG.siteUrl,githubRepo:o.githubRepo||window.STUDIO_CONFIG.githubRepo}}catch(e){return {}}})());
 const $ = (s,r=document)=>r.querySelector(s), $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const esc = s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1083,12 +1083,13 @@ function initSite(){
     if(fd.channel==="whatsapp"&&phoneDigits(fd.phone).length<11){err.textContent="Add your WhatsApp number, or choose email as the reply channel.";err.hidden=false;return}
     if(fd.channel==="email"&&!/^\S+@\S+\.\S+$/.test(fd.email)){err.textContent="Add a valid email address, or choose WhatsApp as the reply channel.";err.hidden=false;return}
     err.hidden=true; const btn=$("button[type=submit]",f); btn.disabled=true; btn.textContent="Sending…";
+    const waTab = fd.channel==="whatsapp" ? window.open("about:blank","_blank") : null;
     const lead={id:uid(),ts:new Date().toISOString(),name:fd.name.trim(),business:fd.business.trim(),niche:fd.niche,package:fd.package,phone:fd.phone,email:fd.email,channel:fd.channel,message:fd.message,status:"new",notes:"",source:ref};
     try{await API.lead(lead)}catch(x){/* still let them reach out directly */}
     track("lead_submit",fd.package);
     const text=`Hi ${CFG.owner}, I'm ${lead.name} — ${lead.business} (${lead.niche}). I'd like: ${lead.package}. ${lead.message||""}`.trim();
     f.innerHTML=`<div class="form-done"><b>Thanks, ${esc(lead.name.split(" ")[0])}.</b>Your enquiry is in. ${fd.channel==="whatsapp"?"WhatsApp is opening so you can send it straight to me.":"I'll reply by email soon."}<div style="margin-top:18px"><a class="btn ${fd.channel==="whatsapp"?"btn-wa":"btn-ghost"}" target="_blank" rel="noopener" href="${fd.channel==="whatsapp"?waLink(CFG.whatsapp,text):mailLink(CFG.email,"Website enquiry — "+lead.business,text)}">${fd.channel==="whatsapp"?"Open WhatsApp":"Send by email too"}</a></div></div>`;
-    if(fd.channel==="whatsapp") window.open(waLink(CFG.whatsapp,text),"_blank","noopener");
+    if(waTab){ try{ waTab.opener=null; waTab.location.href=waLink(CFG.whatsapp,text); }catch(e){} }
   });
 
   /* process: pinned horizontal scroll */
@@ -1506,8 +1507,8 @@ function vSettings(){
   $("#view").innerHTML=`<div class="grid two">
     <form class="panel stack settings" id="setForm"><h3>Connections</h3>
       <div class="field"><label for="s-ep">Apps Script web-app URL</label><input id="s-ep" value="${esc(CFG.endpoint)}" placeholder="https://script.google.com/macros/s/…/exec"></div>
-      <div class="field"><label for="s-wa">Your WhatsApp number</label><input id="s-wa" value="${esc(CFG.whatsapp)}"></div>
-      <div class="field"><label for="s-em">Your email</label><input id="s-em" value="${esc(CFG.email)}"></div>
+      <div class="field"><label for="s-wa">WhatsApp number (set in index.html)</label><input id="s-wa" value="${esc(CFG.whatsapp)}" readonly></div>
+      <div class="field"><label for="s-em">Email (set in index.html)</label><input id="s-em" value="${esc(CFG.email)}" readonly></div>
       <div class="field"><label for="s-url">Your website address</label><input id="s-url" value="${esc(CFG.siteUrl)}" placeholder="https://armanstudio.in"></div>
       <div class="field"><label for="s-gh">GitHub repo</label><input id="s-gh" value="${esc(CFG.githubRepo)}" placeholder="yourname/studio-os"></div>
       <button class="btn btn-wa" type="submit" style="justify-content:center">Save settings in this browser</button>
@@ -1524,7 +1525,7 @@ function vSettings(){
         ${API.live?"":`<button class="btn btn-ghost btn-sm" id="clr">Clear demo data</button><button class="btn btn-ghost btn-sm" id="rst">Reload sample data</button>`}
       </div></div>
     </div></div>`;
-  $("#setForm").onsubmit=e=>{e.preventDefault(); const o={endpoint:$("#s-ep").value.trim(),whatsapp:$("#s-wa").value.trim(),email:$("#s-em").value.trim(),siteUrl:$("#s-url").value.trim(),githubRepo:$("#s-gh").value.trim()};
+  $("#setForm").onsubmit=e=>{e.preventDefault(); const o={endpoint:$("#s-ep").value.trim(),siteUrl:$("#s-url").value.trim(),githubRepo:$("#s-gh").value.trim()};
     localStorage.setItem("studio_cfg",JSON.stringify(o)); toast("Saved — reloading"); setTimeout(()=>location.reload(),700)};
   $("#exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(A.data,null,2)],{type:"application/json"}));a.download="studio-data-"+dayKey(Date.now())+".json";a.click()};
   if(!API.live){
