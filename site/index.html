@@ -259,6 +259,8 @@ form.lead{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .hp{position:absolute;left:-9999px}
 .form-done{grid-column:1/-1;padding:36px;border-radius:18px;background:#E3F2E8;text-align:center}
 .form-done b{font-family:var(--display);font-size:28px;display:block;margin-bottom:6px}
+@keyframes formPulse{0%{box-shadow:0 0 0 0 rgba(242,163,58,.55)}100%{box-shadow:0 0 0 22px rgba(242,163,58,0)}}
+form.lead.pulse{animation:formPulse 1.2s var(--ease) 2;border-radius:18px}
 .form-err{grid-column:1/-1;color:#A3392C;font-size:14px}
 
 
@@ -567,7 +569,7 @@ body.is-admin{min-width:1280px}
         <a href="#care">Care plan</a>
         <a href="#faq">Questions</a>
       </nav>
-      <a class="btn btn-wa btn-sm magnet" data-wa="Hi NOWORA! I'd like my 2 free website samples." data-track="cta_whatsapp:nav">
+      <a class="btn btn-wa btn-sm magnet" href="#contact" data-form="2 free samples" data-track="package_click:Free samples">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.4 14.2c-.2.6-1.3 1.2-1.8 1.3-.5 0-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.5c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.7-.1l.9-1.1c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>
         Get 2 free samples
       </a>
@@ -586,7 +588,7 @@ body.is-admin{min-width:1280px}
           <p class="sigline"><b>NOWORA</b><i></i>Make it happen.</p>
           <p class="lede">Websites, landing pages and sales funnels for students, creators and small businesses. Two free samples first. Then 50% to start — and the other 50% only if you love the finished site.</p>
           <div class="ctas">
-            <a class="btn btn-wa magnet" data-wa="Hi NOWORA! I'd like my 2 free website samples." data-track="cta_whatsapp:hero">
+            <a class="btn btn-wa magnet" href="#contact" data-form="2 free samples" data-track="package_click:Free samples">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.4 14.2c-.2.6-1.3 1.2-1.8 1.3-.5 0-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.5c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.7-.1l.9-1.1c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>
               Get 2 free samples
             </a>
@@ -825,7 +827,7 @@ const API = {
   },
   track(ev){
     if(this.live){
-      try{fetch(CFG.endpoint,{method:"POST",mode:"no-cors",keepalive:true,body:JSON.stringify({action:"track",event:ev})}).catch(()=>{})}catch(e){}
+      const body=JSON.stringify({action:"track",event:ev}); let sent=false; try{ if(navigator.sendBeacon) sent=navigator.sendBeacon(CFG.endpoint,new Blob([body],{type:"text/plain;charset=UTF-8"})); }catch(e){} if(!sent){ try{fetch(CFG.endpoint,{method:"POST",mode:"no-cors",keepalive:true,body}).catch(()=>{})}catch(e){} }
     } else { const d=LOCAL.load(); d.Events.push(ev); if(d.Events.length>8000) d.Events.splice(0,d.Events.length-8000); LOCAL.save(d); }
   },
   async lead(l){ if(this.live) return this.post({action:"lead",lead:l}); const d=LOCAL.load(); d.Leads.push(l); LOCAL.save(d); return {ok:true}; },
@@ -901,7 +903,7 @@ function seed(){
 
 /* ---------------- shared content ---------------- */
 const PKGS=[
-  {name:"Free samples",free:true,tag:"Start here",for:"Not sure yet? See it before you spend anything.",inr:"₹0",usd:"$0",sub:"no payment, no card",items:["2 homepage samples made for you","No advance, no obligation","Like one? We build it","Ready in 3–4 days"],cta:"Claim 2 free samples",msg:"Hi NOWORA! I'd like my 2 free website samples."},
+  {name:"Free samples",free:true,tag:"Start here",for:"Not sure yet? See it before you spend anything.",inr:"₹0",usd:"$0",sub:"no payment, no card",items:["2 homepage samples made for you","No advance, no obligation","Like one? We build it","Ready in 3–4 days"],cta:"Claim 2 free samples",form:true},
   {name:"Starter",for:"Students, freelancers, creators and first-time sellers.",inr:"₹4,999",usd:"$99",sub:"one-time",items:["1–3 pages: portfolio, résumé, menu or shop","Looks great on every phone","WhatsApp button and contact form","Basic SEO and Google Maps","Live within a week"],cta:"Get Starter"},
   {name:"Business",feature:true,tag:"Most picked",for:"Small businesses that take bookings or orders.",inr:"₹29,999",usd:"$499",sub:"one-time",items:["5–8 pages","WhatsApp orders or online booking","Analytics dashboard","Offers or blog page","Google Business Profile setup","Live in 10–14 days"],cta:"Get Business"},
   {name:"Growth",for:"Brands ready to sell online and scale.",inr:"₹39,999+",usd:"$699+",sub:"one-time",items:["Landing pages and a sales funnel","Payments and checkout","Split testing on headline and offer","Conversion tracking","Help writing your copy"],cta:"Get Growth"}
@@ -993,14 +995,21 @@ function initSite(){
   /* session + tracking */
   let vid; try{vid=localStorage.getItem("studio_vid")||uid(); localStorage.setItem("studio_vid",vid)}catch(e){vid=uid()}
   const sid=uid(), qs=new URLSearchParams(location.search);
-  const ref = qs.get("utm_source") || (document.referrer? (()=>{try{const h=new URL(document.referrer).hostname.replace(/^www\./,""); if(h.includes("google")) return "google"; if(h.includes("instagram")) return "instagram"; if(h.includes("linkedin")) return "linkedin"; if(h.includes("facebook")) return "facebook"; if(h.includes("whatsapp")||h==="wa.me") return "whatsapp"; return h;}catch(e){return "direct"}})() : "direct");
-  const device = innerWidth<760?"mobile":"desktop";
+  const ua=navigator.userAgent||"";
+  const inApp=/Instagram/i.test(ua)?"instagram":/FBAN|FBAV|FB_IAB|FBIOS/i.test(ua)?"facebook":/WhatsApp/i.test(ua)?"whatsapp":/LinkedInApp/i.test(ua)?"linkedin":/Snapchat/i.test(ua)?"snapchat":/Twitter/i.test(ua)?"twitter":"";
+  const ref = (qs.get("utm_source")||qs.get("src")||qs.get("ref")||"").toLowerCase().slice(0,40) || inApp || (document.referrer? (()=>{try{const h=new URL(document.referrer).hostname.replace(/^www\./,""); if(h.includes("google")) return "google"; if(h.includes("instagram")) return "instagram"; if(h.includes("linkedin")) return "linkedin"; if(h.includes("facebook")) return "facebook"; if(h.includes("whatsapp")||h==="wa.me") return "whatsapp"; if(h==="t.co"||h.includes("twitter")||h==="x.com") return "twitter"; if(h==="lnkd.in") return "linkedin"; if(h.includes("youtube")) return "youtube"; if(h===location.hostname) return "direct"; return h;}catch(e){return "direct"}})() : "direct");
+  const device = /Mobi|Android|iPhone|iPad/i.test(ua)||innerWidth<760?"mobile":"desktop";
   const track=(type,label)=>API.track({ts:new Date().toISOString(),vid,sid,type,label:label||"",ref,device,utm:qs.get("utm_campaign")||""});
   track("pageview","home");
 
   /* WhatsApp / email links */
   $$("[data-wa]").forEach(a=>{a.href=waLink(CFG.whatsapp,a.dataset.wa);a.target="_blank";a.rel="noopener"});
   $$("[data-mail]").forEach(a=>{a.href=mailLink(CFG.email,a.dataset.mail)});
+  /* buttons marked data-form: scroll to the enquiry form, preselect the plan, put the cursor in the first field */
+  document.addEventListener("click",e=>{const b=e.target.closest("[data-form]"); if(!b) return; e.preventDefault();
+    const f=$("#leadForm"); if(!f) return; const sel=$("#f-pkg"); if(sel) sel.value=b.dataset.form;
+    $("#contact").scrollIntoView({behavior:reduced?"auto":"smooth",block:"start"});
+    setTimeout(()=>{const n=$("#f-name"); if(n) n.focus({preventScroll:true}); f.classList.remove("pulse"); void f.offsetWidth; f.classList.add("pulse")},reduced?0:700);});
   document.addEventListener("click",e=>{const t=e.target.closest("[data-track]"); if(!t) return; const [type,label]=t.dataset.track.split(":"); track(type,label);});
 
   /* nav state + fab */
@@ -1035,7 +1044,7 @@ function initSite(){
       <h3>${p.name}</h3><p class="pkg-for">${p.for}</p>
       <div class="price"><span>${cur==="INR"?p.inr:p.usd}</span></div><small style="opacity:.7;font-size:14px">${p.sub}</small>
       <ul>${p.items.map(i=>`<li>${i}</li>`).join("")}</ul>
-      <a class="btn" target="_blank" rel="noopener" href="${waLink(CFG.whatsapp,p.msg||`Hi NOWORA! I'm interested in the ${p.name} plan. Can we talk?`)}" data-track="package_click:${p.name}">${p.cta}</a>
+      <a class="btn" ${p.form?`href="#contact" data-form="2 free samples"`:`target="_blank" rel="noopener" href="${waLink(CFG.whatsapp,`Hi NOWORA! I'm interested in the ${p.name} plan. Can we talk?`)}"`} data-track="package_click:${p.name}">${p.cta}</a>
     </article>`).join("");};
   renderPkgs();
   const tg=$("#curToggle"), knob=$(".knob",tg);
@@ -1068,7 +1077,7 @@ function initSite(){
   let filt="all";
   const applyFilter=()=>$$(".show").forEach(el=>{const on=filt==="all"||el.dataset.tags.split("|").includes(filt);
     if(on){el.classList.remove("gone");requestAnimationFrame(()=>el.classList.remove("out"))}else{el.classList.add("out");setTimeout(()=>{if(el.classList.contains("out"))el.classList.add("gone")},380)}});
-  $("#filters").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;filt=b.dataset.f;$$("#filters button").forEach(x=>x.classList.toggle("on",x===b));applyFilter();track("work_filter",filt)});
+  $("#filters").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;filt=b.dataset.f;$$("#filters button").forEach(x=>x.classList.toggle("on",x===b));applyFilter();track("work_click","Filter: "+filt)});
   drawWork([]);
   API.portfolio().then(items=>{
     const extra=items.sort((a,b)=>(+a.order||99)-(+b.order||99)).map(p=>({title:p.title,kind:p.niche||"Website",tags:[p.type==="client"?"Client work":"Recent work"],desc:p.description||"",img:p.image,href:p.url,sample:p.type!=="client",niche:p.niche}));
