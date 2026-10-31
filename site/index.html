@@ -547,6 +547,34 @@ body.is-admin #admin{display:block}
 .modal .field input,.modal .field select,.modal .field textarea{height:44px;background:#fff}
 .modal .field textarea{height:90px}
 .modal .row-end{grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+.cl-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:22px 0 16px}.cl-filters{display:flex;gap:6px;flex-wrap:wrap}
+.cl-filters button{height:36px;padding:0 14px;border-radius:999px;border:1.5px solid var(--line-2);font-weight:600;font-size:13.5px;color:var(--ink-2);background:transparent}
+.cl-filters button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.cl-search{margin-left:auto;height:38px;min-width:220px;border-radius:999px;border:1.5px solid var(--line-2);background:#fff;padding:0 16px;font-size:14px}
+.cl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.cl-card{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:transform .35s var(--ease),box-shadow .35s var(--ease)}
+.cl-card:hover{transform:translateY(-4px);box-shadow:0 24px 40px -28px rgba(15,44,36,.6)}
+.cl-thumb{position:relative;height:150px;background:linear-gradient(135deg,var(--pine),var(--pine-soft));overflow:hidden;display:grid;place-items:center}
+.cl-thumb img{width:100%;height:100%;object-fit:cover;object-position:top}.cl-thumb span{font-family:var(--display);font-size:56px;color:rgba(255,255,255,.85)}
+.cl-dot{position:absolute;right:12px;top:12px;width:12px;height:12px;border-radius:50%;background:#B9C2BD;box-shadow:0 0 0 3px rgba(255,255,255,.85)}.cl-dot.up{background:#2F8F63}.cl-dot.down{background:#B5483A}
+.cl-body{padding:14px 16px 6px;display:grid;gap:4px}.cl-body b{font-size:17px}
+.cl-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.st.muted{background:var(--paper-2);color:var(--ink-3)}
+.cl-acts{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 14px 14px;margin-top:auto}.cl-acts .sp{flex:1}.cl-acts .btn svg{width:15px;height:15px}
+.cl-open{font-size:13px;font-weight:700;color:var(--pine)}
+.cw-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.cw-head .sp{flex:1}.cw-title h2{font-family:var(--display);font-size:30px;letter-spacing:-.02em;line-height:1.1}.cw-title a{text-decoration:underline}
+.cw-head .btn svg{width:16px;height:16px}
+.cw-tabs{display:flex;gap:4px;margin:20px 0 18px;border-bottom:1px solid var(--line);overflow-x:auto}
+.cw-tabs button{padding:10px 14px;font-weight:600;font-size:14px;color:var(--ink-3);border-bottom:2.5px solid transparent;margin-bottom:-1px;white-space:nowrap;background:none}
+.cw-tabs button.on{color:var(--ink);border-color:var(--pine)}
+.cw-frame{height:420px;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-top:10px}
+.cw-health{display:flex;gap:24px;margin-top:8px}.cw-health div{display:grid;gap:4px}
+.cw-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}.cw-row:first-of-type{border-top:0}
+.cw-kv{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}.cw-kv span{color:var(--ink-2)}.cw-kv b{text-align:right}
+.seg3{display:inline-flex;padding:4px;border-radius:999px;background:var(--paper-2);margin-top:6px}.seg3 button{height:34px;padding:0 16px;border-radius:999px;font-weight:700;font-size:13.5px;color:var(--ink-2);background:none}.seg3 button.on{background:var(--pine);color:#fff}
+.cw-eff{margin-top:12px;padding:10px 14px;border-radius:12px;background:#F6DDD8;color:#8F3427;font-size:14px;font-weight:600}.cw-eff.ok{background:#D7EEDF;color:#1E6B45}
+.pm-lbl{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}.pm-lbl input{display:block;width:100%;margin-top:6px;height:42px;border:1.5px solid var(--line-2);border-radius:12px;padding:0 12px;background:#fff}
+.sk-val{color:var(--line-2)}
+@media (max-width:900px){.cw .grid[style*="repeat(4"],#view>.grid[style*="repeat(4"]{grid-template-columns:repeat(2,1fr)!important}.cw .grid[style*="1.5fr"]{grid-template-columns:1fr!important}.cl-search{margin-left:0;flex:1;min-width:0}.cw-frame{height:300px}}
 .modal .pm-sub{color:var(--ink-2);font-size:15px;margin:-12px 0 20px}
 .pm-empty{background:var(--paper);border-radius:16px;padding:22px}.pm-empty b{font-size:17px}.pm-empty p{color:var(--ink-2);font-size:14.5px;margin:6px 0 16px}
 .pm-empty .btn svg,.portal-btn svg{width:17px;height:17px}
@@ -1025,7 +1053,7 @@ window.fitFrames=function(root){
       </div>
       <div class="pkgs" id="pkgs"></div>
       <div class="offers">
-        <div class="offer"><b>2 months of care, free</b><span>Every project gets hosting, backups and small edits free for the first 2 months. Then <span data-care-price>₹999</span>/month — cancel anytime.</span></div>
+        <div class="offer"><b>2 months of care, free</b><span>Every project gets hosting, backups and small edits free for the first 2 months. Then <span data-care-price>₹1,499</span>/month, including editing your site yourself — cancel anytime.</span></div>
         <div class="offer"><b>20% off for students</b><span>Show a valid student ID. Works on any plan.</span></div>
         <div class="offer"><b>Refer a friend, get a free month</b><span>Every referral who signs up adds one more free care month.</span></div>
         <div class="offer"><b>Last 50% only if you love it</b><span>50% in advance to start. The other 50% only after you've seen the finished site and you're happy with it.</span></div>
@@ -1039,7 +1067,7 @@ window.fitFrames=function(root){
       <div>
         <h2 class="reveal"><span class="mask"><span>After launch,</span></span><span class="mask"><span>we look after it.</span></span></h2>
         <p class="lead">Small-business sites break quietly — an expired SSL, an update, a form that stops sending. The care plan means we catch it before your customers do.</p>
-        <div class="care-price"><b>2 months free</b><br>then <b class="sm" data-care-price>₹999</b> / month</div>
+        <div class="care-price"><b>2 months free</b><br>then <b class="sm" data-care-price>₹1,499</b> / month</div>
         <div style="margin-top:30px"><a class="btn btn-gold magnet" href="#contact" data-form="Care plan only" data-track="cta_whatsapp:care">Ask about the care plan</a></div>
       </div>
       <div class="care-list">
@@ -1047,6 +1075,8 @@ window.fitFrames=function(root){
         <div class="care-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg><b>Backups and updates</b><span>Regular backups and updates so nothing breaks.</span></div>
         <div class="care-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><b>Uptime checks</b><span>Automated checks every few hours. We're alerted if it goes down.</span></div>
         <div class="care-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></svg><b>Small edits</b><span>New prices, photos, timings — just send them on WhatsApp.</span></div>
+        <div class="care-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><b>Edit it yourself</b><span>A visual editor for your own site: change text, photos and sections, then publish in a minute.</span></div>
+        <div class="care-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 3v18h18"/><path d="m7 15 4-5 4 3 5-7"/></svg><b>Your own dashboard</b><span>Live visitors, WhatsApp taps and enquiries, uptime and your project — in one private link.</span></div>
         <div class="uptime">
           <div class="uptime-top"><span>Uptime, last 90 checks</span><b>99.9% up</b></div>
           <div class="ticks" id="ticks"></div>
@@ -1272,7 +1302,7 @@ const FAQ=[
   ["Who owns the website and the domain?","You do. Domains are registered in your name, and once the final payment is made the site and everything in it is yours."],
   ["How do payments work?","50% in advance to start the build. The other 50% only after you've seen the finished site and you're happy with it. UPI and bank transfer in India; card or transfer for international clients."],
   ["What if I don't like the finished site?","Tell us what feels off — two rounds of changes are included. If you're still not happy, you don't pay the remaining 50%."],
-  ["What does the care plan cover?","Hosting, SSL, backups, updates, uptime checks and small edits like new prices, photos or timings. It's free for the first 2 months on every project, then ₹999/month. Cancel anytime with a month's notice."]
+  ["What does the care plan cover?","Hosting, SSL, backups, updates, uptime checks and small edits like new prices, photos or timings. It's free for the first 2 months on every project, then ₹1,499/month. It also gives you your own dashboard and a visual editor, so you can change text, photos, prices and whole sections of your website yourself. Cancel anytime with a month's notice."]
 ];
 const ISSUES=["isn’t loading well on mobile","is missing","doesn’t have online booking","looks outdated","loads very slowly"];
 const PROSPECT_STATUS=["new","audited","messaged","followed_up","replied","call_booked","proposal","won","lost"];
@@ -1290,7 +1320,7 @@ const TEMPLATES={
   cold:{label:"First message",text:"Hi [Name], I came across [Business] on Google Maps. Your reviews are great, but your site [issue]. I made a quick concept of what it could look like: [screenshot]. I build websites for [niche] businesses and handle hosting too, so you don’t have to deal with anything technical. Open to a 10-min call this week?"},
   samples:{label:"Free samples offer",text:"Hi [Name], I run NOWORA, a small web studio. I’d love to make [Business] two free website samples — no cost and no commitment. If you like one, we build it; if not, you keep the ideas. Shall I send them this week?"},
   follow:{label:"Follow-up",text:"Hi [Name], just bumping this up. Happy to share the full concept if you’d like to see it. No pressure either way."},
-  care:{label:"Care plan offer",text:"Hi [Name], [Business]’s site is live and running well. Your first 2 months of care are free — hosting, SSL, backups, updates, uptime checks and small edits. After that it’s ₹999/month and you can cancel anytime. Want me to keep it switched on?"},
+  care:{label:"Care plan offer",text:"Hi [Name], [Business]’s site is live and running well. Your first 2 months of care are free — hosting, SSL, backups, updates, uptime checks and small edits. After that it’s ₹1,499/month (that also lets you edit your website yourself) and you can cancel anytime. Want me to keep it switched on?"},
   referral:{label:"Ask for referral",text:"Hi [Name], glad the new site is working for you. If you know someone who needs a website, send them my way — you’ll get one more free care month for every referral who signs up."}
 };
 const ICON={
@@ -1429,7 +1459,7 @@ function initSite(){
     cur=b.dataset.cur; $$("button",tg).forEach(x=>x.classList.toggle("on",x===b)); placeKnob();
     $$(".price span").forEach(s=>{s.style.transform="translateY(-100%)";s.style.opacity=0});
     setTimeout(()=>{renderPkgs(); $$(".price span").forEach(s=>{s.style.transition="none";s.style.transform="translateY(100%)";s.style.opacity=0; requestAnimationFrame(()=>{s.style.transition="";s.style.transform="";s.style.opacity=1})})},260);
-    $$("[data-care-price]").forEach(e=>e.textContent=cur==="INR"?"₹999":"$15");
+    $$("[data-care-price]").forEach(e=>e.textContent=cur==="INR"?"₹1,499":"$19");
   });
 
   /* uptime ticks */
@@ -1828,35 +1858,156 @@ function vOutreach(){
 }
 
 /* ---------- clients ---------- */
-function vClients(){
-  const C=A.data.Clients, soon=dayKey(Date.now()+7*864e5);
+function vClients(soft){
+  if(soft&&$("#view .cw")&&document.activeElement&&/TEXTAREA|INPUT|SELECT/.test(document.activeElement.tagName)) return;
+  if(A.clientView&&A.data.Clients.find(c=>c.id===A.clientView)) return vClientWorkspace(A.clientView,soft);
+  A.clientView=null;
+  const C=A.data.Clients, R=A.data.Requests||[], f=A.clientFilter||"all", q=(A.clientQ||"").toLowerCase();
   $("#topActions").innerHTML=`<button class="btn btn-wa btn-sm" id="addC">${ICON.plus}Add client</button>`;
   $("#addC").onclick=()=>clientForm({});
-  const care=C.filter(c=>c.carePlan==="yes"&&c.status!=="paused"), lifetime=C.reduce((s,c)=>s+(+c.price||0),0);
-  const conv=C.filter(c=>c.delivered).length?Math.round(C.filter(c=>c.delivered&&c.carePlan==="yes").length/C.filter(c=>c.delivered).length*100):0;
+  const openReq=c=>R.filter(r=>r.clientId===c.id&&r.status!=="done").length;
+  const attention=c=>c.uptime==="down"||openReq(c)>0||(c.status==="live"&&+c.price&&c.balancePaid!=="yes");
+  const list=C.filter(c=>f==="all"||(f==="live"&&c.status==="live")||(f==="building"&&/onboarding|building/.test(c.status))||(f==="care"&&c.carePlan==="yes")||(f==="attention"&&attention(c)))
+    .filter(c=>!q||(c.business+" "+c.name+" "+c.site).toLowerCase().includes(q));
+  const editOn=C.filter(c=>canEditOwner(c)).length;
   $("#view").innerHTML=`<div class="grid" style="grid-template-columns:repeat(4,1fr)">
-    <div class="panel kpi hero-kpi"><div class="lbl">Care-plan income</div><div class="val">${inr(mrr())}</div><span class="delta" style="color:#F2C27A">per month</span></div>
-    <div class="panel kpi"><div class="lbl">Care-plan sign-up rate</div><div class="val">${conv}%</div><span class="delta ${conv>=70?"up":"flat"}">goal: 70% or more</span></div>
-    <div class="panel kpi"><div class="lbl">Project revenue to date</div><div class="val">${inr(lifetime)}</div><span class="delta flat">${C.length} clients</span></div>
-    <div class="panel kpi"><div class="lbl">Renewals in 7 days</div><div class="val">${care.filter(c=>c.renewal&&c.renewal<=soon).length}</div><span class="delta flat">send a reminder below</span></div>
+    <div class="panel kpi hero-kpi"><div class="lbl">Care-plan income</div><div class="val">${inr(mrr())}</div><span class="delta" style="color:#F2C27A">per month · ${C.filter(c=>c.carePlan==="yes").length} on care</span></div>
+    <div class="panel kpi"><div class="lbl">Live websites</div><div class="val">${C.filter(c=>c.status==="live").length}</div><span class="delta flat">${C.filter(c=>c.uptime==="down").length?`<b style="color:#B5483A">${C.filter(c=>c.uptime==="down").length} down</b>`:"all up"}</span></div>
+    <div class="panel kpi"><div class="lbl">Can edit their site</div><div class="val">${editOn}</div><span class="delta flat">of ${C.length} clients</span></div>
+    <div class="panel kpi"><div class="lbl">Open requests</div><div class="val">${R.filter(r=>r.status!=="done").length}</div><span class="delta flat">${R.filter(r=>r.status==="new").length} new</span></div>
   </div>
-  <div class="panel" style="margin-top:18px">${C.length?`<table class="tbl"><thead><tr><th>Client</th><th>Site</th><th>Package</th><th>Care plan</th><th>Renews</th><th>Uptime</th><th>Onboarding</th><th></th></tr></thead><tbody>
-  ${C.map(c=>{const ck=(()=>{try{return JSON.parse(c.checklist||"[]")}catch(e){return []}})(); return `<tr data-id="${c.id}">
-    <td><b>${esc(c.business)}</b><span class="sub">${esc(c.name)}</span></td>
-    <td>${c.site?`<a href="${esc(c.site)}" target="_blank" rel="noopener" style="text-decoration:underline">${esc(c.site.replace(/^https?:\/\//,""))}</a>`:'<span class="sub">not live</span>'}<span class="sub"><span class="st ${esc(c.status)}">${esc(c.status)}</span></span></td>
-    <td>${esc(c.package)}<span class="sub">${inr(c.price)}</span></td>
-    <td>${c.carePlan==="yes"?inr(c.careFee)+"/mo":'<span class="sub">not yet</span>'}</td>
-    <td>${c.renewal?`<span style="color:${c.renewal<=soon?"#B5483A":"inherit"}">${fmtDate(c.renewal)}</span>`:"—"}</td>
-    <td>${c.uptime?`<span class="st ${c.uptime}">${c.uptime==="up"?"Up":"Down"}</span><span class="sub">${c.responseMs?c.responseMs+" ms · ":""}${c.lastCheck?ago(c.lastCheck):""}</span>`:'<span class="sub">—</span>'}</td>
-    <td><div class="meter" style="width:90px"><i style="width:${ck.length/CHECKLIST.length*100}%"></i></div><span class="sub">${ck.length}/${CHECKLIST.length}</span></td>
-    <td><div class="acts">${c.phone?`<a class="ib wa" target="_blank" rel="noopener" title="${c.carePlan==="yes"?"Send renewal reminder":"Offer care plan"}" href="${waLink(c.phone,c.carePlan==="yes"?`Hi ${(c.name||"").split(" ")[0]}, a quick reminder that the care plan for ${c.business} renews on ${fmtDate(c.renewal)} (${inr(c.careFee)}). Everything's running smoothly — reply here if you'd like any edits this month.`:fillTemplate(TEMPLATES.care.text,c))}">${ICON.wa}</a>`:""}
-      <button class="ib portal-btn${c.portalKey?" on":""}" data-portal title="Client dashboard">${KEY_ICON}</button><button class="ib" data-edit title="Edit">${ICON.edit}</button><button class="ib" data-del title="Delete">${ICON.trash}</button></div></td></tr>`}).join("")}
-  </tbody></table>`:`<div class="empty">No clients yet. When a lead says yes, add them here to track onboarding, care plans and uptime.</div>`}</div>`;
-  const tb=$("#view tbody"); if(!tb) return;
-  tb.onclick=async e=>{const tr=e.target.closest("tr"); if(!tr) return; const c=C.find(x=>x.id===tr.dataset.id);
-    if(e.target.closest("[data-portal]")) portalModal(c);
-    if(e.target.closest("[data-edit]")) clientForm(c);
-    if(e.target.closest("[data-del]")&&confirm("Delete "+c.business+"?")){await delRow("Clients",c.id);vClients()}};
+  <div class="cl-bar"><div class="cl-filters">${[["all","All"],["live","Live"],["building","Building"],["care","Care plan"],["attention","Needs attention"]].map(([k,l])=>`<button data-f="${k}" class="${f===k?"on":""}">${l}</button>`).join("")}</div><input class="cl-search" id="clQ" placeholder="Search clients" value="${esc(A.clientQ||"")}"></div>
+  ${list.length?`<div class="cl-grid">${list.map(c=>clientCard(c,openReq(c))).join("")}</div>`:`<div class="panel"><div class="empty">${C.length?"No clients match.":"No clients yet. Sites in your GitHub with a nowora.json file appear here automatically, or add one by hand."}</div></div>`}`;
+  $$(".cl-filters button").forEach(b=>b.onclick=()=>{A.clientFilter=b.dataset.f;vClients()});
+  const qi=$("#clQ"); qi.oninput=()=>{A.clientQ=qi.value;const pos=qi.selectionStart;vClients();const n=$("#clQ");n.focus();n.setSelectionRange(pos,pos)};
+  $$(".cl-card").forEach(el=>el.onclick=e=>{const c=C.find(x=>x.id===el.dataset.id);
+    if(e.target.closest("[data-view]")) return ownerOpen(c,false);
+    if(e.target.closest("[data-editsite]")) return ownerOpen(c,true);
+    if(e.target.closest("a")) return;
+    A.clientView=c.id; A.cwTab="overview"; vClients();});
+}
+function hostOf(u){return String(u||"").replace(/^https?:\/\//,"").replace(/\/$/,"")}
+function canEditOwner(c){ if(!c.repo) return false; const a=String(c.editAccess||"auto"); return a==="on"||(a!=="off"&&c.carePlan==="yes"&&c.status!=="paused"); }
+function editLabel(c){ if(!c.repo) return ["muted","Editing: not connected"]; const a=String(c.editAccess||"auto"); if(a==="on") return ["up","Editing on"]; if(a==="off") return ["down","Editing off"]; return canEditOwner(c)?["up","Editing on · care plan"]:["muted","Editing off · no care plan"]; }
+function thumbFor(c){ const p=(A.data.Portfolio||[]).find(x=>x.url&&c.site&&hostOf(x.url)===hostOf(c.site)); return p&&p.image?p.image:""; }
+function clientCard(c,open){
+  const th=thumbFor(c), el=editLabel(c);
+  return `<article class="cl-card" data-id="${c.id}">
+    <div class="cl-thumb">${th?`<img src="${esc(th)}" alt="" loading="lazy">`:`<span>${esc((c.business||"?").slice(0,1))}</span>`}<i class="cl-dot ${c.uptime==="down"?"down":c.uptime==="up"?"up":""}" title="${c.uptime||"not checked"}"></i></div>
+    <div class="cl-body"><b>${esc(c.business||"Untitled")}</b><span class="sub">${c.site?esc(hostOf(c.site)):"no site yet"}</span>
+      <div class="cl-tags"><span class="st ${esc(c.status)}">${esc(c.status||"—")}</span>${c.carePlan==="yes"?`<span class="st up">Care ${inr(c.careFee||1499)}</span>`:""}<span class="st ${el[0]}">${el[1]}</span>${open?`<span class="st pend">${open} request${open>1?"s":""}</span>`:""}${c.uptime==="up"&&c.responseMs?`<span class="st">${c.responseMs} ms</span>`:""}</div></div>
+    <div class="cl-acts">${c.portalKey?`<button class="btn btn-ghost btn-sm" data-view>${ICON.eye}View as client</button>${c.repo?`<button class="btn btn-ghost btn-sm" data-editsite>${ICON.edit}Edit site</button>`:""}`:`<span class="sub">No dashboard yet</span>`}<span class="sp"></span><span class="cl-open">Open →</span></div>
+  </article>`;
+}
+function ownerOpen(c,edit){
+  if(!c.portalKey) return toast("Create their dashboard first (Access tab).",true);
+  if(!API.live) return toast("Connect your backend to open client dashboards.",true);
+  const base=/^https?:/.test(location.protocol)?location.origin:siteBase(); // same site, so the admin session carries over
+  const w=window.open(base+"/client/"+encodeURIComponent(c.portalKey)+(edit?"#owner-edit":"#owner"),"_blank");
+  if(!w) toast("Allow pop-ups for this site to open the client view.",true);
+}
+
+function vClientWorkspace(id,soft){
+  const c=A.data.Clients.find(x=>x.id===id); if(!c) return;
+  const R=(A.data.Requests||[]).filter(r=>r.clientId===c.id), tab=A.cwTab||"overview";
+  $("#topActions").innerHTML="";
+  const tabs=[["overview","Overview"],["access","Access & editing"],["billing","Billing & care"],["requests",`Requests${R.filter(r=>r.status!=="done").length?` (${R.filter(r=>r.status!=="done").length})`:""}`],["details","Details"]];
+  $("#view").innerHTML=`<div class="cw">
+    <div class="cw-head"><button class="btn btn-ghost btn-sm" id="cwBack">← All clients</button>
+      <div class="cw-title"><h2>${esc(c.business)}</h2><span class="sub">${c.site?`<a href="${esc(c.site)}" target="_blank" rel="noopener">${esc(hostOf(c.site))} ↗</a>`:"no site yet"}${c.repo?` · <a href="https://github.com/${esc(c.repo)}" target="_blank" rel="noopener">${esc(c.repo)}</a>`:""}</span></div>
+      <span class="sp"></span>
+      ${c.portalKey?`<button class="btn btn-ghost btn-sm" id="cwView">${ICON.eye}View as client</button>`:""}${c.portalKey&&c.repo?`<button class="btn btn-wa btn-sm" id="cwEdit">${ICON.edit}Edit their website</button>`:""}
+      ${c.phone?`<a class="ib wa" target="_blank" rel="noopener" title="WhatsApp ${esc(c.name||c.business)}" href="${waLink(c.phone,`Hi ${(c.name||"").split(" ")[0]||"there"}, `)}">${ICON.wa}</a>`:""}</div>
+    <div class="cw-tabs">${tabs.map(([k,l])=>`<button data-t="${k}" class="${tab===k?"on":""}">${l}</button>`).join("")}</div>
+    <div id="cwBody"></div></div>`;
+  $("#cwBack").onclick=()=>{A.clientView=null;vClients()};
+  $$(".cw-tabs button").forEach(b=>b.onclick=()=>{A.cwTab=b.dataset.t;vClientWorkspace(id)});
+  const v=$("#cwView"); if(v) v.onclick=()=>ownerOpen(c,false);
+  const ed=$("#cwEdit"); if(ed) ed.onclick=()=>ownerOpen(c,true);
+  ({overview:cwOverview,access:cwAccess,billing:cwBilling,requests:cwRequests,details:cwDetails})[tab](c,R);
+}
+async function cwOverview(c){
+  const ck=(()=>{try{return JSON.parse(c.checklist||"[]")}catch(e){return []}})();
+  const edits=(A.data.Automation||[]).filter(a=>a.workflow==="editor"&&String(a.summary||"").indexOf(c.business)===0).slice(-5).reverse();
+  $("#cwBody").innerHTML=`<div class="grid" style="grid-template-columns:repeat(4,1fr)" id="cwStats">${["Visitors · 30 days","WhatsApp & calls","Enquiries","Last visit"].map(l=>`<div class="panel kpi"><div class="lbl">${l}</div><div class="val sk-val">…</div></div>`).join("")}</div>
+  <div class="grid" style="grid-template-columns:1.5fr 1fr;margin-top:18px">
+    <div class="panel"><h3>Live site</h3>${c.site?`<div class="cw-frame fitframe"><iframe src="${esc(c.site)}" title="Live site" loading="lazy" tabindex="-1" sandbox="allow-scripts allow-same-origin"></iframe></div>`:`<div class="empty">No site linked yet — add it in Details.</div>`}</div>
+    <div class="grid" style="align-content:start;gap:18px">
+      <div class="panel"><h3>Health</h3><div class="cw-health"><div><span class="st ${c.uptime==="down"?"down":c.uptime==="up"?"up":""}">${c.uptime==="up"?"Online":c.uptime==="down"?"Down":"Not checked yet"}</span><span class="sub">${c.lastCheck?"checked "+ago(c.lastCheck):""}</span></div><div><b>${c.responseMs?c.responseMs+" ms":"—"}</b><span class="sub">response time</span></div></div></div>
+      <div class="panel"><h3>Setup checklist</h3><div class="meter" style="margin-top:8px"><i style="width:${ck.length/CHECKLIST.length*100}%"></i></div><span class="sub">${ck.length}/${CHECKLIST.length} done · status: ${esc(c.status||"—")}</span></div>
+      <div class="panel"><h3>Recent website edits</h3>${edits.length?edits.map(a=>`<div class="cw-row"><span>${esc(a.details||"Edited")}</span><span class="sub">${ago(a.ts)}</span></div>`).join(""):`<div class="sub">No edits published from the editor yet.</div>`}</div>
+    </div></div>
+  <div class="panel" style="margin-top:18px"><h3>Latest activity on their site</h3><div id="cwFeed" class="sub">Loading…</div></div>`;
+  fitFrames($("#cwBody"));
+  const put=(vals,feed)=>{$$("#cwStats .val").forEach((el,i)=>{el.classList.remove("sk-val");el.textContent=vals[i]});$("#cwFeed").innerHTML=feed};
+  if(!c.portalKey) return put(["—","—","—","—"],`Create their dashboard (Access tab) and add the visitor-stats snippet to see visits here.`);
+  if(!API.live) return put(["—","—","—","—"],"Connect your backend to see live stats.");
+  try{
+    const d=(await API.post({action:"portal",key:ADMIN.key,portalKey:c.portalKey})).data, t=d.stats.totals, rec=d.stats.recent||[];
+    if(A.clientView!==c.id||A.cwTab!=="overview") return;
+    const L={pageview:"Visited",cta_whatsapp:"Tapped WhatsApp",cta_call:"Tapped call",cta_email:"Tapped email",lead_submit:"Sent an enquiry"};
+    put([t.visitors,t.whatsapp+t.calls,t.enquiries,rec[0]?ago(rec[0].ts):"—"],
+      rec.length?rec.slice(0,8).map(e=>`<div class="cw-row"><span>${L[e.type]||e.type}${e.ref&&e.ref!=="direct"?` · from ${esc(e.ref)}`:""}${e.device?` · ${esc(e.device)}`:""}</span><span class="sub">${ago(e.ts)}</span></div>`).join(""):(c.trackId?"No visits recorded yet.":"Add the visitor-stats snippet (Access tab) to start counting visits."));
+  }catch(x){put(["—","—","—","—"],"Couldn't load stats: "+esc(x.message))}
+}
+function cwAccess(c){
+  const a=String(c.editAccess||"auto"), first=(c.name||"").split(" ")[0]||"there";
+  const msg=c.portalKey?`Hi ${first}! Your NOWORA client dashboard is ready.\n\nSee your website's visitors, WhatsApp taps, project progress and payments${canEditOwner(c)?", edit your website yourself,":""} and send change requests anytime:\n${portalLink(c)}\n\nYour PIN: ${c.pin}\n\nPlease keep the link and PIN private.`:"";
+  const eff=canEditOwner(c);
+  $("#cwBody").innerHTML=`<div class="grid two">
+    <div class="panel"><h3>Client dashboard</h3>
+      ${c.portalKey?`<div class="pm-field"><label>Private link</label><div class="pm-row"><input readonly value="${esc(portalLink(c))}"><button class="btn btn-ghost btn-sm" data-copy="link">Copy</button></div></div>
+      <div class="pm-field pm-pin" style="margin-top:12px"><label>PIN</label><div class="pm-row"><input readonly value="${esc(c.pin)}"><button class="btn btn-ghost btn-sm" data-copy="pin">Copy</button><button class="btn btn-ghost btn-sm" id="cwPin">New PIN</button></div></div>
+      <div class="pm-actions">${c.phone?`<a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${waLink(c.phone,msg)}">${ICON.wa}Send link + PIN</a>`:`<button class="btn btn-wa btn-sm" data-copy="msg">Copy message for the client</button>`}<button class="btn btn-ghost btn-sm" id="cwSlug">Change link</button></div>`
+      :`<p class="sub" style="margin:6px 0 14px">Give ${esc(c.business)} a private dashboard: visitors, uptime, project, payments, requests — and the website editor when you allow it.</p><button class="btn btn-wa btn-sm" id="cwCreate">${KEY_ICON}Create dashboard</button>`}
+    </div>
+    <div class="panel"><h3>Website editing</h3>
+      <div class="seg3" id="cwEditAcc">${[["auto","Auto"],["on","Always on"],["off","Off"]].map(([k,l])=>`<button data-v="${k}" class="${a===k?"on":""}">${l}</button>`).join("")}</div>
+      <p class="sub" style="margin-top:10px">${a==="auto"?"On while their care plan is active, off when it isn't.":a==="on"?"They can always edit, with or without a care plan.":"They can't edit. You still can."}</p>
+      <div class="cw-eff ${eff?"ok":""}">${eff?"✓ "+esc(c.business)+" can edit their website now":!c.repo?"Not connected — add their GitHub repo below":"✕ Editing is off for them right now"+(a==="auto"&&c.carePlan!=="yes"?" (no care plan)":"")}</div>
+      <label class="pm-lbl" style="margin-top:16px">GitHub repository</label><div class="pm-row"><input id="cwRepo" value="${esc(c.repo||"")}" placeholder="Sarthak-B/client-site"><button class="btn btn-ghost btn-sm" id="cwRepoSave">Save</button></div>
+      <p class="pm-note">Sites with a nowora.json file are linked automatically.</p></div>
+  </div>
+  <div class="panel" style="margin-top:18px"><h3>Visitor stats snippet</h3>${c.trackId?`<div class="pm-row"><textarea readonly rows="2">${esc(snippet(c))}</textarea><button class="btn btn-ghost btn-sm" data-copy="snip">Copy</button></div><p class="pm-note">Paste just before &lt;/body&gt; on their site. Sites built with the site-builder skill already include it.</p>`:`<p class="sub">Created together with their dashboard.</p>`}</div>`;
+  const save=async(row,note)=>{if(await saveRow("Clients",Object.assign({id:c.id},row))){if(note)toast(note);vClientWorkspace(c.id)}};
+  $$("#cwBody [data-copy]").forEach(b=>b.onclick=()=>copyText({link:portalLink(c),pin:c.pin,snip:snippet(c),msg}[b.dataset.copy]));
+  const cr=$("#cwCreate"); if(cr) cr.onclick=()=>save({portalKey:uniqueSlug(c.business,c.id),pin:rndStr(6,"0123456789"),trackId:c.trackId||rndStr(10,KCH)},"Dashboard created — send them the link and PIN");
+  const np=$("#cwPin"); if(np) np.onclick=()=>{if(confirm("Make a new PIN? The old one stops working."))save({pin:rndStr(6,"0123456789")},"New PIN ready")};
+  const sl=$("#cwSlug"); if(sl) sl.onclick=()=>{const v=prompt("Link name (letters, numbers and dashes). The current link stops working.",c.portalKey);if(v===null)return;const s2=slugify(v);if(s2.length<3)return toast("Use at least 3 characters.",true);if(s2==="demo"||A.data.Clients.some(x=>x.id!==c.id&&String(x.portalKey).toLowerCase()===s2))return toast("Another client already uses that link.",true);save({portalKey:s2},"Link changed")};
+  $$("#cwEditAcc button").forEach(b=>b.onclick=()=>save({editAccess:b.dataset.v},"Editing access updated"));
+  $("#cwRepoSave").onclick=()=>{const v=$("#cwRepo").value.trim().replace(/^https?:\/\/github\.com\//,"").replace(/\.git$/,"").replace(/\/$/,"");if(v&&!/^[\w.-]+\/[\w.-]+$/.test(v))return toast("Use the form owner/repo",true);save({repo:v},v?"Repository linked":"Repository removed")};
+}
+function cwBilling(c){
+  const price=+c.price||0, half=Math.round(price/2), first=(c.name||"").split(" ")[0]||"there";
+  $("#cwBody").innerHTML=`<div class="grid two">
+    <div class="panel"><h3>Project</h3>
+      <div class="cw-kv"><span>Package</span><b>${esc(c.package||"—")}</b></div><div class="cw-kv"><span>Price</span><b>${price?inr(price):"—"}</b></div><div class="cw-kv"><span>Delivered</span><b>${c.delivered?fmtDate(c.delivered):"—"}</b></div>
+      <label class="pm-tog"><input type="checkbox" id="cwAdv" ${c.advancePaid==="yes"?"checked":""}><span>First 50% received${price?` · ${inr(half)}`:""}</span></label>
+      <label class="pm-tog"><input type="checkbox" id="cwBal" ${c.balancePaid==="yes"?"checked":""}><span>Second 50% received${price?` · ${inr(price-half)}`:""}</span></label>
+      ${price?"":`<p class="pm-note">Add the price in Details so payments show on their dashboard.</p>`}</div>
+    <div class="panel"><h3>Care plan</h3>
+      <label class="pm-tog"><input type="checkbox" id="cwCare" ${c.carePlan==="yes"?"checked":""}><span>Care plan active ${String(c.editAccess||"auto")==="auto"?"<small class='sub'>(also switches website editing)</small>":""}</span></label>
+      <div class="pm-row" style="margin-top:10px"><label class="pm-lbl" style="flex:1">Monthly fee (₹)<input id="cwFee" type="number" value="${esc(c.careFee||1499)}"></label><label class="pm-lbl" style="flex:1">Next renewal<input id="cwRen" type="date" value="${esc(c.renewal||"")}"></label></div>
+      <div class="pm-actions"><button class="btn btn-ghost btn-sm" id="cwCareSave">Save</button>${c.phone&&c.carePlan==="yes"&&c.renewal?`<a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${waLink(c.phone,`Hi ${first}, a quick reminder that the NOWORA care plan for ${c.business} renews on ${fmtDate(c.renewal)} (${inr(c.careFee||1499)}). It covers hosting, backups, uptime checks, small changes and editing your website yourself. Reply here if you have any questions!`)}">${ICON.wa}Send renewal reminder</a>`:""}</div></div>
+  </div>`;
+  const save=async(row,note)=>{if(await saveRow("Clients",Object.assign({id:c.id},row))){toast(note);vClientWorkspace(c.id)}};
+  $("#cwAdv").onchange=e=>save({advancePaid:e.target.checked?"yes":""},"Payment updated");
+  $("#cwBal").onchange=e=>save({balancePaid:e.target.checked?"yes":""},"Payment updated");
+  $("#cwCare").onchange=e=>save({carePlan:e.target.checked?"yes":"no",careFee:e.target.checked?(+$("#cwFee").value||1499):c.careFee},e.target.checked?"Care plan on":"Care plan off");
+  $("#cwCareSave").onclick=()=>save({careFee:+$("#cwFee").value||1499,renewal:$("#cwRen").value},"Care plan saved");
+}
+function cwRequests(c,R){
+  const lbl={new:"New",progress:"In progress",done:"Done"};
+  $("#cwBody").innerHTML=R.length?`<div class="rq-list">${[...R].sort((a,b)=>b.ts<a.ts?-1:1).map(r=>`<article class="panel rq" data-id="${r.id}"><header><span class="st">${esc(r.type)}</span><span class="sub">${ago(r.ts)}</span><span class="sp"></span><span class="st ${r.status==="done"?"up":r.status==="progress"?"pend":"new"}">${lbl[r.status]||"New"}</span></header><p class="rq-msg">${esc(r.message)}</p>${r.attachment?`<a class="rq-ph" href="${esc(r.attachment)}" target="_blank" rel="noopener" style="background-image:url('${esc(r.attachment)}')"></a>`:""}
+    <div class="rq-edit"><select data-status>${Object.entries(lbl).map(([k,l])=>`<option value="${k}" ${r.status===k?"selected":""}>${l}</option>`).join("")}</select><textarea data-reply rows="2" placeholder="Reply — they see it on their dashboard">${esc(r.reply)}</textarea><div class="rq-btns"><button class="btn btn-wa btn-sm" data-save>Save</button></div></div></article>`).join("")}</div>`
+    :`<div class="panel"><div class="empty">No requests from ${esc(c.business)} yet.</div></div>`;
+  $$("#cwBody .rq").forEach(el=>{const b=$("[data-save]",el);if(b)b.onclick=async()=>{b.disabled=true;if(await saveRow("Requests",{id:el.dataset.id,status:$("[data-status]",el).value,reply:$("[data-reply]",el).value.trim(),updated:new Date().toISOString()})){toast("Saved — they see it on their dashboard");vClientWorkspace(c.id)}else b.disabled=false}});
+}
+function cwDetails(c){
+  $("#cwBody").innerHTML=`<div class="panel"><div class="cw-kv"><span>Contact</span><b>${esc(c.name||"—")}</b></div><div class="cw-kv"><span>WhatsApp</span><b>${esc(c.phone||"—")}</b></div><div class="cw-kv"><span>Email</span><b>${esc(c.email||"—")}</b></div><div class="cw-kv"><span>Website</span><b>${esc(c.site||"—")}</b></div><div class="cw-kv"><span>Notes</span><b style="white-space:pre-wrap;font-weight:500">${esc(c.notes||"—")}</b></div>
+    <div class="pm-actions"><button class="btn btn-wa btn-sm" id="cwEditDetails">${ICON.edit}Edit details</button><button class="btn btn-ghost btn-sm pm-danger" id="cwDel">${ICON.trash}Delete client</button></div></div>`;
+  $("#cwEditDetails").onclick=()=>clientForm(c);
+  $("#cwDel").onclick=async()=>{if(!confirm("Delete "+c.business+"? Their dashboard link stops working."))return;await delRow("Clients",c.id);A.clientView=null;vClients()};
 }
 
 /* ---------- portfolio ---------- */
@@ -2076,13 +2227,13 @@ function clientForm(c){
     ${F("site","Live site URL",c.site,"url")}${F("status","Status",c.status||"onboarding","text",["onboarding","building","live","paused"])}
     ${F("package","Package",c.package||"Starter","text",["Starter","Business","Growth","Custom"])}${F("price","Project price (₹)",c.price,"number")}
     ${F("delivered","Delivered on",c.delivered,"date")}${F("carePlan","Care plan",c.carePlan||"no","text",[["yes","Yes"],["no","No"]])}
-    ${F("careFee","Care fee per month (₹)",c.careFee||999,"number")}${F("renewal","Next renewal",c.renewal,"date")}
+    ${F("careFee","Care fee per month (₹)",c.careFee||1499,"number")}${F("editAccess","Website editing",c.editAccess||"auto","text",[["auto","Auto (with care plan)"],["on","Always on"],["off","Off"]])}${F("renewal","Next renewal",c.renewal,"date")}
     <div class="checklist"><b style="grid-column:1/-1;font-size:14px">Onboarding checklist</b>${CHECKLIST.map((t,i)=>`<label><input type="checkbox" data-ck="${i}" ${ck.includes(i)?"checked":""}>${t}</label>`).join("")}</div>
     ${F("notes","Notes",c.notes,"textarea",null,true)}
     <div class="row-end"><button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button><button class="btn btn-wa btn-sm">Save client</button></div></form>`);
   $("#mf").onsubmit=async e=>{e.preventDefault(); const v=Object.fromEntries(new FormData(e.target)); if(!v.business.trim()) return toast("Add the business name.",true);
     v.checklist=JSON.stringify($$("[data-ck]:checked").map(x=>+x.dataset.ck)); v.price=+v.price||0; v.careFee=v.carePlan==="yes"?(+v.careFee||0):0;
-    const row=Object.assign({id:uid(),uptime:"",responseMs:"",lastCheck:""},c,v); await saveRow("Clients",row); closeModal(); A.tab="clients"; render(); toast("Client saved");};
+    const row=Object.assign({id:uid(),uptime:"",responseMs:"",lastCheck:""},c,v); await saveRow("Clients",row); closeModal(); A.tab="clients"; A.clientView=row.id; render(); toast("Client saved");};
 }
 async function saveRow(sheet,row){
   try{const saved=await API.save(sheet,row); const list=A.data[sheet]; const i=list.findIndex(x=>x.id===row.id); if(i>=0) list[i]=Object.assign(list[i],saved||row); else list.push(saved||row); return true;}

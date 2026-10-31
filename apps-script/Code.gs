@@ -25,7 +25,7 @@ const SHEETS = {
   Events:     ['ts','vid','sid','type','label','ref','device','utm'],
   Leads:      ['id','ts','name','business','niche','package','phone','email','channel','message','status','notes','source','updated'],
   Prospects:  ['id','ts','name','business','niche','phone','website','maps','status','issue','lastContact','followUpDue','auditScore','auditIssues','screenshot','auditRequested','notes'],
-  Clients:    ['id','business','name','phone','email','site','package','price','delivered','carePlan','careFee','renewal','status','uptime','responseMs','lastCheck','checklist','notes','portalKey','pin','trackId','advancePaid','balancePaid','repo'],
+  Clients:    ['id','business','name','phone','email','site','package','price','delivered','carePlan','careFee','renewal','status','uptime','responseMs','lastCheck','checklist','notes','portalKey','pin','trackId','advancePaid','balancePaid','repo','editAccess'],
   Portfolio:  ['id','ts','title','niche','type','url','image','description','visible','order','tag','embed','shot','theme','repo'],
   Pitches:    ['id','ts','prospectId','channel','template','message'],
   Automation: ['ts','workflow','status','summary','details'],
@@ -296,6 +296,12 @@ const PORTAL_DAYS = 30;
 /** Finds the client for a portal link + PIN. Locks a link for 15 minutes after 6 wrong PINs. */
 function portalClient_(body) {
   const key = String(body.portalKey || '').trim(), pin = String(body.pin || '').trim();
+  if (body.key && prop_('ADMIN_KEY') && String(body.key) === prop_('ADMIN_KEY')) {   // owner view: no PIN needed
+    const own = readAll_('Clients').find(x => (body.clientId && x.id === body.clientId) || (key && x.portalKey && x.portalKey.toLowerCase() === key.toLowerCase()));
+    if (!own) throw new Error('Client not found');
+    own._owner = true;
+    return own;
+  }
   if (!/^[\w-]{3,40}$/.test(key)) throw new Error('This portal link is not valid');
   const cache = CacheService.getScriptCache(), fk = 'pfail_' + key.toLowerCase(), dk = 'pday_' + key.toLowerCase();
   const fails = +(cache.get(fk) || 0), daily = +(cache.get(dk) || 0);
@@ -327,7 +333,7 @@ function portal_(c, sinceSec) {
       business: c.business, name: c.name, site: c.site, status: c.status, package: c.package, price: c.price,
       delivered: c.delivered, carePlan: c.carePlan, careFee: c.careFee, renewal: c.renewal,
       uptime: c.uptime, responseMs: c.responseMs, lastCheck: c.lastCheck,
-      advancePaid: c.advancePaid, balancePaid: c.balancePaid, tracking: !!c.trackId, checklist: c.checklist, editable: !!c.repo
+      advancePaid: c.advancePaid, balancePaid: c.balancePaid, tracking: !!c.trackId, checklist: c.checklist, editable: canEdit_(c), editReason: editReason_(c), owner: !!c._owner, id: c._owner ? c.id : undefined, portalKey: c.portalKey
     },
     stats: {
       days: days, hasData: ev.length > 0,
@@ -414,7 +420,26 @@ function gh_(method, path, payload) {
 const b64ToText_ = b64 => Utilities.newBlob(Utilities.base64Decode(String(b64).replace(/\s/g, ''))).getDataAsString('UTF-8');
 const textToB64_ = t => Utilities.base64Encode(t, Utilities.Charset.UTF_8);
 
+/**
+ * Who can use the website editor. Per client, the Clients tab "editAccess" column decides:
+ *   on   → always allowed        off → never allowed
+ *   (empty / auto) → allowed while the care plan is active
+ * A repo must be linked either way. You (the owner) can always edit.
+ */
+function editReason_(c) {
+  if (!c.repo) return 'not-connected';
+  if (c._owner) return '';
+  const a = String(c.editAccess || 'auto').toLowerCase();
+  if (a === 'off') return 'off';
+  if (a === 'on') return '';
+  return c.carePlan === 'yes' && c.status !== 'paused' ? '' : 'no-plan';
+}
+function canEdit_(c) { return !editReason_(c); }
+
 function siteRepo_(c) {
+  const why = editReason_(c);
+  if (why === 'no-plan') throw new Error('Website editing comes with the NOWORA care plan (₹1,499/month). Message NOWORA to switch it on.');
+  if (why === 'off') throw new Error('Website editing is turned off for this website. Message NOWORA if you need it.');
   if (!c.repo) throw new Error("This website isn't connected for editing yet — ask NOWORA to connect it.");
   if (!/^[\w.-]+\/[\w.-]+$/.test(c.repo)) throw new Error('The linked repository name looks wrong');
   return c.repo;
@@ -452,7 +477,7 @@ function sitePublish_(c, body) {
   const path = String(body.path || '');
   if (!/^[\w./-]+\.html$/.test(path) || path.indexOf('..') >= 0) return { ok: false, error: 'Unexpected file path' };
   const dir = path.indexOf('/') >= 0 ? path.slice(0, path.lastIndexOf('/') + 1) : '';
-  const who = (c.name || c.business || 'Client');
+  const who = c._owner ? 'NOWORA' : (c.name || c.business || 'Client');
   (body.images || []).slice(0, 30).forEach(img => {
     const m = /^data:image\/(jpeg|png|webp|gif);base64,(.+)$/.exec(img.data || '');
     const name = String(img.name || '').replace(/[^\w.-]/g, '');
@@ -462,7 +487,7 @@ function sitePublish_(c, body) {
   const res = gh_('put', '/repos/' + repo + '/contents/' + path.split('/').map(encodeURIComponent).join('/'),
     { message: clip_(body.message || ('Website edited by ' + who), 120) + ' (NOWORA editor)', content: textToB64_(html), sha: body.sha });
   append_('Automation', { ts: new Date().toISOString(), workflow: 'editor', status: 'success', summary: c.business + ' published website changes', details: clip_(body.message, 300) });
-  notify_('Website published: ' + c.business, '✏️ ' + c.business + ' published changes from their dashboard editor.\n\n' + (body.message || '') + '\n\nCommit: ' + res.commit.html_url + '\nLive site: ' + (c.site || ''));
+  if (!c._owner) notify_('Website published: ' + c.business, '✏️ ' + c.business + ' published changes from their dashboard editor.\n\n' + (body.message || '') + '\n\nCommit: ' + res.commit.html_url + '\nLive site: ' + (c.site || ''));
   return { ok: true, sha: res.content.sha, commit: res.commit.sha, url: res.commit.html_url };
 }
 
@@ -530,7 +555,7 @@ function registerSite_(site) {
       const live = (site.status || 'live') === 'live';
       upsert_('Clients', { id: randomKey_(12), business: name, name: clip_(cl.name, 60), phone: digits_(cl.phone), email: clip_(cl.email, 80), site: url,
         package: clip_(cl.package, 20), price: clip_(cl.price, 12), delivered: live ? Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd') : '',
-        carePlan: cl.carePlan ? 'yes' : '', careFee: cl.carePlan ? String(cl.careFee || 999) : '', renewal: '', status: live ? 'live' : 'building',
+        carePlan: cl.carePlan ? 'yes' : '', careFee: cl.carePlan ? String(cl.careFee || 1499) : '', renewal: '', status: live ? 'live' : 'building',
         uptime: '', responseMs: '', lastCheck: '', checklist: live ? '[0,1,2,3,4,5,6]' : '[]', notes: 'Added automatically from GitHub: ' + site.repo,
         portalKey: slug, pin: pin, trackId: site.trackId || slug, advancePaid: '', balancePaid: '', repo: site.repo });
       const link = (prop_('SITE_URL') || 'https://nowora.vercel.app') + '/client/' + slug;

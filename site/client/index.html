@@ -368,6 +368,16 @@ textarea:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 4px rgba(v
 .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,24px) scale(.96);display:flex;align-items:center;gap:10px;background:rgba(14,22,19,.95);border:1px solid rgba(var(--neon-rgb),.4);color:var(--ink);padding:12px 18px;border-radius:16px;font-size:14px;font-weight:600;opacity:0;transition:all .45s var(--spring);z-index:80;max-width:calc(100% - 32px);box-shadow:0 20px 50px -20px rgba(0,0,0,.9),0 0 30px -10px rgba(var(--neon-rgb),.6)}
 .toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
 .toast i{width:8px;height:8px;border-radius:50%;background:var(--neon);box-shadow:0 0 10px var(--neon);flex:none}
+.upsell{position:fixed;inset:0;z-index:600;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transition:opacity .3s}
+.upsell.on{opacity:1}
+.up-card{position:relative;width:min(460px,100%);padding:30px;border-radius:26px;background:radial-gradient(circle at 100% 0%,rgba(var(--neon-rgb),.2),transparent 55%),var(--panel);border:1px solid rgba(var(--neon-rgb),.35);box-shadow:0 0 60px -20px rgba(var(--neon-rgb),.6);transform:translateY(20px) scale(.96);transition:transform .45s var(--spring)}
+.upsell.on .up-card{transform:none}
+.up-card h3{font-family:var(--display);font-size:34px;line-height:1;letter-spacing:-.035em;margin:12px 0 10px}.up-card h3 em{font-style:normal;color:var(--neon)}
+.up-card p{color:var(--ink-2);font-size:15px}.up-card p b{color:var(--ink)}
+.up-card ul{list-style:none;display:grid;gap:8px;margin:18px 0 4px}.up-card li{position:relative;padding-left:26px;font-size:14.5px}.up-card li::before{content:"✓";position:absolute;left:0;color:var(--neon);font-weight:800}
+.up-card .btn{width:100%;margin-top:20px}
+.up-x{position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.06);font-size:20px;color:var(--ink-2)}
+.ownerbar{position:relative;z-index:31;background:var(--mint);color:#04120D;font-size:13px;font-weight:700;text-align:center;padding:8px 16px}
 .demo{position:relative;z-index:31;background:var(--neon);color:#0A0F0D;font-size:13px;font-weight:700;text-align:center;padding:8px 16px}
 .burst{position:fixed;pointer-events:none;z-index:90;width:6px;height:6px;border-radius:50%;background:var(--neon);box-shadow:0 0 10px var(--neon)}
 
@@ -484,9 +494,12 @@ function remember(pin,keep){try{(keep?localStorage:sessionStorage).setItem("nw_p
 function forget(){try{localStorage.removeItem("nw_portal_"+KEY);sessionStorage.removeItem("nw_portal_"+KEY)}catch(e){}}
 function prettyKey(k){return k.replace(/-/g," ").replace(/\b\w/g,function(m){return m.toUpperCase()})}
 
+/* owner view: opened from the NOWORA owner dashboard, uses the admin key instead of a PIN */
+var OWNER_KEY=(function(){if(!/^owner/.test(hash))return "";try{return sessionStorage.getItem("studio_admin_key")||(window.opener&&window.opener.sessionStorage.getItem("studio_admin_key"))||""}catch(e){return ""}})();
+var AUTO_EDIT=/^owner-edit/.test(hash);
 async function call(action,extra){
   if(DEMO) return demoCall(action,extra);
-  var body=Object.assign({action:action,portalKey:KEY,pin:S.pin},extra||{});
+  var body=Object.assign({action:action,portalKey:KEY},OWNER_KEY?{key:OWNER_KEY}:{pin:S.pin},extra||{});
   var r=await fetch(CFG.endpoint,{method:"POST",body:JSON.stringify(body),credentials:"omit"});
   var j=await r.json(); if(!j.ok) throw new Error(j.error||"Something went wrong"); return j;
 }
@@ -578,7 +591,7 @@ function render(){
   var h1=reduced?title:words.map(function(w,i){return '<span class="w" style="animation-delay:'+(120+i*90)+'ms">'+w+'</span>'}).join(" ");
   var up=c.uptime==="up",down=c.uptime==="down";
 
-  $("#app").innerHTML=(DEMO?'<div class="demo">Demo dashboard with sample numbers — your clients see their own website here.</div>':'')+
+  $("#app").innerHTML=(c.owner?'<div class="ownerbar">Owner view — this is exactly what '+esc(c.business)+' sees. You can edit their website from here.</div>':'')+(DEMO?'<div class="demo">Demo dashboard with sample numbers — your clients see their own website here.</div>':'')+
   '<header class="top"><div class="wrap"><span class="brand">'+MARK+'NOWORA<small>'+esc(c.business)+'</small></span>'+
     '<nav class="tabs" id="tabs"><span class="ind"></span><a href="#overview">Overview</a><a href="#traffic">Traffic</a><a href="#website">Website</a><a href="#project">Project</a><a href="#requests">Requests</a></nav>'+
     '<span class="sp"></span><span class="live"><i class="dot up"></i><span>Live</span></span>'+
@@ -814,8 +827,8 @@ function drawProject(){
       (price?'<div class="pay">'+payRow(half,"First 50% — to start","Paid before we begin building",c.advancePaid==="yes")+payRow(price-half,"Second 50% — when you're happy","Only after you approve the finished website",c.balancePaid==="yes")+'</div>':'<div class="empty">Your project price appears here once it\'s confirmed.</div>')+
       '<div class="care">'+(c.carePlan==="yes"&&left!==null?'<div class="days"><svg viewBox="0 0 96 96"><circle class="bg" cx="48" cy="48" r="42"/><circle class="fg" id="dring" cx="48" cy="48" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9" data-frac="'+Math.min(1,left/30)+'"/></svg><div><b>'+left+'</b><small>days to renewal</small></div></div>':'')+
       '<div><span class="eyebrow" style="color:var(--mint)">Care plan</span>'+
-      (c.carePlan==="yes"?'<div class="amt">'+inr(c.careFee)+'<small> / month</small></div><ul><li>Hosting, SSL and backups</li><li>Uptime checks every few minutes</li><li>Small text and photo changes</li><li>This live dashboard</li></ul>'+(ren?'<p>Renews on <b style="color:var(--ink)">'+fmtDate(c.renewal)+'</b></p>':''):
-        '<div class="amt" style="font-size:22px;margin-top:6px">Not active yet</div><p>Your first 2 months of care are free after launch, then ₹999/month for hosting, backups, uptime checks and small changes.</p>')+'</div></div></div>';
+      (c.carePlan==="yes"?'<div class="amt">'+inr(c.careFee)+'<small> / month</small></div><ul><li>Hosting, SSL and backups</li><li>Uptime checks every few minutes</li><li>Small text and photo changes</li><li>Edit your website yourself</li><li>This live dashboard</li></ul>'+(ren?'<p>Renews on <b style="color:var(--ink)">'+fmtDate(c.renewal)+'</b></p>':''):
+        '<div class="amt" style="font-size:22px;margin-top:6px">Not active yet</div><p>Your first 2 months of care are free after launch, then ₹1,499/month for hosting, backups, uptime checks, small changes — and editing your website yourself.</p>')+'</div></div></div>';
   S.pct=pct; S.stage=stage;
 }
 function payRow(a,t,s,p){return '<div class="pay-row"><div class="what"><b>'+t+'</b>'+s+'</div><span class="amt num">'+inr(a)+'</span><span class="tag '+(p?"paid":"due")+'">'+(p?"Paid ✓":"Due")+'</span></div>'}
@@ -894,7 +907,8 @@ function motion(){
 
 /* ---------- website editor ---------- */
 function openEditor(){
-  if(!DEMO&&!S.data.client.editable){toast("Editing isn't switched on for your website yet — message NOWORA and we'll connect it.");return}
+  var c=S.data.client;
+  if(!DEMO&&!c.editable){return lockedEditor(c.editReason)}
   var go=function(){window.NoworaEditor.open({call:call,toast:toast,key:KEY,onClose:function(){}})};
   if(window.NoworaEditor) return go();
   toast("Opening the editor…");
@@ -949,10 +963,23 @@ function demoCall(action,extra){
   },350)});
 }
 
+function lockedEditor(why){
+  var first=(S.data.client.name||"").split(" ")[0], biz=S.data.client.business;
+  var copy=why==="no-plan"?{t:'Edit your website <em>yourself.</em>',p:'Website editing comes with the NOWORA care plan — <b>₹1,499/month</b>. Change text, photos, prices and whole sections whenever you like, and publish in a minute.',l:['Edit text, photos, buttons and animations','Add new sections made for your business','Hosting, SSL, backups and uptime checks','Small changes done by us on WhatsApp','This live dashboard'],cta:'Get the care plan',msg:"Hi NOWORA, it's "+first+" from "+biz+". I'd like the care plan with website editing."}
+    :why==="off"?{t:'Editing is <em>paused.</em>',p:'Website editing is turned off for your site right now. Message NOWORA and we\'ll help with any change you need.',l:[],cta:'Message NOWORA',msg:"Hi NOWORA, it's "+first+" from "+biz+". I'd like to make a change to my website."}
+    :{t:'Almost <em>ready.</em>',p:'We\'re still connecting your website to the editor. Message NOWORA and we\'ll switch it on.',l:[],cta:'Message NOWORA',msg:"Hi NOWORA, it's "+first+" from "+biz+". Can you switch on website editing for me?"};
+  var m=document.createElement("div");m.className="upsell";
+  m.innerHTML='<div class="up-card"><button class="up-x" aria-label="Close">×</button><span class="eyebrow">'+(why==="no-plan"?"Care plan":"Website editor")+'</span><h3>'+copy.t+'</h3><p>'+copy.p+'</p>'+(copy.l.length?'<ul>'+copy.l.map(function(x){return '<li>'+x+'</li>'}).join("")+'</ul>':'')+'<a class="btn" target="_blank" rel="noopener" href="'+waLink(copy.msg)+'">'+I.wa+copy.cta+'</a></div>';
+  document.body.appendChild(m);requestAnimationFrame(function(){m.classList.add("on")});
+  var close=function(){m.classList.remove("on");setTimeout(function(){m.remove()},300)};
+  m.addEventListener("click",function(e){if(e.target===m||e.target.closest(".up-x"))close()});
+}
+
 /* ---------- start ---------- */
 addEventListener("hashchange",function(){if(!/^#(overview|traffic|website|project|requests)$/.test(location.hash))location.reload()});
 var remembered=KEY?saved():"";
-if(remembered){S.pin=remembered;loading();call("portal").then(function(j){boot(j.data)}).catch(function(x){forget();login(/PIN|valid/i.test(x.message)?"Please enter your PIN again.":x.message)})}
+if(OWNER_KEY&&KEY&&!DEMO){loading();call("portal").then(function(j){boot(j.data);if(AUTO_EDIT)setTimeout(openEditor,600)}).catch(function(x){login("Owner view failed: "+x.message)})}
+else if(remembered){S.pin=remembered;loading();call("portal").then(function(j){boot(j.data)}).catch(function(x){forget();login(/PIN|valid/i.test(x.message)?"Please enter your PIN again.":x.message)})}
 else login();
 })();
 </script>
