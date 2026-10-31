@@ -108,18 +108,39 @@ svg{display:block}
 .site-link{display:inline-flex;align-items:center;gap:8px;margin-top:18px;color:var(--ink-2);font-size:15px;border-bottom:1px solid var(--line-2);padding-bottom:2px;word-break:break-all;transition:color .2s,border-color .2s}
 .site-link:hover{color:var(--neon);border-color:var(--neon)}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
-.now{position:relative;overflow:hidden;border-radius:var(--r);padding:24px;background:radial-gradient(circle at 85% 0%,rgba(var(--neon-rgb),.18),transparent 55%),linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid rgba(var(--neon-rgb),.22);box-shadow:0 0 60px -30px rgba(var(--neon-rgb),.6)}
-.now .lbl{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--neon)}
-.now .big{display:flex;align-items:baseline;gap:12px;margin-top:10px}
-.now .big b{font-family:var(--display);font-size:68px;line-height:1;letter-spacing:-.04em;text-shadow:0 0 30px rgba(var(--neon-rgb),.35)}
-.now .big span{color:var(--ink-2);font-size:15px}
-.now svg{width:100%;height:56px;margin-top:10px}
-.now .spark{fill:none;stroke:var(--neon);stroke-width:2;filter:drop-shadow(0 0 6px rgba(var(--neon-rgb),.8))}
-.now .area{fill:url(#nowGrad)}
-.now small{display:block;color:var(--ink-3);font-size:12.5px;margin-top:6px}
-.ring-ping{position:absolute;right:22px;top:22px;width:12px;height:12px;border-radius:50%;background:var(--neon)}
-.ring-ping::before,.ring-ping::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--neon);animation:ping 2.4s var(--ease) infinite}
-.ring-ping::after{animation-delay:1.2s}
+.now{position:relative;overflow:hidden;min-width:0;border-radius:var(--r);padding:24px;background:radial-gradient(circle at 85% 0%,rgba(var(--neon-rgb),.18),transparent 55%),linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid rgba(var(--neon-rgb),.22);box-shadow:0 0 60px -30px rgba(var(--neon-rgb),.6)}
+.now-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.live-badge{display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--neon)}
+.live-badge .pp{position:relative;width:9px;height:9px;border-radius:50%;background:var(--neon);box-shadow:0 0 10px var(--neon)}
+.live-badge .pp::after{content:"";position:absolute;inset:-1px;border-radius:50%;border:2px solid var(--neon);animation:pp 2s var(--ease) infinite}
+@keyframes pp{from{transform:scale(1);opacity:.9}to{transform:scale(2.8);opacity:0}}
+.now-head small{font-size:12px;color:var(--ink-3)}
+.now .big{display:flex;align-items:center;gap:14px;margin-top:14px}
+.now .big b{font-family:var(--display);font-size:64px;line-height:.9;letter-spacing:-.04em;color:var(--neon);text-shadow:0 0 30px rgba(var(--neon-rgb),.4)}
+.now .big span{color:var(--ink);font-size:16px;font-weight:600;line-height:1.3}
+.now .big span em{display:block;font-style:normal;font-weight:400;color:var(--ink-3);font-size:13.5px}
+.who{list-style:none;display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin-top:14px}
+.who li{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-2);padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.035);animation:slidein .6s var(--spring) both}
+.who li svg{width:15px;height:15px;color:var(--neon);flex:none}
+.who li b{color:var(--ink);font-weight:600;text-transform:capitalize}
+.who li span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who li time{font-size:12px;color:var(--ink-3);white-space:nowrap}
+.who .quiet-note{background:none;padding:2px 0;color:var(--ink-3)}
+.today{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.today div{min-width:0}
+.today b{display:block;font-family:var(--display);font-size:24px;letter-spacing:-.02em;line-height:1}
+.today span{display:block;font-size:12px;color:var(--ink-3);margin-top:4px}
+.today .vs i{font-style:normal}@media (max-width:640px){.today .vs i{display:none}}
+.today .vs{font-size:11.5px;font-weight:700;margin-top:3px;color:var(--ink-3)}.today .vs.up{color:var(--neon)}.today .vs.down{color:var(--rose)}
+.hours{margin-top:14px}
+.hours .bars{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:3px;align-items:end;height:44px}
+.hours .bars i{display:block;border-radius:3px 3px 1px 1px;background:rgba(255,255,255,.08);min-height:3px;transform-origin:bottom;animation:growY .8s var(--ease) both}
+.hours .bars i.on{background:rgba(var(--neon-rgb),.55)}
+.hours .bars i.cur{background:var(--neon);box-shadow:0 0 12px rgba(var(--neon-rgb),.8)}
+.hours .bars i.fut{background:rgba(255,255,255,.03)}
+.hours .ax{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-3);margin-top:6px}
+.hours .cap{font-size:12px;color:var(--ink-3);margin-top:2px}
+@keyframes growY{from{transform:scaleY(0)}}
 @keyframes ping{from{transform:scale(1);opacity:.9}to{transform:scale(4.2);opacity:0}}
 
 /* ---------- toolbar ---------- */
@@ -628,20 +649,35 @@ function countUp(root){
 }
 
 /* right-now card */
+var NICE={instagram:"Instagram",google:"Google",whatsapp:"WhatsApp",facebook:"Facebook","google maps":"Google Maps",youtube:"YouTube",linkedin:"LinkedIn",twitter:"X / Twitter",bing:"Bing",justdial:"Justdial"};
+function nice(r){return NICE[r]||r}
 function drawNow(){
   var el=$("#now"); if(!el) return;
-  var t=nowSec(), win=30*60, live=new Set(), bins=[];
-  for(var i=0;i<12;i++) bins.push(new Set());
-  S.rows.forEach(function(e){ if(e.t>t-win){ live.add(e.vid); } if(e.t>t-3600){ var b=Math.min(11,Math.floor((e.t-(t-3600))/300)); bins[b].add(e.vid);} });
-  var v=bins.map(function(s){return s.size}), mx=Math.max.apply(null,v.concat([1]));
-  var pts=v.map(function(y,i){return [i/11*300,52-(y/mx)*44]});
-  var line=pts.map(function(p,i){return (i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)}).join(" ");
-  var prevN=+el.dataset.n||0;
-  el.dataset.n=live.size;
-  el.innerHTML='<span class="ring-ping"></span><div class="lbl">'+I.pulse.replace("<svg",'<svg width="16" height="16"')+'Right now</div>'+
-    '<div class="big"><b class="num" data-count="'+live.size+'">'+prevN+'</b><span>'+(live.size===1?"person":"people")+' on your site<br>in the last 30 minutes</span></div>'+
-    '<svg viewBox="0 0 300 56" preserveAspectRatio="none"><defs><linearGradient id="nowGrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#C6FF3D" stop-opacity=".35"/><stop offset="1" stop-color="#C6FF3D" stop-opacity="0"/></linearGradient></defs><path class="area" d="'+line+' L300 56 L0 56 Z"/><path class="spark" d="'+line+'"/></svg>'+
-    '<small>Last hour, in 5-minute steps · refreshes every 30 seconds</small>';
+  var t=nowSec(), win=30*60;
+  var recent=S.rows.filter(function(e){return e.t>t-win});
+  var byVid={}; recent.forEach(function(e){var v=byVid[e.vid]||(byVid[e.vid]={vid:e.vid,t:0,ref:e.ref,dev:e.dev,path:e.path,acts:[]});if(e.t>=v.t){v.t=e.t;if(e.type==="pageview")v.path=e.path;}v.ref=e.ref||v.ref;if(e.type!=="pageview")v.acts.push(e.type)});
+  var people=Object.keys(byVid).map(function(k){return byVid[k]}).sort(function(a,b){return b.t-a.t});
+  var last=S.rows.length?S.rows[S.rows.length-1]:null;
+  // last 24 hours vs the 24 hours before
+  var tod=stats(S.rows.filter(function(e){return e.t>t-DAY})), yst=stats(S.rows.filter(function(e){return e.t>t-2*DAY&&e.t<=t-DAY}));
+  var vs=function(a,b){if(!b)return '<span class="vs'+(a?' up':'')+'">'+(a?'▲ up from 0':'same as before')+'</span>';var ch=Math.round((a-b)/b*100);return '<span class="vs '+(ch>0?"up":ch<0?"down":"")+'">'+(ch>0?"▲ +":ch<0?"▼ ":"")+ch+'%<i> vs day before</i></span>'};
+  // last 24 hours, hour by hour (rightmost bar = this hour)
+  var hourStart=new Date();hourStart.setMinutes(0,0,0);var hs=hourStart.getTime()/1000-23*3600;
+  var hrs=[];for(var h=0;h<24;h++)hrs.push(new Set());
+  S.rows.forEach(function(e){if(e.t>=hs&&e.type==="pageview"){var i=Math.floor((e.t-hs)/3600);if(i>=0&&i<24)hrs[i].add(e.vid)}});
+  var hv=hrs.map(function(x){return x.size}),mx=Math.max.apply(null,hv.concat([1])),ch=23;
+  var hlab=function(i){var d=new Date((hs+i*3600)*1000),x=d.getHours();return (x%12||12)+(x<12?" am":" pm")};
+  var verb=function(p){var a=p.acts;if(a.indexOf("lead_submit")>-1)return "sent an enquiry";if(a.indexOf("cta_whatsapp")>-1)return "tapped WhatsApp";if(a.indexOf("cta_call")>-1)return "tapped call";return p.path&&p.path!=="/"?"on "+p.path:"on your home page"};
+  var devIcon=function(d){return d==="desktop"?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>'};
+  var n=people.length;
+  el.innerHTML='<div class="now-head"><span class="live-badge"><span class="pp"></span>Live now</span><small>refreshes every 30 s</small></div>'+
+    '<div class="big"><b class="num" data-count="'+n+'">'+(+el.dataset.n||0)+'</b><span>'+(n===1?"person is":"people are")+' on your site<em>active in the last 30 minutes</em></span></div>'+
+    '<ul class="who">'+(n?people.slice(0,3).map(function(p,i){return '<li style="animation-delay:'+(i*80)+'ms">'+devIcon(p.dev)+'<span><b>'+esc(p.dev||"visitor")+'</b> from '+esc(p.ref&&p.ref!=="direct"?nice(p.ref):"a direct link")+' · '+esc(verb(p))+'</span><time>'+ago(p.t*1000)+'</time></li>'}).join("")+(n>3?'<li class="quiet-note">+ '+(n-3)+' more</li>':''):
+      '<li class="quiet-note">Quiet right now.'+(last?' Your last visitor came '+ago(last.t*1000)+'.':' Visitors will show up here the moment they arrive.')+'</li>')+'</ul>'+
+    '<div class="today"><div><b class="num" data-count="'+tod.visitors+'">0</b><span>visitors · 24 h</span>'+vs(tod.visitors,yst.visitors)+'</div><div><b class="num" data-count="'+tod.taps+'">0</b><span>WhatsApp &amp; calls</span>'+vs(tod.taps,yst.taps)+'</div><div><b class="num" data-count="'+tod.leads+'">0</b><span>enquiries</span>'+vs(tod.leads,yst.leads)+'</div></div>'+
+    '<div class="hours"><div class="bars">'+hv.map(function(v,h){return '<i class="'+(h===ch?"cur":h>ch?"fut":v?"on":"")+'" style="height:'+(h>ch?3:Math.max(3,v/mx*44)).toFixed(0)+'px;animation-delay:'+(h*18)+'ms" title="'+hlab(h)+': '+v+' visitor'+(v===1?"":"s")+'"></i>'}).join("")+'</div>'+
+    '<div class="ax"><span>'+hlab(0)+'</span><span>'+hlab(8)+'</span><span>'+hlab(16)+'</span><span>now</span></div><div class="cap">Visitors each hour over the last 24 hours</div></div>';
+  el.dataset.n=n;
   countUp(el);
 }
 
