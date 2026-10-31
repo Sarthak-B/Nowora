@@ -211,12 +211,22 @@ function remove_(sheet, id) {
   } finally { lock.releaseLock(); }
 }
 
+/** The Drive folder for uploads. If it was deleted or belongs to another account, a new one is made. */
+function uploadsFolder_() {
+  const p = PropertiesService.getScriptProperties(), id = p.getProperty('DRIVE_FOLDER_ID');
+  if (id) {
+    try { const f = DriveApp.getFolderById(id); if (!f.isTrashed()) return f; } catch (e) { /* missing or no access: make a new one */ }
+  }
+  const folder = DriveApp.createFolder('NOWORA uploads');
+  p.setProperty('DRIVE_FOLDER_ID', folder.getId());
+  return folder;
+}
+
 function saveImage_(dataUrl, name) {
   const m = /^data:(image\/[a-z+]+);base64,(.+)$/.exec(dataUrl || '');
   if (!m) throw new Error('Expected an image');
   const blob = Utilities.newBlob(Utilities.base64Decode(m[2]), m[1], (name || 'upload') .replace(/[^\w.\- ]/g, '') || 'upload.jpg');
-  const folder = DriveApp.getFolderById(prop_('DRIVE_FOLDER_ID'));
-  const file = folder.createFile(blob);
+  const file = uploadsFolder_().createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1600';
 }
@@ -352,7 +362,8 @@ function portalRequest_(c, r) {
   let attachment = '';
   if (r.photo) {
     if (String(r.photo).length > 4500000) return { ok: false, error: 'That photo is too large — try a smaller one' };
-    attachment = saveImage_(r.photo, c.business + ' request.jpg');
+    try { attachment = saveImage_(r.photo, c.business + ' request.jpg'); }
+    catch (e) { attachment = ''; r.message = r.message + '\n\n(A photo was attached but could not be saved: ' + String(e.message || e).slice(0, 120) + ')'; }
   }
   const row = { id: randomKey_(12), ts: new Date().toISOString(), clientId: c.id, business: c.business, type: clip_(r.type || 'Change', 40), message: clip_(r.message, 2000), status: 'new', reply: '', updated: '', attachment: attachment };
   append_('Requests', row);
