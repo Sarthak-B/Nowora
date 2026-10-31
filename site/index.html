@@ -29,7 +29,7 @@ window.STUDIO_CONFIG = {
   endpoint: "https://script.google.com/macros/s/AKfycbwOFH3fuNlDOsOV59HZ4bmSYCZcsHMcNMtwc_qPF8Dn_-cOUN_NJVPoCoXx7WqWwWB7/exec",
   siteUrl: "https://nowora.vercel.app",
   githubRepo: "Sarthak-B/Nowora", // e.g. "yourname/studio-os" — links the Automations tab to GitHub Actions
-  availability: "Now taking new projects — 2 free samples each",
+  availability: "Now booking — 2 free samples each",
   responseNote: "We reply evenings and weekends, usually within a few hours."
 };
 </script>
@@ -730,6 +730,35 @@ body.is-admin #admin{display:block}
   .phone .notch{width:30px;height:8px;margin-left:-15px;top:8px}
   .stage-cap{padding-left:106px;gap:10px}
   .dots{gap:4px;flex:none}.dots i{width:10px}.dots i.on{width:20px}
+}
+
+/* ===== phones & tablets: preview sits right under the headline ===== */
+@media (max-width:900px){
+  .hero{padding:84px 0 56px}
+  .hero-grid{margin-top:20px;gap:20px}
+  .hero-grid>div:first-child{display:contents}
+  .headline{order:1}
+  .stage{order:2;margin:4px auto 6px}
+  .hero .ctas{order:3}
+  .sigline{order:4}
+  .hero p.lede{order:5}
+  .hero-meta{order:6}
+  .sigline,.hero p.lede,.hero .ctas,.hero-meta{margin:0}
+}
+@media (max-width:640px){
+  .hero{padding:78px 0 48px}
+  .avail{font-size:12.5px;padding:6px 12px 6px 9px;white-space:nowrap}
+  .headline{font-size:clamp(34px,10.2vw,44px)}
+  .hero-grid{gap:18px}
+  .bar{height:34px;padding:0 12px}
+  .url{height:24px;font-size:12px;margin-left:8px}
+  .canvas{height:clamp(200px,58vw,250px)}
+  .phone{width:80px;height:160px;left:auto;right:-6px;bottom:2px;border-radius:16px;padding:4px}
+  .pscreen{border-radius:12px}
+  .phone .notch{width:24px;height:6px;margin-left:-12px;top:6px}
+  .stage-cap{padding:0 84px 0 0;margin-top:10px;font-size:12.5px;min-height:20px}
+  .stage{margin-bottom:12px}
+  .canvas::after{right:auto;left:10px}
 }
 
 </style>
