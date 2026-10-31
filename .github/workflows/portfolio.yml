@@ -1,8 +1,10 @@
-name: Portfolio previews
+name: Client sites & previews
 
-# Captures a scrolling preview for every website link you add in the dashboard's Portfolio tab.
-# Checks every 10 minutes (a few seconds when there is nothing to do). Add GITHUB_TOKEN to the
-# Apps Script properties to start it instantly instead.
+# Every 10 minutes:
+#  1. finds your GitHub repos that have a nowora.json file and adds any new ones to NOWORA
+#     (showcase card + client dashboard, link and PIN emailed to you)
+#  2. captures a scrolling preview for every showcase link that needs one
+# Takes a few seconds when there's nothing new. Add a DISCOVER_TOKEN secret to include private repos.
 on:
   schedule:
     - cron: '*/10 * * * *'
@@ -19,6 +21,14 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - name: Find new client sites
+        run: node scripts/discover.mjs
+        continue-on-error: true
+        env:
+          STUDIO_ENDPOINT: ${{ secrets.STUDIO_ENDPOINT }}
+          STUDIO_AUTOMATION_KEY: ${{ secrets.STUDIO_AUTOMATION_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCOVER_TOKEN: ${{ secrets.DISCOVER_TOKEN }}
       - name: Any new links?
         id: check
         run: node scripts/portfolio.mjs --check

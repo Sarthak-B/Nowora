@@ -25,11 +25,11 @@ const SHEETS = {
   Events:     ['ts','vid','sid','type','label','ref','device','utm'],
   Leads:      ['id','ts','name','business','niche','package','phone','email','channel','message','status','notes','source','updated'],
   Prospects:  ['id','ts','name','business','niche','phone','website','maps','status','issue','lastContact','followUpDue','auditScore','auditIssues','screenshot','auditRequested','notes'],
-  Clients:    ['id','business','name','phone','email','site','package','price','delivered','carePlan','careFee','renewal','status','uptime','responseMs','lastCheck','checklist','notes','portalKey','pin','trackId','advancePaid','balancePaid'],
-  Portfolio:  ['id','ts','title','niche','type','url','image','description','visible','order','tag','embed','shot','theme'],
+  Clients:    ['id','business','name','phone','email','site','package','price','delivered','carePlan','careFee','renewal','status','uptime','responseMs','lastCheck','checklist','notes','portalKey','pin','trackId','advancePaid','balancePaid','repo'],
+  Portfolio:  ['id','ts','title','niche','type','url','image','description','visible','order','tag','embed','shot','theme','repo'],
   Pitches:    ['id','ts','prospectId','channel','template','message'],
   Automation: ['ts','workflow','status','summary','details'],
-  Requests:   ['id','ts','clientId','business','type','message','status','reply','updated'],
+  Requests:   ['id','ts','clientId','business','type','message','status','reply','updated','attachment'],
   ClientEvents: ['ts','cid','vid','sid','type','label','ref','device','path']
 };
 const EDITABLE = ['Leads','Prospects','Clients','Portfolio','Pitches','Requests'];
@@ -108,7 +108,7 @@ function doPost(e) {
       case 'lead':               return json_(lead_(body.lead));
       case 'ctrack':             return json_(clientTrack_(body.event));
       /* ---- client portal (portal link + PIN) ---- */
-      case 'portal':             return json_({ ok: true, data: portal_(portalClient_(body)) });
+      case 'portal':             return json_({ ok: true, data: portal_(portalClient_(body), +body.since || 0) });
       case 'portal_request':     return json_(portalRequest_(portalClient_(body), body.request));
       /* ---- owner dashboard ---- */
       case 'dashboard':          requireAdmin_(body); return json_({ ok: true, data: dashboard_() });
@@ -119,6 +119,7 @@ function doPost(e) {
       /* ---- GitHub automations ---- */
       case 'automation_targets': requireAutomation_(body); return json_({ ok: true, ...automationTargets_() });
       case 'automation_report':  requireAutomation_(body); return json_(automationReport_(body));
+      case 'register_site':      requireAutomation_(body); return json_(registerSite_(body.site || {}));
       case 'portfolio_targets':  requireAutomation_(body); return json_({ ok: true, items: portfolioTargets_() });
       default:                   return json_({ ok: false, error: 'Unknown action' });
     }
@@ -292,9 +293,9 @@ function portalClient_(body) {
   return c;
 }
 
-function portal_(c) {
+function portal_(c, sinceSec) {
   const since = Date.now() - 2 * PORTAL_DAYS * 864e5, mid = Date.now() - PORTAL_DAYS * 864e5;
-  const ev = c.trackId ? readAll_('ClientEvents').filter(e => e.cid === c.trackId && new Date(e.ts).getTime() > since) : [];
+  const ev = c.trackId ? clientEvents_(c).filter(e => e.cid === c.trackId && new Date(e.ts).getTime() > since) : [];
   const cur = ev.filter(e => new Date(e.ts).getTime() > mid), prev = ev.filter(e => new Date(e.ts).getTime() <= mid);
   const uniq = (list, t) => new Set(list.filter(e => !t || e.type === t).map(e => e.vid)).size;
   const n = (list, t) => list.filter(e => e.type === t).length;
@@ -321,17 +322,41 @@ function portal_(c) {
       recent: cur.slice(-14).reverse().map(e => ({ ts: e.ts, type: e.type, label: e.label, ref: e.ref, device: e.device }))
     },
     requests: readAll_('Requests').filter(r => r.clientId === c.id).sort((a, b) => b.ts < a.ts ? -1 : 1).slice(0, 30)
-      .map(r => ({ id: r.id, ts: r.ts, type: r.type, message: r.message, status: r.status, reply: r.reply, updated: r.updated }))
+      .map(r => ({ id: r.id, ts: r.ts, type: r.type, message: r.message, status: r.status, reply: r.reply, updated: r.updated, attachment: r.attachment })),
+    events: compactEvents_(c, sinceSec),
+    now: new Date().toISOString()
   };
+}
+
+/** All of a client's events from the last 180 days (read once per request). */
+function clientEvents_(c) {
+  if (c._ev) return c._ev;
+  const since = Date.now() - 180 * 864e5;
+  c._ev = c.trackId ? readAll_('ClientEvents').filter(e => e.cid === c.trackId && new Date(e.ts).getTime() > since) : [];
+  return c._ev;
+}
+
+/** Compact event list so the dashboard can slice any range, metric or source without another request. */
+function compactEvents_(c, since) {
+  const ev = clientEvents_(c).filter(e => !since || new Date(e.ts).getTime() / 1000 > since).slice(-30000);
+  const dict = () => { const list = [], idx = {}; return { list: list, at: v => { v = v || ''; if (!(v in idx)) { idx[v] = list.length; list.push(v); } return idx[v]; } }; };
+  const T = dict(), R = dict(), D = dict(), P = dict(), V = dict();
+  const rows = ev.map(e => [Math.round(new Date(e.ts).getTime() / 1000), T.at(e.type), R.at(e.ref || 'direct'), D.at(e.device || 'desktop'), P.at(e.path || '/'), V.at(e.vid)]);
+  return { types: T.list, refs: R.list, devices: D.list, paths: P.list, vids: V.list, rows: rows };
 }
 
 function portalRequest_(c, r) {
   if (!r || !String(r.message || '').trim()) return { ok: false, error: 'Write what you would like changed' };
   const open = readAll_('Requests').filter(x => x.clientId === c.id && x.status !== 'done').length;
   if (open >= 15) return { ok: false, error: 'You have 15 open requests — we will work through those first' };
-  const row = { id: randomKey_(12), ts: new Date().toISOString(), clientId: c.id, business: c.business, type: clip_(r.type || 'Change', 40), message: clip_(r.message, 2000), status: 'new', reply: '', updated: '' };
+  let attachment = '';
+  if (r.photo) {
+    if (String(r.photo).length > 4500000) return { ok: false, error: 'That photo is too large — try a smaller one' };
+    attachment = saveImage_(r.photo, c.business + ' request.jpg');
+  }
+  const row = { id: randomKey_(12), ts: new Date().toISOString(), clientId: c.id, business: c.business, type: clip_(r.type || 'Change', 40), message: clip_(r.message, 2000), status: 'new', reply: '', updated: '', attachment: attachment };
   append_('Requests', row);
-  notify_('Request from ' + c.business, '📝 New request from ' + c.business + ' (' + row.type + ')\n\n' + row.message + '\n\nOpen your dashboard → Requests to reply.');
+  notify_('Request from ' + c.business, '📝 New request from ' + c.business + ' (' + row.type + ')\n\n' + row.message + (attachment ? '\n\nPhoto: ' + attachment : '') + '\n\nOpen your dashboard → Requests to reply.');
   return { ok: true, request: row };
 }
 
@@ -347,6 +372,78 @@ function clientTrack_(ev) {
   row.ts = new Date().toISOString();
   append_('ClientEvents', row);
   return { ok: true };
+}
+
+
+/* ============================== auto-registered client sites ============================== */
+
+/**
+ * Called by the GitHub "discover" workflow for every repo that has a nowora.json file.
+ * Adds (or updates) the showcase card and the client dashboard, and emails you the new
+ * dashboard link + PIN the first time a site appears. Never overwrites what you edited.
+ */
+function registerSite_(site) {
+  const url = normUrl_(site.url || '');
+  if (!site.repo || !site.url) return { ok: false, error: 'repo and url are required' };
+  const key = u => String(u || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '');
+  const name = clip_(site.name || site.repo.split('/').pop(), 80);
+  const out = { ok: true, repo: site.repo, portfolio: 'unchanged', client: 'unchanged' };
+
+  // ---- showcase card ----
+  if (site.showcase !== false) {
+    const items = readAll_('Portfolio');
+    const p = items.find(x => x.repo === site.repo) || items.find(x => x.url && key(x.url) === key(url));
+    if (!p) {
+      upsert_('Portfolio', { id: randomKey_(12), ts: new Date().toISOString(), title: name, niche: clip_(site.niche, 40), type: 'client', url: url, image: '',
+        description: clip_(site.description, 220), visible: 'TRUE', order: String(items.length + 1), tag: clip_(site.tag || 'Shops & brands', 30),
+        embed: 'true', shot: 'pending', theme: '', repo: site.repo });
+      out.portfolio = 'created';
+    } else {
+      const u = { id: p.id, repo: site.repo };
+      if (key(p.url) !== key(url)) { u.url = url; u.shot = 'pending'; }
+      if (!p.title) u.title = name;
+      if (!p.niche && site.niche) u.niche = clip_(site.niche, 40);
+      if (!p.description && site.description) u.description = clip_(site.description, 220);
+      if (!p.image && p.shot !== 'pending' && p.shot !== 'failed') u.shot = 'pending';
+      if (Object.keys(u).length > 2 || p.repo !== site.repo) { upsert_('Portfolio', u); out.portfolio = 'updated'; }
+    }
+  }
+
+  // ---- client dashboard ----
+  if (site.dashboard !== false) {
+    const clients = readAll_('Clients');
+    const c = clients.find(x => x.repo === site.repo) || clients.find(x => x.site && key(x.site) === key(url));
+    const cl = site.client || {};
+    if (!c) {
+      const taken = clients.map(x => String(x.portalKey || '').toLowerCase());
+      const base = slug_(site.slug || name);
+      let slug = base, n = 2; while (taken.indexOf(slug) >= 0 || slug === 'demo') slug = base + '-' + n++;
+      const pin = String(Math.floor(100000 + Math.random() * 900000));
+      const live = (site.status || 'live') === 'live';
+      upsert_('Clients', { id: randomKey_(12), business: name, name: clip_(cl.name, 60), phone: digits_(cl.phone), email: clip_(cl.email, 80), site: url,
+        package: clip_(cl.package, 20), price: clip_(cl.price, 12), delivered: live ? Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd') : '',
+        carePlan: cl.carePlan ? 'yes' : '', careFee: cl.carePlan ? String(cl.careFee || 999) : '', renewal: '', status: live ? 'live' : 'building',
+        uptime: '', responseMs: '', lastCheck: '', checklist: live ? '[0,1,2,3,4,5,6]' : '[]', notes: 'Added automatically from GitHub: ' + site.repo,
+        portalKey: slug, pin: pin, trackId: site.trackId || slug, advancePaid: '', balancePaid: '', repo: site.repo });
+      const link = (prop_('SITE_URL') || 'https://nowora.vercel.app') + '/client/' + slug;
+      notify_('New client site: ' + name, '🚀 ' + name + ' is now in NOWORA\n\nLive site: ' + url + '\nClient dashboard: ' + link + '\nPIN: ' + pin +
+        '\n\nIt is on your website showcase, and a scrolling preview is being captured.' + (site.tracking ? '' : '\nTip: add the visitor-stats snippet so their dashboard shows visits (Clients → chart icon).'));
+      out.client = 'created'; out.slug = slug;
+    } else {
+      const u = { id: c.id, repo: site.repo };
+      if (!c.site || (c.repo === site.repo && key(c.site) !== key(url))) u.site = url;
+      if (!c.phone && cl.phone) u.phone = digits_(cl.phone);
+      if (!c.name && cl.name) u.name = clip_(cl.name, 60);
+      if (Object.keys(u).length > 2 || c.repo !== site.repo) { upsert_('Clients', u); out.client = 'updated'; }
+      out.slug = c.portalKey;
+    }
+  }
+  return out;
+}
+
+function slug_(t) {
+  const s = String(t || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/['\u2019]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32);
+  return s.length >= 3 ? s : (s || 'client') + '-site';
 }
 
 /* ============================== portfolio from a link ============================== */

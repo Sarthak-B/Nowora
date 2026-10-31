@@ -569,6 +569,7 @@ body.is-admin #admin{display:block}
 .rq-list{display:grid;gap:14px}
 .rq header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.rq header b{font-size:16px}.rq header .sp{flex:1}
 .st.new{background:#E1EEF5;color:#24607E}
+.rq-ph{display:block;width:140px;height:96px;margin-top:10px;border-radius:12px;background:var(--paper-2) center/cover;border:1px solid var(--line)}
 .rq-msg{margin-top:10px;font-size:15px;white-space:pre-wrap;word-break:break-word}
 .rq-edit{display:grid;grid-template-columns:160px minmax(0,1fr) auto;gap:10px;margin-top:14px;align-items:start}
 .rq-edit select,.rq-edit textarea{border:1.5px solid var(--line-2);border-radius:12px;background:#fff;padding:9px 12px;font-size:14px;min-height:42px}
@@ -1986,7 +1987,7 @@ const KCH="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const rndStr=(n,ch)=>{const a=new Uint32Array(n);crypto.getRandomValues(a);return [...a].map(x=>ch[x%ch.length]).join("")};
 const siteBase=()=>(CFG.siteUrl||location.origin).replace(/\/$/,"");
 const portalLink=c=>siteBase()+"/client/"+c.portalKey;
-const slugify=t=>String(t||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/&/g," and ").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,32)||"client";
+const slugify=t=>String(t||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/['\u2019]/g,"").replace(/&/g," and ").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,32)||"client";
 const uniqueSlug=(t,id)=>{const base=slugify(t), taken=new Set(A.data.Clients.filter(x=>x.id!==id&&x.portalKey).map(x=>String(x.portalKey).toLowerCase())); let s=base.length<3?base+"-site":base, n=2; while(taken.has(s)||s==="demo") s=base+"-"+n++; return s;};
 const snippet=c=>`<script src="${siteBase()}/t.js" data-site="${c.trackId}" defer></`+`script>`;
 async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(msg||"Copied")}catch(e){const x=document.createElement("textarea");x.value=t;document.body.appendChild(x);x.select();try{document.execCommand("copy");toast(msg||"Copied")}catch(_){toast("Select and copy it manually",true)}x.remove()}}
@@ -2036,7 +2037,7 @@ function vRequests(soft){
   $("#view").innerHTML=`<div class="rq-filters">${[["open","Open"],["done","Done"],["all","All"]].map(([k,l])=>`<button data-f="${k}" class="${A.reqFilter===k?"on":""}">${l} <span>${k==="all"?R.length:R.filter(r=>k==="open"?r.status!=="done":r.status==="done").length}</span></button>`).join("")}</div>
   ${list.length?`<div class="rq-list">${list.map(r=>{const c=A.data.Clients.find(x=>x.id===r.clientId)||{}; return `<article class="panel rq" data-id="${r.id}">
     <header><b>${esc(r.business||c.business||"Client")}</b><span class="st">${esc(r.type)}</span><span class="sub">${ago(r.ts)}</span><span class="sp"></span><span class="st ${r.status==="done"?"up":r.status==="progress"?"pend":"new"}">${lbl[r.status]||"New"}</span></header>
-    <p class="rq-msg">${esc(r.message)}</p>
+    <p class="rq-msg">${esc(r.message)}</p>${r.attachment?`<a class="rq-ph" href="${esc(r.attachment)}" target="_blank" rel="noopener" style="background-image:url('${esc(r.attachment)}')" title="Open photo"></a>`:""}
     <div class="rq-edit"><select data-status>${Object.entries(lbl).map(([k,l])=>`<option value="${k}" ${r.status===k?"selected":""}>${l}</option>`).join("")}</select>
       <textarea data-reply rows="2" placeholder="Reply — they'll see this on their dashboard">${esc(r.reply)}</textarea>
       <div class="rq-btns"><button class="btn btn-wa btn-sm" data-save>Save</button>${c.phone?`<a class="ib wa" target="_blank" rel="noopener" title="Message on WhatsApp" href="${waLink(c.phone,`Hi ${(c.name||"").split(" ")[0]}, about your request: "${(r.message||"").slice(0,80)}" — `)}">${ICON.wa}</a>`:""}<button class="ib" data-del title="Delete">${ICON.trash}</button></div></div>
