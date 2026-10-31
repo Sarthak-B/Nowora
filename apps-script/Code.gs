@@ -110,6 +110,11 @@ function doPost(e) {
       /* ---- client portal (portal link + PIN) ---- */
       case 'portal':             return json_({ ok: true, data: portal_(portalClient_(body), +body.since || 0) });
       case 'portal_request':     return json_(portalRequest_(portalClient_(body), body.request));
+      /* ---- website editor (client portal) ---- */
+      case 'site_source':        return json_({ ok: true, site: siteSource_(portalClient_(body)) });
+      case 'site_publish':       return json_(sitePublish_(portalClient_(body), body));
+      case 'site_versions':      return json_({ ok: true, versions: siteVersions_(portalClient_(body)) });
+      case 'site_restore':       return json_(siteRestore_(portalClient_(body), body.sha));
       /* ---- owner dashboard ---- */
       case 'dashboard':          requireAdmin_(body); return json_({ ok: true, data: dashboard_() });
       case 'upsert':             requireAdmin_(body); return json_({ ok: true, row: upsert_(body.sheet, body.row), queued: body.sheet === 'Portfolio' && body.row && body.row.shot === 'pending' ? dispatchShots_() : undefined });
@@ -322,7 +327,7 @@ function portal_(c, sinceSec) {
       business: c.business, name: c.name, site: c.site, status: c.status, package: c.package, price: c.price,
       delivered: c.delivered, carePlan: c.carePlan, careFee: c.careFee, renewal: c.renewal,
       uptime: c.uptime, responseMs: c.responseMs, lastCheck: c.lastCheck,
-      advancePaid: c.advancePaid, balancePaid: c.balancePaid, tracking: !!c.trackId, checklist: c.checklist
+      advancePaid: c.advancePaid, balancePaid: c.balancePaid, tracking: !!c.trackId, checklist: c.checklist, editable: !!c.repo
     },
     stats: {
       days: days, hasData: ev.length > 0,
@@ -385,6 +390,98 @@ function clientTrack_(ev) {
   return { ok: true };
 }
 
+
+
+/* ============================== website editor (GitHub) ============================== */
+// Needs Script property GITHUB_TOKEN: a fine-grained token with Contents read & write on your client repos.
+// A client can only ever read or change the repo linked to their own row in the Clients tab.
+
+function gh_(method, path, payload) {
+  const token = prop_('GITHUB_TOKEN');
+  if (!token) throw new Error("Website editing isn't switched on yet — ask NOWORA to connect it.");
+  const res = UrlFetchApp.fetch('https://api.github.com' + path, {
+    method: method, muteHttpExceptions: true, contentType: 'application/json',
+    payload: payload ? JSON.stringify(payload) : undefined,
+    headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+  });
+  const code = res.getResponseCode();
+  if (code === 404) return null;
+  let body = {}; try { body = JSON.parse(res.getContentText() || '{}'); } catch (e) {}
+  if (code === 409 || (code === 422 && /sha/i.test(body.message || ''))) throw new Error('Your website changed since you opened the editor. Reload the editor to get the latest version.');
+  if (code >= 300) throw new Error('GitHub said: ' + (body.message || ('error ' + code)));
+  return body;
+}
+const b64ToText_ = b64 => Utilities.newBlob(Utilities.base64Decode(String(b64).replace(/\s/g, ''))).getDataAsString('UTF-8');
+const textToB64_ = t => Utilities.base64Encode(t, Utilities.Charset.UTF_8);
+
+function siteRepo_(c) {
+  if (!c.repo) throw new Error("This website isn't connected for editing yet — ask NOWORA to connect it.");
+  if (!/^[\w.-]+\/[\w.-]+$/.test(c.repo)) throw new Error('The linked repository name looks wrong');
+  return c.repo;
+}
+
+function readFile_(repo, path, ref) {
+  const f = gh_('get', '/repos/' + repo + '/contents/' + path.split('/').map(encodeURIComponent).join('/') + (ref ? '?ref=' + encodeURIComponent(ref) : ''));
+  if (!f || f.type !== 'file') return null;
+  let text = f.content ? b64ToText_(f.content) : '';
+  if (!f.content || f.encoding === 'none') { const blob = gh_('get', '/repos/' + repo + '/git/blobs/' + f.sha); text = blob ? b64ToText_(blob.content) : ''; }
+  return { path: f.path, sha: f.sha, text: text };
+}
+
+function siteFile_(c) {
+  const repo = siteRepo_(c);
+  let cfg = {};
+  try { const nj = readFile_(repo, 'nowora.json'); if (nj) cfg = JSON.parse(nj.text); } catch (e) {}
+  const tries = [cfg.entry, 'index.html', 'public/index.html', 'site/index.html', 'docs/index.html', 'src/index.html'].filter(Boolean);
+  for (let i = 0; i < tries.length; i++) { const f = readFile_(repo, tries[i]); if (f) return { repo: repo, cfg: cfg, file: f }; }
+  throw new Error("Couldn't find the website's index.html in its repository");
+}
+
+function siteSource_(c) {
+  const s = siteFile_(c);
+  let niche = s.cfg.niche || '';
+  if (!niche) { try { niche = parseMeta_(s.file.text, c.site || 'https://example.com', {}).niche; } catch (e) {} }
+  return { repo: s.repo, path: s.file.path, sha: s.file.sha, html: s.file.text, url: c.site, niche: niche, name: s.cfg.name || c.business };
+}
+
+function sitePublish_(c, body) {
+  const html = String(body.html || '');
+  if (html.length < 200 || !/<html|<body/i.test(html)) return { ok: false, error: "That doesn't look like a full web page — nothing was published" };
+  if (html.length > 4500000) return { ok: false, error: 'The page is too large to publish. Remove some photos and try again.' };
+  const repo = siteRepo_(c);
+  const path = String(body.path || '');
+  if (!/^[\w./-]+\.html$/.test(path) || path.indexOf('..') >= 0) return { ok: false, error: 'Unexpected file path' };
+  const dir = path.indexOf('/') >= 0 ? path.slice(0, path.lastIndexOf('/') + 1) : '';
+  const who = (c.name || c.business || 'Client');
+  (body.images || []).slice(0, 30).forEach(img => {
+    const m = /^data:image\/(jpeg|png|webp|gif);base64,(.+)$/.exec(img.data || '');
+    const name = String(img.name || '').replace(/[^\w.-]/g, '');
+    if (!m || !/^[\w-]+\.(jpg|jpeg|png|webp|gif)$/.test(name)) throw new Error('One of the photos could not be uploaded');
+    gh_('put', '/repos/' + repo + '/contents/' + dir + 'images/uploads/' + name, { message: 'Photo added by ' + who + ' (NOWORA editor)', content: m[2] });
+  });
+  const res = gh_('put', '/repos/' + repo + '/contents/' + path.split('/').map(encodeURIComponent).join('/'),
+    { message: clip_(body.message || ('Website edited by ' + who), 120) + ' (NOWORA editor)', content: textToB64_(html), sha: body.sha });
+  append_('Automation', { ts: new Date().toISOString(), workflow: 'editor', status: 'success', summary: c.business + ' published website changes', details: clip_(body.message, 300) });
+  notify_('Website published: ' + c.business, '✏️ ' + c.business + ' published changes from their dashboard editor.\n\n' + (body.message || '') + '\n\nCommit: ' + res.commit.html_url + '\nLive site: ' + (c.site || ''));
+  return { ok: true, sha: res.content.sha, commit: res.commit.sha, url: res.commit.html_url };
+}
+
+function siteVersions_(c) {
+  const s = siteFile_(c);
+  const list = gh_('get', '/repos/' + s.repo + '/commits?per_page=15&path=' + encodeURIComponent(s.file.path)) || [];
+  return list.map(x => ({ sha: x.sha, date: x.commit.author.date, message: String(x.commit.message || '').split('\n')[0].slice(0, 120), current: false }));
+}
+
+function siteRestore_(c, sha) {
+  if (!/^[0-9a-f]{7,40}$/i.test(String(sha || ''))) return { ok: false, error: 'Pick a version to restore' };
+  const s = siteFile_(c);
+  const old = readFile_(s.repo, s.file.path, sha);
+  if (!old) return { ok: false, error: "That version couldn't be found" };
+  const res = gh_('put', '/repos/' + s.repo + '/contents/' + s.file.path.split('/').map(encodeURIComponent).join('/'),
+    { message: 'Restored an earlier version (' + String(sha).slice(0, 7) + ') by ' + (c.name || c.business) + ' (NOWORA editor)', content: textToB64_(old.text), sha: s.file.sha });
+  notify_('Website restored: ' + c.business, '↩️ ' + c.business + ' restored an earlier version of their website.\nCommit: ' + res.commit.html_url);
+  return { ok: true, sha: res.content.sha };
+}
 
 /* ============================== auto-registered client sites ============================== */
 
