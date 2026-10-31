@@ -547,6 +547,34 @@ body.is-admin #admin{display:block}
 .modal .field input,.modal .field select,.modal .field textarea{height:44px;background:#fff}
 .modal .field textarea{height:90px}
 .modal .row-end{grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+.modal .pm-sub{color:var(--ink-2);font-size:15px;margin:-12px 0 20px}
+.pm-empty{background:var(--paper);border-radius:16px;padding:22px}.pm-empty b{font-size:17px}.pm-empty p{color:var(--ink-2);font-size:14.5px;margin:6px 0 16px}
+.pm-empty .btn svg,.portal-btn svg{width:17px;height:17px}
+.pm-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}.pm-pin input{flex:0 1 170px}
+.pm-field label{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.pm-row{display:flex;gap:8px;align-items:stretch}.pm-row input,.pm-row textarea{flex:1;min-width:0;border:1.5px solid var(--line-2);border-radius:12px;background:#fff;padding:0 12px;height:42px;font-size:14px}
+.pm-row textarea{height:auto;padding:10px 12px;font:13px/1.45 ui-monospace,Menlo,monospace;resize:none}
+.pm-pin input{font-family:var(--display);font-weight:700;letter-spacing:.2em;font-size:17px}
+.pm-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.pm-danger{color:#B5483A}
+.pm-sec{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.pm-sec h3{font-size:16px;margin-bottom:10px}.pm-sec h3 small{font-weight:500;color:var(--ink-3);font-size:13px;margin-left:6px}
+.pm-tog{display:flex;align-items:center;gap:10px;font-size:14.5px;padding:7px 0;cursor:pointer}.pm-tog input{width:18px;height:18px;accent-color:var(--pine)}
+.pm-note{font-size:13px;color:var(--ink-3);margin-top:8px}.pm-note code{background:var(--paper-2);padding:1px 5px;border-radius:5px}
+.pm-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pm-foot span{flex:1;font-size:14px;color:var(--ink-2)}
+.portal-btn.on{color:var(--pine);background:#D7EEDF}
+.rq-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.rq-filters button{height:38px;padding:0 16px;border-radius:999px;border:1.5px solid var(--line-2);font-weight:600;font-size:14px;color:var(--ink-2);background:transparent}
+.rq-filters button.on{background:var(--ink);border-color:var(--ink);color:#fff}.rq-filters span{opacity:.6;margin-left:4px}
+.rq-list{display:grid;gap:14px}
+.rq header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.rq header b{font-size:16px}.rq header .sp{flex:1}
+.st.new{background:#E1EEF5;color:#24607E}
+.rq-msg{margin-top:10px;font-size:15px;white-space:pre-wrap;word-break:break-word}
+.rq-edit{display:grid;grid-template-columns:160px minmax(0,1fr) auto;gap:10px;margin-top:14px;align-items:start}
+.rq-edit select,.rq-edit textarea{border:1.5px solid var(--line-2);border-radius:12px;background:#fff;padding:9px 12px;font-size:14px;min-height:42px}
+.rq-edit textarea{resize:vertical}
+.rq-btns{display:flex;gap:6px;align-items:center}
+@media (max-width:700px){.pm-grid{grid-template-columns:minmax(0,1fr)}.rq-edit{grid-template-columns:minmax(0,1fr)}.pm-actions .btn{flex:1 1 100%;justify-content:center}}
 .checklist{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--paper);border-radius:14px;padding:14px}
 .checklist label{display:flex;gap:10px;font-size:14px;align-items:center;cursor:pointer}
 .checklist input{width:18px;height:18px;accent-color:var(--pine)}
@@ -1133,7 +1161,7 @@ function toast(msg,err){const t=$("#toast");t.textContent=msg;t.className="toast
 /* ---------------- data layer ----------------
    Live mode  -> Google Apps Script web app (CFG.endpoint) backed by Google Sheets
    Demo mode  -> localStorage in this browser (seeded with sample data)            */
-const SHEETS = ["Events","Leads","Prospects","Clients","Portfolio","Pitches","Automation"];
+const SHEETS = ["Events","Leads","Prospects","Clients","Portfolio","Pitches","Automation","Requests"];
 const LOCAL = {
   key:"nowora_demo_v1",
   load(){let d; try{d=JSON.parse(localStorage.getItem(this.key)||"null")}catch(e){} if(!d){d=seed();this.save(d)} SHEETS.forEach(s=>d[s]=d[s]||[]); return d;},
@@ -1527,7 +1555,7 @@ function buildLoop(){
    OWNER DASHBOARD
    ================================================================ */
 const A={data:null,tab:"overview",range:14,lastSync:0,poll:null,seenIds:new Set(),tpl:"cold",prospectId:""};
-const TABS=[["overview","Overview",ICON.grid],["leads","Leads",ICON.inbox],["outreach","Outreach",ICON.send],["clients","Clients & care",ICON.heart],["portfolio","Portfolio",ICON.image],["automations","Automations",ICON.bolt],["settings","Settings",ICON.cog]];
+const TABS=[["overview","Overview",ICON.grid],["leads","Leads",ICON.inbox],["outreach","Outreach",ICON.send],["clients","Clients & care",ICON.heart],["portfolio","Portfolio",ICON.image],["automations","Automations",ICON.bolt],["requests","Requests",ICON.inbox],["settings","Settings",ICON.cog]];
 
 function initAdmin(){
   document.body.classList.add("is-admin");
@@ -1575,7 +1603,7 @@ function shell(){
   $("#admin").innerHTML=`<div class="app">
     <aside class="side">
       <span class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1D4A3D"/><path d="M10 22V10l12 12V10" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="25" r="2.6" fill="#F2A33A"/></svg>${esc(CFG.brand)}</span>
-      <nav id="tabs">${TABS.map(([k,l,ic])=>`<button data-tab="${k}">${ic}${l}${k==="leads"?`<span class="count" id="leadCount" ${counts.leads?"":"hidden"}>${counts.leads}</span>`:""}</button>`).join("")}</nav>
+      <nav id="tabs">${TABS.map(([k,l,ic])=>`<button data-tab="${k}">${ic}${l}${k==="leads"?`<span class="count" id="leadCount" ${counts.leads?"":"hidden"}>${counts.leads}</span>`:""}${k==="requests"?`<span class="count" id="reqCount" hidden></span>`:""}</button>`).join("")}</nav>
       <div class="side-foot"><a href="#" id="viewSite">View website</a><a href="#" id="logout">Lock dashboard</a></div>
     </aside>
     <main class="main">
@@ -1595,11 +1623,12 @@ function render(soft){
   $$("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===A.tab));
   $("#tabTitle").textContent=TABS.find(t=>t[0]===A.tab)[1];
   const n=A.data.Leads.filter(l=>l.status==="new").length, lc=$("#leadCount"); if(lc){lc.textContent=n;lc.hidden=!n}
+  const rn=(A.data.Requests||[]).filter(r=>r.status==="new").length, rc=$("#reqCount"); if(rc){rc.textContent=rn;rc.hidden=!rn}
   $("#topActions").innerHTML="";
   updateSyncLabel();
   if(soft&&A.tab!=="overview"&&$(".modal-bg.open")) return; // don't redraw under an open form
   if(soft&&(A.tab==="outreach"||A.tab==="portfolio")&&document.activeElement&&/TEXTAREA|INPUT|SELECT/.test(document.activeElement.tagName)) return;
-  ({overview:vOverview,leads:vLeads,outreach:vOutreach,clients:vClients,portfolio:vPortfolio,automations:vAuto,settings:vSettings})[A.tab](soft);
+  ({overview:vOverview,leads:vLeads,outreach:vOutreach,clients:vClients,portfolio:vPortfolio,automations:vAuto,requests:vRequests,settings:vSettings})[A.tab](soft);
 }
 
 /* ---------- analytics helpers ---------- */
@@ -1820,10 +1849,11 @@ function vClients(){
     <td>${c.uptime?`<span class="st ${c.uptime}">${c.uptime==="up"?"Up":"Down"}</span><span class="sub">${c.responseMs?c.responseMs+" ms · ":""}${c.lastCheck?ago(c.lastCheck):""}</span>`:'<span class="sub">—</span>'}</td>
     <td><div class="meter" style="width:90px"><i style="width:${ck.length/CHECKLIST.length*100}%"></i></div><span class="sub">${ck.length}/${CHECKLIST.length}</span></td>
     <td><div class="acts">${c.phone?`<a class="ib wa" target="_blank" rel="noopener" title="${c.carePlan==="yes"?"Send renewal reminder":"Offer care plan"}" href="${waLink(c.phone,c.carePlan==="yes"?`Hi ${(c.name||"").split(" ")[0]}, a quick reminder that the care plan for ${c.business} renews on ${fmtDate(c.renewal)} (${inr(c.careFee)}). Everything's running smoothly — reply here if you'd like any edits this month.`:fillTemplate(TEMPLATES.care.text,c))}">${ICON.wa}</a>`:""}
-      <button class="ib" data-edit title="Edit">${ICON.edit}</button><button class="ib" data-del title="Delete">${ICON.trash}</button></div></td></tr>`}).join("")}
+      <button class="ib portal-btn${c.portalKey?" on":""}" data-portal title="Client dashboard">${KEY_ICON}</button><button class="ib" data-edit title="Edit">${ICON.edit}</button><button class="ib" data-del title="Delete">${ICON.trash}</button></div></td></tr>`}).join("")}
   </tbody></table>`:`<div class="empty">No clients yet. When a lead says yes, add them here to track onboarding, care plans and uptime.</div>`}</div>`;
   const tb=$("#view tbody"); if(!tb) return;
   tb.onclick=async e=>{const tr=e.target.closest("tr"); if(!tr) return; const c=C.find(x=>x.id===tr.dataset.id);
+    if(e.target.closest("[data-portal]")) portalModal(c);
     if(e.target.closest("[data-edit]")) clientForm(c);
     if(e.target.closest("[data-del]")&&confirm("Delete "+c.business+"?")){await delRow("Clients",c.id);vClients()}};
 }
@@ -1947,6 +1977,71 @@ function vSettings(){
     $("#clr").onclick=()=>{if(!confirm("Clear all demo data in this browser?")) return; const e={};SHEETS.forEach(s=>e[s]=[]);LOCAL.save(e);A.data=LOCAL.load();render();toast("Demo data cleared")};
     $("#rst").onclick=()=>{localStorage.removeItem(LOCAL.key);A.data=LOCAL.load();render();toast("Sample data reloaded")};
   }
+}
+
+
+/* ---------------- client dashboards ---------------- */
+const KEY_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 14v-3M11 14V9M15 14v-5M3 21h18"/></svg>';
+const KCH="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const rndStr=(n,ch)=>{const a=new Uint32Array(n);crypto.getRandomValues(a);return [...a].map(x=>ch[x%ch.length]).join("")};
+const siteBase=()=>(CFG.siteUrl||location.origin).replace(/\/$/,"");
+const portalLink=c=>siteBase()+"/client/#"+c.portalKey;
+const snippet=c=>`<script src="${siteBase()}/t.js" data-site="${c.trackId}" defer></`+`script>`;
+async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(msg||"Copied")}catch(e){const x=document.createElement("textarea");x.value=t;document.body.appendChild(x);x.select();try{document.execCommand("copy");toast(msg||"Copied")}catch(_){toast("Select and copy it manually",true)}x.remove()}}
+function portalModal(c){
+  const fresh=A.data.Clients.find(x=>x.id===c.id)||c; c=fresh;
+  const first=(c.name||"").split(" ")[0]||"there";
+  const open=(A.data.Requests||[]).filter(r=>r.clientId===c.id&&r.status!=="done").length;
+  const msg=`Hi ${first}! Your NOWORA client dashboard is ready.\n\nSee your website's visitors, WhatsApp taps, project progress and payments, and send change requests anytime:\n${portalLink(c)}\n\nYour PIN: ${c.pin}\n\nPlease keep the link and PIN private.`;
+  modal(`<h2>Client dashboard</h2><p class="pm-sub">${esc(c.business)}${c.site?` · ${esc(c.site.replace(/^https?:\/\//,""))}`:""}</p>
+  ${!c.portalKey?`<div class="pm-empty"><b>Give ${esc(c.business)} their own dashboard</b><p>They'll see their website's visitors and WhatsApp taps, uptime and speed, build progress and payments, and can send you change requests. Opens with a private link and a 6-digit PIN.</p>
+    <button class="btn btn-wa" id="pmCreate" style="justify-content:center">${KEY_ICON}Create dashboard</button></div>`:`
+  <div class="pm-grid">
+    <div class="pm-field"><label>Private link</label><div class="pm-row"><input readonly value="${esc(portalLink(c))}"><button class="btn btn-ghost btn-sm" data-copy="link">Copy</button></div></div>
+    <div class="pm-field pm-pin"><label>PIN</label><div class="pm-row"><input readonly value="${esc(c.pin)}"><button class="btn btn-ghost btn-sm" data-copy="pin">Copy</button><button class="btn btn-ghost btn-sm" id="pmNewPin">New PIN</button></div></div>
+  </div>
+  <div class="pm-actions">${c.phone?`<a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${waLink(c.phone,msg)}">${ICON.wa}Send link + PIN on WhatsApp</a>`:`<button class="btn btn-wa btn-sm" data-copy="msg">Copy message for the client</button>`}
+    <a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${esc(portalLink(c))}">Open their dashboard ↗</a>
+    <button class="btn btn-ghost btn-sm pm-danger" id="pmReset" title="The old link stops working">Reset link</button></div>
+  <div class="pm-sec"><h3>Payments <small>shown on their dashboard</small></h3>
+    <label class="pm-tog"><input type="checkbox" id="pmAdv" ${c.advancePaid==="yes"?"checked":""}><span>First 50% received${+c.price?` · ${inr(Math.round(c.price/2))}`:""}</span></label>
+    <label class="pm-tog"><input type="checkbox" id="pmBal" ${c.balancePaid==="yes"?"checked":""}><span>Second 50% received${+c.price?` · ${inr(c.price-Math.round(c.price/2))}`:""}</span></label>
+    ${+c.price?"":`<p class="pm-note">Add the project price in “Edit client” so amounts show.</p>`}</div>
+  <div class="pm-sec"><h3>Visitor stats <small>paste once on their website</small></h3>
+    <div class="pm-row"><textarea readonly rows="3">${esc(snippet(c))}</textarea><button class="btn btn-ghost btn-sm" data-copy="snip">Copy</button></div>
+    <p class="pm-note">Paste it just before <code>&lt;/body&gt;</code> on ${c.site?esc(c.site.replace(/^https?:\/\//,"")):"their site"}. It counts visits, WhatsApp and call taps and form enquiries, with no cookies. Stats show on their dashboard within a minute.</p></div>
+  <div class="pm-sec pm-foot"><span>${open?`<b>${open}</b> open request${open>1?"s":""}`:"No open requests"}</span><button class="btn btn-ghost btn-sm" id="pmReq">Go to Requests</button><button class="btn btn-ghost btn-sm" data-close>Close</button></div>`}`);
+  const save=async(row,note)=>{const ok=await saveRow("Clients",Object.assign({id:c.id},row)); if(ok){ if(note) toast(note); portalModal(c); if(A.tab==="clients") vClients(); } };
+  const cr=$("#pmCreate"); if(cr) cr.onclick=()=>save({portalKey:rndStr(24,KCH),pin:rndStr(6,"0123456789"),trackId:c.trackId||rndStr(10,KCH)},"Dashboard created — send them the link and PIN");
+  if(!c.portalKey) return;
+  $$("#modal [data-copy]").forEach(b=>b.onclick=()=>copyText({link:portalLink(c),pin:c.pin,snip:snippet(c),msg:msg}[b.dataset.copy]));
+  $("#pmNewPin").onclick=()=>{ if(confirm("Make a new PIN? The old PIN stops working.")) save({pin:rndStr(6,"0123456789")},"New PIN ready — send it to them"); };
+  $("#pmReset").onclick=()=>{ if(confirm("Reset the link? Their current link stops working and you'll need to send the new one.")) save({portalKey:rndStr(24,KCH),pin:rndStr(6,"0123456789")},"New link and PIN ready"); };
+  $("#pmAdv").onchange=e=>save({advancePaid:e.target.checked?"yes":""},"Payment updated");
+  $("#pmBal").onchange=e=>save({balancePaid:e.target.checked?"yes":""},"Payment updated");
+  $("#pmReq").onclick=()=>{closeModal();A.tab="requests";render()};
+}
+
+function vRequests(soft){
+  const R=[...(A.data.Requests||[])].sort((a,b)=>b.ts<a.ts?-1:1);
+  A.reqFilter=A.reqFilter||"open";
+  const list=R.filter(r=>A.reqFilter==="all"||(A.reqFilter==="open"?r.status!=="done":r.status==="done"));
+  const lbl={new:"New",progress:"In progress",done:"Done"};
+  if(soft&&$("#view .rq textarea:focus")) return;
+  $("#view").innerHTML=`<div class="rq-filters">${[["open","Open"],["done","Done"],["all","All"]].map(([k,l])=>`<button data-f="${k}" class="${A.reqFilter===k?"on":""}">${l} <span>${k==="all"?R.length:R.filter(r=>k==="open"?r.status!=="done":r.status==="done").length}</span></button>`).join("")}</div>
+  ${list.length?`<div class="rq-list">${list.map(r=>{const c=A.data.Clients.find(x=>x.id===r.clientId)||{}; return `<article class="panel rq" data-id="${r.id}">
+    <header><b>${esc(r.business||c.business||"Client")}</b><span class="st">${esc(r.type)}</span><span class="sub">${ago(r.ts)}</span><span class="sp"></span><span class="st ${r.status==="done"?"up":r.status==="progress"?"pend":"new"}">${lbl[r.status]||"New"}</span></header>
+    <p class="rq-msg">${esc(r.message)}</p>
+    <div class="rq-edit"><select data-status>${Object.entries(lbl).map(([k,l])=>`<option value="${k}" ${r.status===k?"selected":""}>${l}</option>`).join("")}</select>
+      <textarea data-reply rows="2" placeholder="Reply — they'll see this on their dashboard">${esc(r.reply)}</textarea>
+      <div class="rq-btns"><button class="btn btn-wa btn-sm" data-save>Save</button>${c.phone?`<a class="ib wa" target="_blank" rel="noopener" title="Message on WhatsApp" href="${waLink(c.phone,`Hi ${(c.name||"").split(" ")[0]}, about your request: "${(r.message||"").slice(0,80)}" — `)}">${ICON.wa}</a>`:""}<button class="ib" data-del title="Delete">${ICON.trash}</button></div></div>
+  </article>`}).join("")}</div>`:`<div class="panel"><div class="empty">${R.length?"Nothing here.":"When a client sends a change request from their dashboard, it lands here and you get an email. Create a client dashboard from Clients → the chart icon."}</div></div>`}`;
+  $$(".rq-filters button").forEach(b=>b.onclick=()=>{A.reqFilter=b.dataset.f;vRequests()});
+  $$(".rq").forEach(el=>el.onclick=async e=>{const r=A.data.Requests.find(x=>x.id===el.dataset.id); if(!r) return;
+    if(e.target.closest("[data-save]")){const b=e.target.closest("[data-save]"); b.disabled=true;
+      const ok=await saveRow("Requests",{id:r.id,status:$("[data-status]",el).value,reply:$("[data-reply]",el).value.trim(),updated:new Date().toISOString()});
+      if(ok){toast("Saved — the client sees it on their dashboard");render()} else b.disabled=false;}
+    if(e.target.closest("[data-del]")&&confirm("Delete this request?")){await delRow("Requests",r.id);render()}});
 }
 
 /* ---------- forms (modal) ---------- */

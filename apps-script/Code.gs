@@ -25,12 +25,14 @@ const SHEETS = {
   Events:     ['ts','vid','sid','type','label','ref','device','utm'],
   Leads:      ['id','ts','name','business','niche','package','phone','email','channel','message','status','notes','source','updated'],
   Prospects:  ['id','ts','name','business','niche','phone','website','maps','status','issue','lastContact','followUpDue','auditScore','auditIssues','screenshot','auditRequested','notes'],
-  Clients:    ['id','business','name','phone','email','site','package','price','delivered','carePlan','careFee','renewal','status','uptime','responseMs','lastCheck','checklist','notes'],
+  Clients:    ['id','business','name','phone','email','site','package','price','delivered','carePlan','careFee','renewal','status','uptime','responseMs','lastCheck','checklist','notes','portalKey','pin','trackId','advancePaid','balancePaid'],
   Portfolio:  ['id','ts','title','niche','type','url','image','description','visible','order','tag','embed','shot','theme'],
   Pitches:    ['id','ts','prospectId','channel','template','message'],
-  Automation: ['ts','workflow','status','summary','details']
+  Automation: ['ts','workflow','status','summary','details'],
+  Requests:   ['id','ts','clientId','business','type','message','status','reply','updated'],
+  ClientEvents: ['ts','cid','vid','sid','type','label','ref','device','path']
 };
-const EDITABLE = ['Leads','Prospects','Clients','Portfolio','Pitches'];
+const EDITABLE = ['Leads','Prospects','Clients','Portfolio','Pitches','Requests'];
 const EVENT_TYPES = ['pageview','section_view','cta_whatsapp','cta_email','package_click','lead_submit','work_click','faq_open'];
 const EVENT_DAYS_IN_DASHBOARD = 60;
 const TZ = 'Asia/Kolkata';
@@ -104,6 +106,10 @@ function doPost(e) {
       /* ---- public ---- */
       case 'track':              return json_(track_(body.event));
       case 'lead':               return json_(lead_(body.lead));
+      case 'ctrack':             return json_(clientTrack_(body.event));
+      /* ---- client portal (portal link + PIN) ---- */
+      case 'portal':             return json_({ ok: true, data: portal_(portalClient_(body)) });
+      case 'portal_request':     return json_(portalRequest_(portalClient_(body), body.request));
       /* ---- owner dashboard ---- */
       case 'dashboard':          requireAdmin_(body); return json_({ ok: true, data: dashboard_() });
       case 'upsert':             requireAdmin_(body); return json_({ ok: true, row: upsert_(body.sheet, body.row), queued: body.sheet === 'Portfolio' && body.row && body.row.shot === 'pending' ? dispatchShots_() : undefined });
@@ -163,6 +169,7 @@ function dashboard_() {
   const cutoff = Date.now() - EVENT_DAYS_IN_DASHBOARD * 864e5;
   const data = {};
   Object.keys(SHEETS).forEach(name => {
+    if (name === 'ClientEvents') return;                        // summarised per client in the portal instead
     let rows = readAll_(name);
     if (name === 'Events') rows = rows.filter(r => new Date(r.ts).getTime() > cutoff).slice(-25000);
     if (name === 'Automation') rows = rows.slice(-200);
@@ -176,6 +183,7 @@ function upsert_(sheet, row) {
   if (!row || !row.id) throw new Error('Row needs an id');
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
+    if (sheet === 'Clients') CacheService.getScriptCache().remove('track_ids');
     const sh = sheet_(sheet), headers = SHEETS[sheet];
     const ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])) : [];
     const i = ids.indexOf(String(row.id));
@@ -262,6 +270,82 @@ function automationReport_(body) {
   return { ok: true };
 }
 
+
+
+/* ============================== client portal ============================== */
+
+const CLIENT_EVENTS = ['pageview', 'cta_whatsapp', 'cta_call', 'cta_email', 'lead_submit'];
+const PORTAL_DAYS = 30;
+
+/** Finds the client for a portal link + PIN. Locks a link for 15 minutes after 6 wrong PINs. */
+function portalClient_(body) {
+  const key = String(body.portalKey || '').trim(), pin = String(body.pin || '').trim();
+  if (key.length < 16) throw new Error('This portal link is not valid');
+  const cache = CacheService.getScriptCache(), fk = 'pfail_' + key, fails = +(cache.get(fk) || 0);
+  if (fails >= 6) throw new Error('Too many wrong PINs. Try again in 15 minutes.');
+  const c = readAll_('Clients').find(x => x.portalKey === key);
+  if (!c) throw new Error('This portal link is not valid any more — ask NOWORA for a new one');
+  if (!c.pin || pin !== String(c.pin)) { cache.put(fk, String(fails + 1), 900); throw new Error('Wrong PIN'); }
+  cache.remove(fk);
+  return c;
+}
+
+function portal_(c) {
+  const since = Date.now() - 2 * PORTAL_DAYS * 864e5, mid = Date.now() - PORTAL_DAYS * 864e5;
+  const ev = c.trackId ? readAll_('ClientEvents').filter(e => e.cid === c.trackId && new Date(e.ts).getTime() > since) : [];
+  const cur = ev.filter(e => new Date(e.ts).getTime() > mid), prev = ev.filter(e => new Date(e.ts).getTime() <= mid);
+  const uniq = (list, t) => new Set(list.filter(e => !t || e.type === t).map(e => e.vid)).size;
+  const n = (list, t) => list.filter(e => e.type === t).length;
+  const days = [];
+  for (let i = PORTAL_DAYS - 1; i >= 0; i--) {
+    const d = Utilities.formatDate(new Date(Date.now() - i * 864e5), TZ, 'yyyy-MM-dd');
+    const de = cur.filter(e => Utilities.formatDate(new Date(e.ts), TZ, 'yyyy-MM-dd') === d);
+    days.push({ d: d, v: uniq(de, 'pageview'), t: de.filter(e => e.type !== 'pageview').length });
+  }
+  const tally = (list, f) => { const o = {}; list.forEach(e => { const k = f(e); if (k) o[k] = (o[k] || 0) + 1; }); return Object.keys(o).map(k => [k, o[k]]).sort((a, b) => b[1] - a[1]).slice(0, 6); };
+  const pv = cur.filter(e => e.type === 'pageview');
+  return {
+    client: {
+      business: c.business, name: c.name, site: c.site, status: c.status, package: c.package, price: c.price,
+      delivered: c.delivered, carePlan: c.carePlan, careFee: c.careFee, renewal: c.renewal,
+      uptime: c.uptime, responseMs: c.responseMs, lastCheck: c.lastCheck,
+      advancePaid: c.advancePaid, balancePaid: c.balancePaid, tracking: !!c.trackId, checklist: c.checklist
+    },
+    stats: {
+      days: days, hasData: ev.length > 0,
+      totals: { visitors: uniq(pv), views: pv.length, whatsapp: n(cur, 'cta_whatsapp'), calls: n(cur, 'cta_call'), emails: n(cur, 'cta_email'), enquiries: n(cur, 'lead_submit') },
+      previous: { visitors: uniq(prev, 'pageview'), taps: prev.filter(e => /^cta_/.test(e.type)).length, enquiries: n(prev, 'lead_submit') },
+      sources: tally(pv, e => e.ref || 'direct'), devices: tally(pv, e => e.device || 'desktop'), pages: tally(pv, e => e.path || '/'),
+      recent: cur.slice(-14).reverse().map(e => ({ ts: e.ts, type: e.type, label: e.label, ref: e.ref, device: e.device }))
+    },
+    requests: readAll_('Requests').filter(r => r.clientId === c.id).sort((a, b) => b.ts < a.ts ? -1 : 1).slice(0, 30)
+      .map(r => ({ id: r.id, ts: r.ts, type: r.type, message: r.message, status: r.status, reply: r.reply, updated: r.updated }))
+  };
+}
+
+function portalRequest_(c, r) {
+  if (!r || !String(r.message || '').trim()) return { ok: false, error: 'Write what you would like changed' };
+  const open = readAll_('Requests').filter(x => x.clientId === c.id && x.status !== 'done').length;
+  if (open >= 15) return { ok: false, error: 'You have 15 open requests — we will work through those first' };
+  const row = { id: randomKey_(12), ts: new Date().toISOString(), clientId: c.id, business: c.business, type: clip_(r.type || 'Change', 40), message: clip_(r.message, 2000), status: 'new', reply: '', updated: '' };
+  append_('Requests', row);
+  notify_('Request from ' + c.business, '📝 New request from ' + c.business + ' (' + row.type + ')\n\n' + row.message + '\n\nOpen your dashboard → Requests to reply.');
+  return { ok: true, request: row };
+}
+
+/** Events from client websites (the t.js snippet). Only known tracking IDs are accepted. */
+function clientTrack_(ev) {
+  if (!ev || CLIENT_EVENTS.indexOf(ev.type) < 0) return { ok: false, error: 'Unknown event' };
+  const cache = CacheService.getScriptCache();
+  let ids = cache.get('track_ids');
+  if (!ids) { ids = JSON.stringify(readAll_('Clients').map(c => c.trackId).filter(Boolean)); cache.put('track_ids', ids, 300); }
+  if (JSON.parse(ids).indexOf(String(ev.cid)) < 0) return { ok: false, error: 'Unknown site' };
+  const row = {};
+  SHEETS.ClientEvents.forEach(k => row[k] = clip_(ev[k], k === 'path' ? 80 : 60));
+  row.ts = new Date().toISOString();
+  append_('ClientEvents', row);
+  return { ok: true };
+}
 
 /* ============================== portfolio from a link ============================== */
 
@@ -501,7 +585,14 @@ function requireAutomation_(body) {
 function prop_(k) { return PropertiesService.getScriptProperties().getProperty(k) || ''; }
 
 function sheet_(name) {
-  const sh = SpreadsheetApp.getActive().getSheetByName(name);
+  const ss = SpreadsheetApp.getActive();
+  let sh = ss.getSheetByName(name);
+  if (!sh && SHEETS[name]) {                                     // new tabs are created on first use
+    sh = ss.insertSheet(name);
+    sh.getRange('A:Z').setNumberFormat('@');
+    sh.getRange(1, 1, 1, SHEETS[name].length).setValues([SHEETS[name]]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
   if (!sh) throw new Error('Missing sheet "' + name + '" — run setup() once');
   const want = SHEETS[name];                                   // add any new columns automatically
   if (want && sh.getLastColumn() < want.length) sh.getRange(1, 1, 1, want.length).setValues([want]).setFontWeight('bold');
