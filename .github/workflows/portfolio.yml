@@ -1,0 +1,46 @@
+name: Portfolio previews
+
+# Captures a scrolling preview for every website link you add in the dashboard's Portfolio tab.
+# Checks every 10 minutes (a few seconds when there is nothing to do). Add GITHUB_TOKEN to the
+# Apps Script properties to start it instantly instead.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: { group: portfolio, cancel-in-progress: false }
+
+jobs:
+  previews:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Any new links?
+        id: check
+        run: node scripts/portfolio.mjs --check
+        env:
+          STUDIO_ENDPOINT: ${{ secrets.STUDIO_ENDPOINT }}
+          STUDIO_AUTOMATION_KEY: ${{ secrets.STUDIO_AUTOMATION_KEY }}
+      - if: steps.check.outputs.pending != '0' && steps.check.outputs.pending != ''
+        uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - if: steps.check.outputs.pending != '0' && steps.check.outputs.pending != ''
+        run: npm ci
+      - if: steps.check.outputs.pending != '0' && steps.check.outputs.pending != ''
+        name: Cache Playwright browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.check.outputs.pending != '0' && steps.check.outputs.pending != ''
+        run: npx playwright install --with-deps chromium
+      - if: steps.check.outputs.pending != '0' && steps.check.outputs.pending != ''
+        name: Capture previews
+        run: node scripts/portfolio.mjs
+        env:
+          STUDIO_ENDPOINT: ${{ secrets.STUDIO_ENDPOINT }}
+          STUDIO_AUTOMATION_KEY: ${{ secrets.STUDIO_AUTOMATION_KEY }}

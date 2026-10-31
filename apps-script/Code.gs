@@ -26,7 +26,7 @@ const SHEETS = {
   Leads:      ['id','ts','name','business','niche','package','phone','email','channel','message','status','notes','source','updated'],
   Prospects:  ['id','ts','name','business','niche','phone','website','maps','status','issue','lastContact','followUpDue','auditScore','auditIssues','screenshot','auditRequested','notes'],
   Clients:    ['id','business','name','phone','email','site','package','price','delivered','carePlan','careFee','renewal','status','uptime','responseMs','lastCheck','checklist','notes'],
-  Portfolio:  ['id','ts','title','niche','type','url','image','description','visible','order'],
+  Portfolio:  ['id','ts','title','niche','type','url','image','description','visible','order','tag','embed','shot','theme'],
   Pitches:    ['id','ts','prospectId','channel','template','message'],
   Automation: ['ts','workflow','status','summary','details']
 };
@@ -87,7 +87,7 @@ function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || '';
   try {
     if (action === 'portfolio') {
-      const items = readAll_('Portfolio').filter(r => truthy_(r.visible));
+      const items = readAll_('Portfolio').filter(r => truthy_(r.visible) && (r.title || r.url));
       return json_({ ok: true, items: items });
     }
     return json_({ ok: true, service: 'studio-os', time: new Date().toISOString() });
@@ -106,12 +106,14 @@ function doPost(e) {
       case 'lead':               return json_(lead_(body.lead));
       /* ---- owner dashboard ---- */
       case 'dashboard':          requireAdmin_(body); return json_({ ok: true, data: dashboard_() });
-      case 'upsert':             requireAdmin_(body); return json_({ ok: true, row: upsert_(body.sheet, body.row) });
+      case 'upsert':             requireAdmin_(body); return json_({ ok: true, row: upsert_(body.sheet, body.row), queued: body.sheet === 'Portfolio' && body.row && body.row.shot === 'pending' ? dispatchShots_() : undefined });
+      case 'inspect':            requireAdmin_(body); return json_({ ok: true, meta: inspect_(body.url) });
       case 'delete':             requireAdmin_(body); remove_(body.sheet, body.id); return json_({ ok: true });
       case 'upload':             requireAdmin_(body); return json_({ ok: true, url: saveImage_(body.data, body.name) });
       /* ---- GitHub automations ---- */
       case 'automation_targets': requireAutomation_(body); return json_({ ok: true, ...automationTargets_() });
       case 'automation_report':  requireAutomation_(body); return json_(automationReport_(body));
+      case 'portfolio_targets':  requireAutomation_(body); return json_({ ok: true, items: portfolioTargets_() });
       default:                   return json_({ ok: false, error: 'Unknown action' });
     }
   } catch (err) {
@@ -243,11 +245,155 @@ function automationReport_(body) {
     upsert_('Prospects', update);
   });
 
+  (body.portfolio || []).forEach(r => {
+    const before = readAll_('Portfolio').find(p => p.id === r.id);
+    if (!before) return;
+    const update = { id: r.id, shot: r.error ? 'failed' : 'done' };
+    if (r.image) update.image = clip_(r.image, 400);
+    if (!before.title && r.title) update.title = clip_(r.title, 80);
+    if (!before.description && r.description) update.description = clip_(r.description, 220);
+    upsert_('Portfolio', update);
+  });
+
   append_('Automation', { ts: now, workflow: clip_(body.workflow, 40), status: clip_(body.status, 20), summary: clip_(body.summary, 300), details: clip_(body.details, 2000) });
 
   if (wentDown.length) notify_('Site down: ' + wentDown.length, '🚨 Care-plan site down\n\n' + wentDown.join('\n') + '\n\nChecked ' + Utilities.formatDate(new Date(), TZ, 'd MMM, h:mm a'));
   if (cameBack.length) notify_('Back up: ' + cameBack.join(', '), '✅ Back online: ' + cameBack.join(', '));
   return { ok: true };
+}
+
+
+/* ============================== portfolio from a link ============================== */
+
+// Niche guesses: [pattern, niche label, showcase filter]
+const NICHES_ = [
+  [/restaurant|dining|cuisine|biryani|bistro|dhaba|chef|cooking|dishes|tasting|thali|reserve a table/, 'Restaurant', 'Local business'],
+  [/caf[eé]|coffee|espresso|tea house/, 'Café', 'Local business'],
+  [/bak(e|ery|es|ing)|cakes?\b|patisserie|pastr|dessert|cookie|mithai|sweets/, 'Bakery & sweets', 'Local business'],
+  [/salon|spa\b|beauty|skin ?care|makeup|nail|barber|hair/, 'Beauty & wellness', 'Local business'],
+  [/gym|fitness|workout|strength|crossfit|personal train/, 'Gym & fitness', 'Local business'],
+  [/yoga|pilates|meditation/, 'Yoga studio', 'Local business'],
+  [/dental|dentist|clinic|hospital|doctor|physio|health ?care|ayurved/, 'Clinic', 'Local business'],
+  [/hotel|resort|homestay|villa|stay|hostel/, 'Hotel & stays', 'Local business'],
+  [/real estate|propert|apartment|realty|homes|bhk|estates?\b|viewing/, 'Real estate', 'Services'],
+  [/wealth|financ|invest|mutual fund|insurance|tax|account(ant|ing)|\bca\b/, 'Finance', 'Services'],
+  [/agency|marketing|seo|branding|design studio|advertis/, 'Agency', 'Services'],
+  [/law|lawyer|legal|advocate/, 'Legal', 'Services'],
+  [/tuition|coaching|course|academy|classes|school|learn|tutor/, 'Education', 'Services'],
+  [/e-?book|book|webinar|masterclass|workshop|launch|pre-?order|limited offer|checkout/, 'Sales page', 'Sales funnels'],
+  [/headphone|earbud|speaker|gadget|watch|phone|laptop|device|audio/, 'Product', 'Shops & brands'],
+  [/saree|fashion|clothing|apparel|wear|boutique|jewel|kurta|lehenga|sneaker/, 'Fashion', 'Shops & brands'],
+  [/shop|store|buy now|add to cart|collection|candles|handmade|skincare products/, 'Online shop', 'Shops & brands'],
+  [/portfolio|photograph|resume|freelanc|designer|developer|creator/, 'Portfolio', 'Services'],
+  [/wedding|event|decor|planner/, 'Events', 'Services']
+];
+
+/** Reads a public page and returns what the showcase needs: title, description, niche, filter tag, social image, colour and whether it can be embedded. */
+function inspect_(rawUrl) {
+  const url = normUrl_(rawUrl);
+  if (!/^https?:\/\/[^\s/]+\.[^\s]+/i.test(url)) throw new Error('That does not look like a website link');
+  const res = UrlFetchApp.fetch(url, {
+    muteHttpExceptions: true, followRedirects: true,
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36', 'Accept-Language': 'en-IN,en;q=0.9' }
+  });
+  const code = res.getResponseCode();
+  if (code >= 400) throw new Error('The site answered with error ' + code + ' — check the link is public');
+  const meta = parseMeta_(res.getContentText().slice(0, 2000000), url, res.getAllHeaders());
+  meta.status = code;
+  return meta;
+}
+
+function parseMeta_(html, url, headers) {
+  const h = {};
+  Object.keys(headers || {}).forEach(k => h[k.toLowerCase()] = String(headers[k]));
+  const dec = t => String(t || '').replace(/<[^>]*>/g, ' ')
+    .replace(/&#x([0-9a-f]+);/gi, (m, x) => String.fromCharCode(parseInt(x, 16)))
+    .replace(/&#(\d+);/g, (m, d) => String.fromCharCode(+d))
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&rsquo;|&lsquo;/g, "'").replace(/&ldquo;|&rdquo;/g, '"')
+    .replace(/&mdash;/g, '—').replace(/&ndash;/g, '–').replace(/&middot;/g, '·').replace(/&hellip;/g, '…')
+    .replace(/\s+/g, ' ').trim();
+  const body = stripData_(html).replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ');
+  const m = {};
+  (html.match(/<meta\b[^>]*>/gi) || []).forEach(tag => {
+    const a = {}; let r; const re = /([\w:-]+)\s*=\s*("([^"]*)"|'([^']*)'|([^\s>"']+))/g;
+    while ((r = re.exec(tag))) a[r[1].toLowerCase()] = r[3] !== undefined ? r[3] : r[4] !== undefined ? r[4] : r[5];
+    const k = (a.property || a.name || a.itemprop || '').toLowerCase();
+    if (k && a.content !== undefined && m[k] === undefined) m[k] = dec(a.content);
+  });
+  const first = re => { const x = re.exec(body); return x ? dec(x[1]) : ''; };
+  const docTitle = first(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const h1 = first(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  let para = '';
+  const pre = /<p\b[^>]*>([\s\S]*?)<\/p>/gi; let pm;
+  while ((pm = pre.exec(body))) { const t = dec(pm[1]); if (t.length >= 60) { para = t; break; } }
+
+  const full = m['og:title'] || m['twitter:title'] || docTitle || h1;
+  const parts = full.split(/\s+[|—–·]\s+|:\s+|\s+-\s+/).map(x => x.trim()).filter(Boolean);
+  let title = m['og:site_name'] || m['application-name'] || (parts[0] && parts[0].length <= 48 ? parts[0] : '') || full || hostName_(url);
+  title = title.slice(0, 80);
+  const tagline = parts.length > 1 ? parts.slice(1).join(' · ') : '';
+
+  let description = m['og:description'] || m['description'] || m['twitter:description'] || para || tagline || h1;
+  if (description.length > 220) description = description.slice(0, 217).replace(/\s+\S*$/, '') + '…';
+
+  // score every niche: words in the title, headline and description count three times
+  const strong = [full, description, h1].join(' ').toLowerCase(), weak = [m['keywords'] || '', dec(body.replace(/^[\s\S]*?<body/i, '')).slice(0, 80000)].join(' ').toLowerCase();
+  const count = (re, t) => (t.match(new RegExp(re.source, 'g')) || []).length;
+  let niche = '', tag = 'Services', best = 0;
+  NICHES_.forEach(n => { const sc = 3 * count(n[0], strong) + Math.min(count(n[0], weak), 6); if (sc > best) { best = sc; niche = n[1]; tag = n[2]; } });
+
+  const xfo = (h['x-frame-options'] || '').toLowerCase();
+  const fa = /frame-ancestors([^;]*)/i.exec(h['content-security-policy'] || '');
+  const embed = !/deny|sameorigin/.test(xfo) && !(fa && !/\*/.test(fa[1]) && !/nowora/i.test(fa[1]));
+
+  return {
+    url: url, title: title, description: description, niche: niche, tag: tag, h1: h1.slice(0, 120),
+    image: absUrl_(m['og:image'] || m['og:image:url'] || m['twitter:image'] || '', url),
+    theme: /^#[0-9a-f]{3,8}$/i.test(m['theme-color'] || '') ? m['theme-color'] : '',
+    embed: embed
+  };
+}
+
+function portfolioTargets_() {
+  return readAll_('Portfolio').filter(p => p.url && p.shot === 'pending').map(p => ({ id: p.id, url: normUrl_(p.url), title: p.title }));
+}
+
+/** Optional: starts the screenshot workflow right away. Needs Script properties GITHUB_TOKEN + GITHUB_REPO; otherwise the 10-minute schedule picks it up. */
+function dispatchShots_() {
+  const token = prop_('GITHUB_TOKEN'), repo = prop_('GITHUB_REPO');
+  if (!token || !repo) return 'scheduled';
+  try {
+    const r = UrlFetchApp.fetch('https://api.github.com/repos/' + repo + '/actions/workflows/portfolio.yml/dispatches', {
+      method: 'post', muteHttpExceptions: true, contentType: 'application/json', payload: JSON.stringify({ ref: 'main' }),
+      headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' }
+    });
+    return r.getResponseCode() < 300 ? 'now' : 'scheduled';
+  } catch (e) { return 'scheduled'; }
+}
+
+/** Removes long inline data: URIs (embedded images) without a regex, so huge pages can't overflow the stack. */
+function stripData_(html) {
+  let out = '', i = 0;
+  while (true) {
+    const j = html.indexOf('data:', i);
+    if (j < 0) { out += html.slice(i); break; }
+    let k = j + 5;
+    while (k < html.length) { const c = html.charCodeAt(k); if (c === 34 || c === 39 || c === 41 || c <= 32) break; k++; }
+    out += html.slice(i, j) + (k - j > 200 ? '' : html.slice(j, k));
+    i = k;
+  }
+  return out;
+}
+function normUrl_(u) { u = String(u || '').trim(); return /^https?:\/\//i.test(u) ? u : 'https://' + u; }
+function hostName_(u) { return (/^https?:\/\/(?:www\.)?([^/?#]+)/i.exec(u) || [])[1] || u; }
+function absUrl_(src, base) {
+  src = String(src || '').trim(); if (!src) return '';
+  if (/^https?:\/\//i.test(src)) return src;
+  const o = /^(https?:)\/\/[^/]+/i.exec(base); if (!o) return src;
+  if (src.indexOf('//') === 0) return o[1] + src;
+  if (src.charAt(0) === '/') return o[0] + src;
+  return base.replace(/[?#].*$/, '').replace(/[^/]*$/, '') + src;
 }
 
 /* ============================== 5-minute uptime check ============================== */
@@ -357,6 +503,8 @@ function prop_(k) { return PropertiesService.getScriptProperties().getProperty(k
 function sheet_(name) {
   const sh = SpreadsheetApp.getActive().getSheetByName(name);
   if (!sh) throw new Error('Missing sheet "' + name + '" — run setup() once');
+  const want = SHEETS[name];                                   // add any new columns automatically
+  if (want && sh.getLastColumn() < want.length) sh.getRange(1, 1, 1, want.length).setValues([want]).setFontWeight('bold');
   return sh;
 }
 function readAll_(name) {

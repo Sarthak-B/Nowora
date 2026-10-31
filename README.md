@@ -11,9 +11,9 @@ This repo is the whole studio system I built for it: the public website, a priva
 | Part | What it does |
 | --- | --- |
 | **Website** (`site/index.html`) | Single-file site: live "site being built" hero animation, filterable showcase with hover-scroll previews, services, plans with an INR / USD toggle, care plan, scroll-pinned process, FAQ and an enquiry form that hands off to WhatsApp or email. No framework, no build step. |
-| **Owner dashboard** (`site/index.html#admin`) | Live analytics (visitors, WhatsApp/email taps, enquiries, conversion, sources, visitor journey), a lead inbox, an outreach CRM with message templates and a daily target, client and care-plan tracking with onboarding checklists, portfolio uploads, automation health and 12-month goal tracking. |
+| **Owner dashboard** (`site/index.html#admin`) | Live analytics (visitors, WhatsApp/email taps, enquiries, conversion, sources, visitor journey), a lead inbox, an outreach CRM with message templates and a daily target, client and care-plan tracking with onboarding checklists, portfolio from a link (paste a URL: title, description, niche and filter are read automatically, with a live embedded preview), automation health and 12-month goal tracking. |
 | **Backend** (`apps-script/Code.gs`) | Google Apps Script web app on top of Google Sheets. Records events and enquiries, sends instant WhatsApp and email alerts, stores uploads in Google Drive, serves the dashboard behind an admin key, checks every client site every 5 minutes with instant down/up alerts, and emails a weekly review. |
-| **Automations** (`scripts/`, `.github/workflows/`) | Playwright in GitHub Actions. **Uptime:** every 3 hours, opens each care-plan client site, checks it really renders and alerts on downtime. **Prospect audit:** every morning, scores a prospect's site on desktop and iPhone, lists issues worth fixing and saves a mobile screenshot for the pitch. |
+| **Automations** (`scripts/`, `.github/workflows/`) | Playwright in GitHub Actions. **Uptime:** every 3 hours, opens each care-plan client site, checks it really renders and alerts on downtime. **Prospect audit:** every morning, scores a prospect's site on desktop and iPhone, lists issues worth fixing and saves a mobile screenshot for the pitch. **Portfolio previews:** within minutes of adding a link, scrolls through the site and captures a tall preview for the showcase. |
 
 ![Website showcase](docs/showcase.jpg)
 ![Owner dashboard](docs/dashboard.jpg)
@@ -27,7 +27,7 @@ Visitor ──► Website ──(visits, taps, enquiries)──► Apps Script �
                                                        ├─► WhatsApp alert
                                                        └─► Email alert
 Owner ──► Dashboard ◄──(live data every 15 s)──── Apps Script
-GitHub Actions + Playwright ──(uptime + audit results)──► Apps Script
+GitHub Actions + Playwright ──(uptime, audits, portfolio previews)──► Apps Script
 ```
 
 **Built with:** HTML, CSS and vanilla JavaScript · Google Apps Script · Google Sheets and Drive · Node.js · Playwright · GitHub Actions
@@ -69,11 +69,14 @@ Under **Settings → Secrets and variables → Actions**, add:
 
 Run each workflow once from the **Actions** tab to confirm.
 
+**Portfolio previews** check for new links every 10 minutes (a few seconds when there's nothing to do). To start them the moment you add a link instead, create a fine-grained GitHub token with **Actions: Read and write** on this repo and add Apps Script properties `GITHUB_TOKEN` (the token) and `GITHUB_REPO` (`Sarthak-B/Nowora`).
+
 Local test, which leaves the Sheet untouched:
 
 ```bash
 npm install && npx playwright install chromium
 TEST_SITES=https://example.com npm run test:audit
+TEST_SITES=https://example.com node scripts/portfolio.mjs --dry-run
 ```
 
 ### 4. Dashboard
