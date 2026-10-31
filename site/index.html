@@ -1010,7 +1010,7 @@ const API = {
   },
   track(ev){
     if(this.live){
-      const body=JSON.stringify({action:"track",event:ev}); let sent=false; try{ if(navigator.sendBeacon) sent=navigator.sendBeacon(CFG.endpoint,new Blob([body],{type:"text/plain;charset=UTF-8"})); }catch(e){} if(!sent){ try{fetch(CFG.endpoint,{method:"POST",mode:"no-cors",keepalive:true,body}).catch(()=>{})}catch(e){} }
+      const body=JSON.stringify({action:"track",event:ev}), ep=CFG.endpoint; const viaXhr=()=>{try{const x=new XMLHttpRequest();x.open("POST",ep,true);x.withCredentials=false;x.setRequestHeader("Content-Type","text/plain;charset=utf-8");x.send(body);}catch(e){}}; const viaBeacon=()=>{try{ if(!(navigator.sendBeacon&&navigator.sendBeacon(ep,new Blob([body],{type:"text/plain;charset=UTF-8"})))) viaXhr(); }catch(e){ viaXhr(); }}; try{ fetch(ep,{method:"POST",mode:"no-cors",credentials:"omit",cache:"no-store",headers:{"Content-Type":"text/plain;charset=utf-8"},body}).catch(viaBeacon); }catch(e){ viaBeacon(); }
     } else { const d=LOCAL.load(); d.Events.push(ev); if(d.Events.length>8000) d.Events.splice(0,d.Events.length-8000); LOCAL.save(d); }
   },
   async lead(l){ if(this.live) return this.post({action:"lead",lead:l}); const d=LOCAL.load(); d.Leads.push(l); LOCAL.save(d); return {ok:true}; },
@@ -1183,7 +1183,7 @@ function initSite(){
   const ref = (qs.get("utm_source")||qs.get("src")||qs.get("ref")||"").toLowerCase().slice(0,40) || inApp || (document.referrer? (()=>{try{const h=new URL(document.referrer).hostname.replace(/^www\./,""); if(h.includes("google")) return "google"; if(h.includes("instagram")) return "instagram"; if(h.includes("linkedin")) return "linkedin"; if(h.includes("facebook")) return "facebook"; if(h.includes("whatsapp")||h==="wa.me") return "whatsapp"; if(h==="t.co"||h.includes("twitter")||h==="x.com") return "twitter"; if(h==="lnkd.in") return "linkedin"; if(h.includes("youtube")) return "youtube"; if(h===location.hostname) return "direct"; return h;}catch(e){return "direct"}})() : "direct");
   const device = /Mobi|Android|iPhone|iPad/i.test(ua)||innerWidth<760?"mobile":"desktop";
   const track=(type,label)=>API.track({ts:new Date().toISOString(),vid,sid,type,label:label||"",ref,device,utm:qs.get("utm_campaign")||""});
-  track("pageview","home");
+  const sendPV=()=>track("pageview","home"); if(document.prerendering){ document.addEventListener("prerenderingchange",sendPV,{once:true}); } else sendPV();
   /* staggered reveal: elements fade up as they enter, then drop the helper class so hover effects work normally */
   const revealIO = reduced||!("IntersectionObserver" in window) ? null : new IntersectionObserver(es=>es.forEach(en=>{
     if(!en.isIntersecting) return; const el=en.target; revealIO.unobserve(el); el.classList.add("in");
