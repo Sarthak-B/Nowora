@@ -1985,7 +1985,9 @@ const KEY_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 const KCH="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const rndStr=(n,ch)=>{const a=new Uint32Array(n);crypto.getRandomValues(a);return [...a].map(x=>ch[x%ch.length]).join("")};
 const siteBase=()=>(CFG.siteUrl||location.origin).replace(/\/$/,"");
-const portalLink=c=>siteBase()+"/client/#"+c.portalKey;
+const portalLink=c=>siteBase()+"/client/"+c.portalKey;
+const slugify=t=>String(t||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/&/g," and ").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,32)||"client";
+const uniqueSlug=(t,id)=>{const base=slugify(t), taken=new Set(A.data.Clients.filter(x=>x.id!==id&&x.portalKey).map(x=>String(x.portalKey).toLowerCase())); let s=base.length<3?base+"-site":base, n=2; while(taken.has(s)||s==="demo") s=base+"-"+n++; return s;};
 const snippet=c=>`<script src="${siteBase()}/t.js" data-site="${c.trackId}" defer></`+`script>`;
 async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(msg||"Copied")}catch(e){const x=document.createElement("textarea");x.value=t;document.body.appendChild(x);x.select();try{document.execCommand("copy");toast(msg||"Copied")}catch(_){toast("Select and copy it manually",true)}x.remove()}}
 function portalModal(c){
@@ -2002,7 +2004,7 @@ function portalModal(c){
   </div>
   <div class="pm-actions">${c.phone?`<a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${waLink(c.phone,msg)}">${ICON.wa}Send link + PIN on WhatsApp</a>`:`<button class="btn btn-wa btn-sm" data-copy="msg">Copy message for the client</button>`}
     <a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="${esc(portalLink(c))}">Open their dashboard ↗</a>
-    <button class="btn btn-ghost btn-sm pm-danger" id="pmReset" title="The old link stops working">Reset link</button></div>
+    <button class="btn btn-ghost btn-sm" id="pmReset" title="The old link stops working">Change link</button></div>
   <div class="pm-sec"><h3>Payments <small>shown on their dashboard</small></h3>
     <label class="pm-tog"><input type="checkbox" id="pmAdv" ${c.advancePaid==="yes"?"checked":""}><span>First 50% received${+c.price?` · ${inr(Math.round(c.price/2))}`:""}</span></label>
     <label class="pm-tog"><input type="checkbox" id="pmBal" ${c.balancePaid==="yes"?"checked":""}><span>Second 50% received${+c.price?` · ${inr(c.price-Math.round(c.price/2))}`:""}</span></label>
@@ -2012,11 +2014,14 @@ function portalModal(c){
     <p class="pm-note">Paste it just before <code>&lt;/body&gt;</code> on ${c.site?esc(c.site.replace(/^https?:\/\//,"")):"their site"}. It counts visits, WhatsApp and call taps and form enquiries, with no cookies. Stats show on their dashboard within a minute.</p></div>
   <div class="pm-sec pm-foot"><span>${open?`<b>${open}</b> open request${open>1?"s":""}`:"No open requests"}</span><button class="btn btn-ghost btn-sm" id="pmReq">Go to Requests</button><button class="btn btn-ghost btn-sm" data-close>Close</button></div>`}`);
   const save=async(row,note)=>{const ok=await saveRow("Clients",Object.assign({id:c.id},row)); if(ok){ if(note) toast(note); portalModal(c); if(A.tab==="clients") vClients(); } };
-  const cr=$("#pmCreate"); if(cr) cr.onclick=()=>save({portalKey:rndStr(24,KCH),pin:rndStr(6,"0123456789"),trackId:c.trackId||rndStr(10,KCH)},"Dashboard created — send them the link and PIN");
+  const cr=$("#pmCreate"); if(cr) cr.onclick=()=>save({portalKey:uniqueSlug(c.business,c.id),pin:rndStr(6,"0123456789"),trackId:c.trackId||rndStr(10,KCH)},"Dashboard created — send them the link and PIN");
   if(!c.portalKey) return;
   $$("#modal [data-copy]").forEach(b=>b.onclick=()=>copyText({link:portalLink(c),pin:c.pin,snip:snippet(c),msg:msg}[b.dataset.copy]));
   $("#pmNewPin").onclick=()=>{ if(confirm("Make a new PIN? The old PIN stops working.")) save({pin:rndStr(6,"0123456789")},"New PIN ready — send it to them"); };
-  $("#pmReset").onclick=()=>{ if(confirm("Reset the link? Their current link stops working and you'll need to send the new one.")) save({portalKey:rndStr(24,KCH),pin:rndStr(6,"0123456789")},"New link and PIN ready"); };
+  $("#pmReset").onclick=()=>{ const v=prompt("Link name (letters, numbers and dashes). The current link stops working.", c.portalKey&&c.portalKey.length<24?c.portalKey:slugify(c.business)); if(v===null) return;
+    const s=slugify(v); if(s.length<3) return toast("Use at least 3 letters or numbers.",true);
+    if(s==="demo"||A.data.Clients.some(x=>x.id!==c.id&&String(x.portalKey).toLowerCase()===s)) return toast("Another client already uses that link.",true);
+    save({portalKey:s},"Link changed — send them the new one"); };
   $("#pmAdv").onchange=e=>save({advancePaid:e.target.checked?"yes":""},"Payment updated");
   $("#pmBal").onchange=e=>save({balancePaid:e.target.checked?"yes":""},"Payment updated");
   $("#pmReq").onclick=()=>{closeModal();A.tab="requests";render()};

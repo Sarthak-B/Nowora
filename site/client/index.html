@@ -44,6 +44,7 @@ svg{display:block}
 .login-card{width:min(420px,100%);background:var(--card);border-radius:26px;padding:36px 32px;box-shadow:0 40px 90px -40px rgba(0,0,0,.6);animation:rise .8s var(--ease) both}
 .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:-.01em}
 .brand small{font-family:var(--body);font-weight:600;font-size:12px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;margin-left:4px}
+.for{display:inline-flex;margin-top:24px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--pine);background:#D7EEDF;padding:6px 12px;border-radius:999px}.for+h1{margin-top:14px}
 .login-card h1{font-family:var(--display);font-size:34px;line-height:1.05;letter-spacing:-.03em;margin:26px 0 8px}
 .login-card p{color:var(--ink-2);font-size:15px}
 .pin{display:flex;gap:8px;margin:26px 0 14px}
@@ -251,8 +252,10 @@ var toastT; function toast(m){var t=$("#toast"); t.textContent=m; t.classList.ad
 var waLink = function(text){return "https://wa.me/"+CFG.whatsapp+"?text="+encodeURIComponent(text)};
 
 /* ---------- session ---------- */
-var hash = location.hash.replace(/^#/,""), DEMO = hash==="demo";
-var KEY = DEMO ? "demo" : (hash.match(/(?:^|&)k=([\w-]+)/)||[])[1] || (/^[\w-]{16,}$/.test(hash)?hash:"");
+// clean links: /client/52-alive  (older links with #key still work)
+var hash = location.hash.replace(/^#/,""), seg = decodeURIComponent((location.pathname.match(/\/client\/([^\/?#]+)/)||[])[1]||"");
+var DEMO = hash==="demo" || seg==="demo";
+var KEY = DEMO ? "demo" : (/^[\w-]{3,40}$/.test(seg) ? seg : (hash.match(/(?:^|&)k=([\w-]+)/)||[])[1] || (/^[\w-]{16,}$/.test(hash)?hash:""));
 var S = { pin:"", data:null, poll:null, type:TYPES[0] };
 function saved(){ try{ return localStorage.getItem("nw_portal_"+KEY) || sessionStorage.getItem("nw_portal_"+KEY) || "" }catch(e){ return "" } }
 function remember(pin,keep){ try{ (keep?localStorage:sessionStorage).setItem("nw_portal_"+KEY,pin) }catch(e){} }
@@ -274,7 +277,7 @@ function login(err){
   }
   $("#app").innerHTML='<div class="login"><form class="login-card" id="lf" autocomplete="off">'+
     '<span class="brand">'+MARK+'NOWORA<small>Client portal</small></span>'+
-    '<h1>Your website,<br>at a glance.</h1><p>Enter the PIN NOWORA sent you with this link.</p>'+
+    (KEY&&!DEMO&&!/^[\w]{16,}$/.test(KEY)?'<span class="for">'+esc(KEY.replace(/-/g," ").replace(/\b\w/g,function(m){return m.toUpperCase()}))+'</span>':DEMO?'<span class="for">Brew &amp; Bloom Café</span>':'')+'<h1>Your website,<br>at a glance.</h1><p>Enter the PIN NOWORA sent you with this link.</p>'+
     '<div class="pin" id="pin">'+[0,1,2,3,4,5].map(function(i){return '<input inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="PIN digit '+(i+1)+'" data-i="'+i+'">'}).join("")+'</div>'+
     '<label class="remember"><input type="checkbox" id="keep" checked>Keep me signed in on this device</label>'+
     '<button class="btn" type="submit" id="go">Open my dashboard</button><div class="msg" id="msg" role="alert">'+esc(err||"")+'</div>'+

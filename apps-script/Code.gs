@@ -280,12 +280,14 @@ const PORTAL_DAYS = 30;
 /** Finds the client for a portal link + PIN. Locks a link for 15 minutes after 6 wrong PINs. */
 function portalClient_(body) {
   const key = String(body.portalKey || '').trim(), pin = String(body.pin || '').trim();
-  if (key.length < 16) throw new Error('This portal link is not valid');
-  const cache = CacheService.getScriptCache(), fk = 'pfail_' + key, fails = +(cache.get(fk) || 0);
+  if (!/^[\w-]{3,40}$/.test(key)) throw new Error('This portal link is not valid');
+  const cache = CacheService.getScriptCache(), fk = 'pfail_' + key.toLowerCase(), dk = 'pday_' + key.toLowerCase();
+  const fails = +(cache.get(fk) || 0), daily = +(cache.get(dk) || 0);
+  if (daily >= 20) throw new Error('Too many wrong PINs today. Ask NOWORA for help on WhatsApp.');
   if (fails >= 6) throw new Error('Too many wrong PINs. Try again in 15 minutes.');
-  const c = readAll_('Clients').find(x => x.portalKey === key);
+  const c = readAll_('Clients').find(x => x.portalKey && x.portalKey.toLowerCase() === key.toLowerCase());
   if (!c) throw new Error('This portal link is not valid any more — ask NOWORA for a new one');
-  if (!c.pin || pin !== String(c.pin)) { cache.put(fk, String(fails + 1), 900); throw new Error('Wrong PIN'); }
+  if (!c.pin || pin !== String(c.pin)) { cache.put(fk, String(fails + 1), 900); cache.put(dk, String(daily + 1), 21600); throw new Error('Wrong PIN'); }
   cache.remove(fk);
   return c;
 }
