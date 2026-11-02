@@ -145,6 +145,7 @@ function doPost(e) {
       case 'track':              return json_(track_(body.event));
       case 'lead':               return json_(lead_(body.lead));
       case 'ctrack':             return json_(clientTrack_(body.event));
+      case 'cform':              return json_(clientForm_(body));
       /* ---- client portal (portal link + PIN) ---- */
       case 'portal':             return json_({ ok: true, data: portal_(portalClient_(body), +body.since || 0) });
       case 'portal_request':     return json_(portalRequest_(portalClient_(body), body.request));
@@ -155,6 +156,7 @@ function doPost(e) {
       case 'site_restore':       return json_(siteRestore_(portalClient_(body), body.sha));
       /* ---- client database (portal link + PIN) ---- */
       case 'db_get':             return json_(dbGet_(portalClient_(body), body.tableId));
+      case 'db_rev':             return json_({ ok: true, rev: dbRev_(portalClient_(body)) });
       case 'db_save_table':      return json_(dbSaveTable_(portalClient_(body), body.table));
       case 'db_delete_table':    return json_(dbDeleteTable_(portalClient_(body), body.tableId));
       case 'db_save_row':        return json_(dbSaveRow_(portalClient_(body), body.tableId, body.row));
@@ -958,6 +960,7 @@ function dbSaveTable_(c, table) {
       const id = randomKey_(10);
       sh.addDeveloperMetadata('nowora_table', JSON.stringify({ id: id, cols: cols }));
       dbStyle_(sh, cols);
+      bumpRev_(c);
       return { ok: true, table: { id: id, name: sh.getName(), cols: cols, count: 0 } };
     }
     const t = dbFind_(ss, table.id), rows = dbRead_(t), sh = t.sh;
@@ -973,13 +976,14 @@ function dbSaveTable_(c, table) {
     t.md.setValue(JSON.stringify({ id: t.id, cols: cols }));
     dbStyle_(sh, cols);
     if (data.length) sh.getRange(2, 1, data.length, 2 + cols.length).setValues(data);
+    bumpRev_(c);
     return { ok: true, table: { id: t.id, name: sh.getName(), cols: cols, count: data.length } };
   } finally { lock.releaseLock(); }
 }
 function dbDeleteTable_(c, tableId) {
   const ss = clientData_(c, false); if (!ss) return { ok: true };
   const lock = LockService.getScriptLock(); lock.waitLock(15000);
-  try { const t = dbFind_(ss, tableId); ss.deleteSheet(t.sh); return { ok: true }; }
+  try { const t = dbFind_(ss, tableId); ss.deleteSheet(t.sh); bumpRev_(c); return { ok: true }; }
   finally { lock.releaseLock(); }
 }
 function dbSaveRow_(c, tableId, row) {
@@ -1000,6 +1004,7 @@ function dbSaveRow_(c, tableId, row) {
     sh.getRange(i + 2, 1, 1, cells.length).setValues([cells]);
     const out = { _id: id, _ts: ts instanceof Date ? ts.toISOString() : String(ts || '') };
     t.cols.forEach((col, j) => out[col.id] = dbValue_(col, cells[j + 2]));
+    bumpRev_(c);
     return { ok: true, row: out };
   } finally { lock.releaseLock(); }
 }
@@ -1015,8 +1020,149 @@ function dbDeleteRows_(c, tableId, ids) {
     const at = [];
     col.forEach((v, i) => { if (ids.indexOf(v) >= 0) at.push(i + 2); });
     at.reverse().forEach(r => sh.deleteRow(r));
+    if (at.length) bumpRev_(c);
     return { ok: true, deleted: at.length };
   } finally { lock.releaseLock(); }
+}
+
+/* ---------- live updates: a tiny revision number the dashboard polls ---------- */
+function bumpRev_(c) { try { CacheService.getScriptCache().put('dbrev_' + c.id, String(Date.now()), 21600); } catch (e) { /* only slows the live refresh */ } }
+function dbRev_(c) {
+  const cache = CacheService.getScriptCache(), k = 'dbrev_' + c.id;
+  let v = cache.get(k); if (!v) { v = String(Date.now()); cache.put(k, v, 21600); }
+  return v;
+}
+
+/* ---------- forms on client websites → the client's database, in real time ---------- */
+// t.js sends every form a visitor submits (and sites can call nowora.record() for carts).
+// The row lands in a table named after the form ("Orders", "Bookings", "Website enquiries"…);
+// the table and any new columns are created automatically. Order items reduce stock.
+function clientForm_(b) {
+  const cid = String(b.cid || ''), vid = String(b.vid || '').slice(0, 40);
+  if (b.bot === true || b.framed === true) return { ok: true, skipped: true };
+  const cache = CacheService.getScriptCache();
+  let map = cache.get('track_map');
+  if (!map) { const m = {}; readAll_('Clients').forEach(x => { if (x.trackId) m[x.trackId] = { id: x.id, business: x.business }; }); map = JSON.stringify(m); cache.put('track_map', map, 300); }
+  const ref = JSON.parse(map)[cid];
+  if (!ref) return { ok: false, error: 'Unknown site' };
+  // flood guard: 60 forms per site and 8 per visitor every 10 minutes
+  const ks = 'cf_' + cid, kv = 'cfv_' + cid + '_' + vid, ns = +(cache.get(ks) || 0), nv = +(cache.get(kv) || 0);
+  if (ns >= 60 || (vid && nv >= 8)) return { ok: false, error: 'Too many forms — try again in a few minutes' };
+  cache.put(ks, String(ns + 1), 600); if (vid) cache.put(kv, String(nv + 1), 600);
+
+  const fields = [];
+  Object.keys(b.fields || {}).slice(0, 40).forEach(k => {
+    const name = String(k).replace(/\s+/g, ' ').trim().slice(0, 60);
+    let v = b.fields[k]; if (Array.isArray(v)) v = v.join(', ');
+    v = String(v == null ? '' : v).trim().slice(0, 2000);
+    if (!name || /^(row id|added)$/i.test(name) || /password|cvv|cvc|card ?number|otp/i.test(name)) return;
+    if (fields.some(f => f.name.toLowerCase() === name.toLowerCase())) return;
+    fields.push({ name: name, value: v });
+  });
+  const items = (Array.isArray(b.items) ? b.items : []).slice(0, 50).map(i => ({
+    name: String(i.name || '').slice(0, 80), variant: String(i.variant || '').slice(0, 80),
+    size: String(i.size || '').slice(0, 30), colour: String(i.colour || i.color || '').slice(0, 40),
+    qty: Math.max(1, Math.min(999, Math.round(+i.qty || 1))), price: +i.price || 0 })).filter(i => i.name);
+  if (!fields.some(f => f.value) && !items.length) return { ok: false, error: 'Empty form' };
+
+  const table = String(b.table || 'Website enquiries').replace(/\s+/g, ' ').trim().slice(0, 60) || 'Website enquiries';
+  const isOrder = /order|checkout|cart|purchase/i.test(table) || items.length > 0;
+  const c = readAll_('Clients').find(x => x.id === ref.id); if (!c) return { ok: false, error: 'Unknown site' };
+  const ss = clientData_(c, true);
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  let stockNote = '';
+  try {
+    const want = fields.map(f => ({ name: f.name, type: guessType_(f.name, f.value) }));
+    if (items.length) { want.push({ name: 'Items', type: 'longtext' }, { name: 'Item count', type: 'number' });
+      if (!fields.some(f => /^total$/i.test(f.name))) want.push({ name: 'Total', type: 'money' }); }
+    want.push({ name: 'Status', type: 'choice', options: isOrder ? ['New', 'Confirmed', 'Packed', 'Shipped', 'Delivered', 'Cancelled'] : ['New', 'Contacted', 'Done'] });
+    if (items.length) want.push({ name: 'Stock', type: 'text' });
+    want.push({ name: 'Came from', type: 'text' });
+    const seen = {}, uniq = want.filter(w => { const k = w.name.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; });
+    const t = dbEnsure_(ss, table, uniq);
+
+    const val = {};
+    fields.forEach(f => val[f.name.toLowerCase()] = f.value);
+    if (items.length) {
+      const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+      val['items'] = items.map(i => i.qty + ' × ' + i.name + [i.variant, i.colour, i.size].filter(Boolean).map(x => ' · ' + x).join('') + (i.price ? ' — ₹' + (i.price * i.qty).toLocaleString('en-IN') : '')).join('\n');
+      val['item count'] = String(items.reduce((s, i) => s + i.qty, 0));
+      if (val['total'] === undefined) val['total'] = String(total);
+      stockNote = takeStock_(ss, items);
+      val['stock'] = stockNote;
+    }
+    val['status'] = 'New';
+    val['came from'] = [String(b.ref || 'direct').slice(0, 30), String(b.device || '').slice(0, 10)].filter(Boolean).join(' · ');
+    const sh = t.sh, id = randomKey_(10);
+    sh.appendRow([id, new Date()].concat(t.cols.map(col => dbCell_(col, val[col.name.toLowerCase()]))));
+    bumpRev_(c);
+    clientLog_(c, { ts: new Date().toISOString(), type: 'lead_submit', label: clip_(table + (items.length ? ' · ' + items.length + ' item(s)' : ''), 60), ref: String(b.ref || 'direct').slice(0, 30), device: String(b.device || '').slice(0, 10), path: String(b.path || '').slice(0, 80), vid: vid });
+    return { ok: true, id: id, table: sh.getName(), stock: stockNote || undefined };
+  } finally { lock.releaseLock(); }
+}
+
+/** Finds a table by name (any case) or makes it, and adds any columns it is missing. */
+function dbEnsure_(ss, name, want) {
+  const all = dbTables_(ss);
+  let t = all.find(x => x.sh.getName().toLowerCase() === name.toLowerCase());
+  if (!t) {
+    if (all.length >= DB_LIMIT.tables) throw new Error('This site has too many tables');
+    const cols = dbCleanCols_(want.slice(0, DB_LIMIT.columns));
+    const sh = ss.insertSheet(dbTabName_(ss, name)), id = randomKey_(10);
+    sh.addDeveloperMetadata('nowora_table', JSON.stringify({ id: id, cols: cols }));
+    dbStyle_(sh, cols);
+    return { sh: sh, id: id, cols: cols, md: sh.getDeveloperMetadata().find(m => m.getKey() === 'nowora_table') };
+  }
+  const have = t.cols.map(c => c.name.toLowerCase());
+  const add = want.filter(w => have.indexOf(w.name.toLowerCase()) < 0).slice(0, Math.max(0, DB_LIMIT.columns - t.cols.length));
+  if (add.length) {
+    const cols = dbCleanCols_(t.cols.concat(add));
+    t.md.setValue(JSON.stringify({ id: t.id, cols: cols }));
+    dbStyle_(t.sh, cols);                              // new columns go on the right; existing data stays where it is
+    t.cols = cols;
+  }
+  return t;
+}
+function guessType_(name, v) {
+  const n = name.toLowerCase();
+  if (/e-?mail/.test(n) || /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v)) return 'email';
+  if (/phone|mobile|whatsapp|contact no|tel/.test(n)) return 'phone';
+  if (/address|note|message|comment|details|requirement|question/.test(n) || v.length > 80) return 'longtext';
+  if (/\b(date|dob|day)\b/.test(n) && /^\d{4}-\d{2}-\d{2}$/.test(v)) return 'date';
+  if (/price|amount|total|budget|fee|cost/.test(n) && /^[₹\d,.\s]+$/.test(v)) return 'money';
+  if (/\b(qty|quantity|people|guests|count|number of)\b/.test(n) && /^\d+$/.test(v)) return 'number';
+  if (/website|url|link/.test(n)) return 'link';
+  return 'text';
+}
+/**
+ * Reduces stock for ordered items. Looks for a table with an item/product name column and a
+ * stock column ("In stock", "Stock", "Qty"…). When the stock table has Size / Colour columns,
+ * the matching variant row is used. Returns a short note for the order row.
+ */
+function takeStock_(ss, items) {
+  const inv = dbTables_(ss).map(t => {
+    const nameCol = t.cols.find(c => /^(item|product|name|item name|product name|title)$/i.test(c.name)) || t.cols.find(c => /item|product/i.test(c.name) && c.type === 'text');
+    const stockCol = t.cols.find(c => c.type === 'number' && /stock|qty|quantity|available|in hand/i.test(c.name));
+    return nameCol && stockCol ? { t: t, name: nameCol, stock: stockCol, size: t.cols.find(c => /^size$/i.test(c.name)), colour: t.cols.find(c => /^(colour|color|variant|shade)$/i.test(c.name)) } : null;
+  }).filter(Boolean)[0];
+  if (!inv) return '';
+  const sh = inv.t.sh, last = sh.getLastRow(); if (last < 2) return 'Not in your stock list: ' + items.map(i => i.name).join(', ');
+  const n = 2 + inv.t.cols.length, data = sh.getRange(2, 1, last - 1, n).getValues();
+  const at = col => 2 + inv.t.cols.indexOf(col);
+  const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const missing = [], low = [];
+  items.forEach(i => {
+    const cand = data.map((r, k) => ({ r: r, k: k })).filter(x => norm(x.r[at(inv.name)]) === norm(i.name));
+    let hit = cand;
+    if (inv.size && i.size) { const s = cand.filter(x => norm(x.r[at(inv.size)]) === norm(i.size)); if (s.length) hit = s; else if (cand.some(x => x.r[at(inv.size)] !== '')) hit = []; }
+    if (inv.colour && (i.colour || i.variant)) { const v = norm(i.colour || i.variant), s = hit.filter(x => norm(x.r[at(inv.colour)]) === v); if (s.length) hit = s; else if (hit.some(x => x.r[at(inv.colour)] !== '')) hit = []; }
+    if (!hit.length) { missing.push(i.name + [i.colour, i.size].filter(Boolean).map(x => ' ' + x).join('')); return; }
+    const row = hit[0], cur = Number(row.r[at(inv.stock)]) || 0, next = cur - i.qty;
+    row.r[at(inv.stock)] = next;
+    sh.getRange(row.k + 2, at(inv.stock) + 1).setValue(next);
+    if (next <= 0) low.push(i.name + (i.size ? ' ' + i.size : '') + ' is out');
+  });
+  return [missing.length ? 'Not in stock list: ' + missing.join(', ') : 'Stock updated', low.join(', ')].filter(Boolean).join(' · ');
 }
 
 /* ============================== weekly review ============================== */

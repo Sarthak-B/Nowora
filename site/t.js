@@ -56,7 +56,81 @@
     else if (/^tel:/i.test(h)) send('cta_call', t);
     else if (/^mailto:/i.test(h)) send('cta_email', t);
   }, true);
+  /* ---------- forms → the client's NOWORA database, in real time ----------
+     Every form a visitor sends is saved as a row (one table per kind of form).
+     <form data-nowora-table="Bookings">   choose the table
+     <form data-nowora="off">              don't save this form
+     <form data-nowora="manual">           the site calls nowora.record() itself (carts)
+     <input data-nowora="off">             leave one field out
+     nowora.record("Orders", {Name: "…", Phone: "…"}, [{name:"Hoodie", size:"M", colour:"Black", qty:1, price:1299}])  */
+  var SKIP = /pass(word)?|card|cvv|cvc|otp|aadhaar|aadhar|pan ?(no|number)|account ?(no|number)|ifsc|upi ?pin/i;
+  function post(body) {
+    var b = JSON.stringify(body);
+    try { fetch(END, { method: 'POST', mode: 'no-cors', credentials: 'omit', keepalive: true, body: b }).catch(function () { beacon(b); }); }
+    catch (e) { beacon(b); }
+  }
+  function beacon(b) { try { navigator.sendBeacon && navigator.sendBeacon(END, b); } catch (e) {} }
+  function record(table, fields, items) {
+    var clean = {}, n = 0;
+    for (var k in (fields || {})) {
+      if (n >= 40) break;
+      var v = fields[k]; if (v === undefined || v === null) continue;
+      if (typeof v === 'boolean') v = v ? 'Yes' : 'No';
+      clean[String(k).slice(0, 60)] = String(v).slice(0, 2000); n++;
+    }
+    var key = 'nw_f_' + JSON.stringify([table, clean, items || []]).length + '_' + JSON.stringify(clean).slice(0, 200);
+    try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (e) {}
+    post({ action: 'cform', cid: cid, vid: vid, ref: ref, device: device, path: location.pathname.slice(0, 80), table: String(table || 'Website enquiries').slice(0, 60), fields: clean, items: (items || []).slice(0, 50) });
+  }
+  function labelFor(el, form) {
+    var t = '';
+    if (el.id) { var l = form.querySelector('label[for="' + el.id.replace(/"/g, '') + '"]'); if (l) t = l.childNodes.length ? [].map.call(l.childNodes, function (x) { return x.nodeType === 3 ? x.textContent : (x.matches && x.matches('input,select,textarea,.err,.muted,small') ? '' : x.textContent); }).join('') : l.textContent; }
+    if (!t && el.closest('label')) t = [].map.call(el.closest('label').childNodes, function (x) { return x.nodeType === 3 ? x.textContent : (x.matches && x.matches('input,select,textarea') ? '' : x.textContent); }).join('');
+    t = (t || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.name || '').replace(/\(optional\)|\*/gi, '').replace(/\s+/g, ' ').trim();
+    if (/^[a-z_]+$/.test(t)) t = t.replace(/_/g, ' ').replace(/^\w/, function (m) { return m.toUpperCase(); });
+    return t.slice(0, 60);
+  }
+  function tableFor(form) {
+    var w = form.getAttribute('data-nowora-table'); if (w) return w;
+    var k = ((form.getAttribute('name') || '') + ' ' + (form.id || '') + ' ' + (form.className || '') + ' ' + (form.getAttribute('action') || '')).toLowerCase();
+    if (/order|checkout|cart|buy/.test(k)) return 'Orders';
+    if (/book|appoint|reserv|slot/.test(k)) return 'Bookings';
+    if (/subscri|newsletter/.test(k)) return 'Subscribers';
+    return 'Website enquiries';
+  }
+  function capture(form) {
+    var mode = (form.getAttribute('data-nowora') || '').toLowerCase();
+    if (mode === 'off' || mode === 'manual') return mode === 'manual';
+    if (form.checkValidity && !form.checkValidity()) return false;
+    var out = {}, filled = 0;
+    [].forEach.call(form.elements, function (el) {
+      if (!el.name && !el.id) return;
+      var type = (el.type || '').toLowerCase();
+      if (/^(submit|button|reset|image|file|hidden|password)$/.test(type) || el.disabled || el.getAttribute('data-nowora') === 'off') return;
+      var label = labelFor(el, form); if (!label || SKIP.test(label) || SKIP.test(el.name || '')) return;
+      if (type === 'radio') { if (!el.checked) return; var g = el.closest('fieldset'); var gl = g && g.querySelector('legend'); label = (gl && gl.textContent.trim()) || (el.name.replace(/_/g, ' ').replace(/^\w/, function (m) { return m.toUpperCase(); })); }
+      var v;
+      if (type === 'checkbox') { v = el.checked ? 'Yes' : 'No'; }
+      else if (el.tagName === 'SELECT' && el.multiple) v = [].filter.call(el.options, function (o) { return o.selected; }).map(function (o) { return o.text; }).join(', ');
+      else if (el.tagName === 'SELECT') v = el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : '';
+      else v = el.value;
+      v = String(v || '').trim();
+      if (out[label] && v) out[label] += ', ' + v; else if (!out[label]) out[label] = v;
+      if (v && type !== 'checkbox') filled++;
+    });
+    if (filled < 1) return false;
+    record(tableFor(form), out);
+    return true;
+  }
   document.addEventListener('submit', function (e) {
-    var f = e.target; send('lead_submit', (f.getAttribute('name') || f.id || 'form').slice(0, 60));
+    var f = e.target;
+    setTimeout(function () {                       // let the site's own checks run first
+      var saved = false; try { saved = capture(f); } catch (x) {}
+      if (!saved && (f.getAttribute('data-nowora') || '') !== 'manual') send('lead_submit', (f.getAttribute('name') || f.id || 'form').slice(0, 60));
+    }, 0);
   }, true);
+
+  window.nowora = { record: record };
+  var q = window.noworaQ || []; window.noworaQ = { push: function (a) { try { record.apply(null, a); } catch (e) {} } };
+  for (var i = 0; i < q.length; i++) window.noworaQ.push(q[i]);
 })();

@@ -924,7 +924,7 @@ function initDB(){
   var go=function(){ if(initDB.on) return; initDB.on=1;
     var mount=function(){window.NoworaDB.mount({root:root,call:call,toast:toast,demo:DEMO,owner:!!(S.data.client&&S.data.client.owner),business:S.data.client.business})};
     if(window.NoworaDB) return mount();
-    var sc=document.createElement("script");sc.src="/client/db.js?v=1";sc.onload=mount;sc.onerror=function(){initDB.on=0;root.innerHTML='<div class="card"><div class="empty" style="margin:0">The database couldn\'t load — check your connection and refresh.</div></div>'};document.head.appendChild(sc);};
+    var sc=document.createElement("script");sc.src="/client/db.js?v=2";sc.onload=mount;sc.onerror=function(){initDB.on=0;root.innerHTML='<div class="card"><div class="empty" style="margin:0">The database couldn\'t load — check your connection and refresh.</div></div>'};document.head.appendChild(sc);};
   if(!("IntersectionObserver" in window)) return go();
   var io=new IntersectionObserver(function(es){if(es.some(function(e){return e.isIntersecting})){io.disconnect();go()}},{rootMargin:"800px 0px"}); io.observe(root);
   $$('a[href="#database"]').forEach(function(a){a.addEventListener("click",go)});

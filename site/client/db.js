@@ -12,8 +12,8 @@
       cols: [["Name", "text"], ["Phone", "phone"], ["Email", "email"], ["City", "text"], ["Notes", "longtext"]] },
     { name: "Orders", icon: "bag", blurb: "Every order, what it was, how much and where it's up to.",
       cols: [["Order no.", "text"], ["Customer", "text"], ["Phone", "phone"], ["Items", "longtext"], ["Amount", "money"], ["Status", "choice", "New, Paid, Packed, Shipped, Delivered, Cancelled"], ["Order date", "date"]] },
-    { name: "Products", icon: "box", blurb: "Your catalogue with prices and what's in stock.",
-      cols: [["Product", "text"], ["Price", "money"], ["Stock", "number"], ["Category", "text"], ["In stock", "yesno"], ["Photo link", "link"]] },
+    { name: "Stock", icon: "box", blurb: "What's on your shelves. Website orders take items off automatically.",
+      cols: [["Product", "text"], ["Size", "text"], ["Colour", "text"], ["In stock", "number"], ["Reorder at", "number"], ["Price", "money"], ["Cost price", "money"], ["Category", "text"]] },
     { name: "Bookings", icon: "cal", blurb: "Appointments, tables or classes — who's coming and when.",
       cols: [["Name", "text"], ["Phone", "phone"], ["Date", "date"], ["Time", "text"], ["People", "number"], ["Status", "choice", "Booked, Came, No-show, Cancelled"], ["Notes", "longtext"]] },
     { name: "Payments", icon: "coin", blurb: "Money in and out, so month-end is easy.",
@@ -100,6 +100,19 @@
 .db-col.gone{display:none}
 .db-note{font-size:12.5px;color:var(--ink-3);margin-top:8px}
 .db-meta{font-size:12px;color:var(--ink-3);margin-top:14px}
+.db-stock{display:inline-flex;align-items:center;gap:6px}.db-stock button{width:26px;height:26px;border-radius:8px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--ink-2);cursor:pointer;font-weight:800;line-height:1}
+.db-stock button:hover{border-color:rgba(var(--neon-rgb),.6);color:var(--neon)}.db-stock b{min-width:30px;text-align:center;font-variant-numeric:tabular-nums}
+.db-low b{color:var(--amber)}.db-out b{color:var(--rose)}
+.db-st{appearance:none;-webkit-appearance:none;border:0;border-radius:999px;padding:4px 12px;font-size:12.5px;font-weight:800;cursor:pointer;background:rgba(255,255,255,.08);color:var(--ink)}
+.db-st option{background:#0E1613;color:var(--ink)}
+.db-st[data-v=new]{background:rgba(var(--neon-rgb),.16);color:var(--neon)}.db-st[data-v=confirmed],.db-st[data-v=contacted],.db-st[data-v=packed]{background:rgba(92,200,255,.14);color:var(--sky)}
+.db-st[data-v=shipped]{background:rgba(255,181,71,.14);color:var(--amber)}.db-st[data-v=delivered],.db-st[data-v=done],.db-st[data-v=paid]{background:rgba(var(--mint-rgb),.14);color:var(--mint)}.db-st[data-v=cancelled]{background:rgba(255,92,122,.14);color:var(--rose)}
+.db-sum{display:flex;gap:8px;flex-wrap:wrap}.db-sum button{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--ink-2);font-size:13px;font-weight:700;cursor:pointer}
+.db-sum button b{color:var(--ink)}.db-sum button.on{border-color:rgba(var(--neon-rgb),.6);color:var(--neon)}.db-sum .warn b{color:var(--amber)}.db-sum .bad b{color:var(--rose)}
+.db-live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3);font-weight:700}.db-live i{width:7px;height:7px;border-radius:50%;background:var(--neon);box-shadow:0 0 10px var(--neon);animation:dbpulse 2s infinite}
+@keyframes dbpulse{50%{opacity:.35}}
+.db-tab .dot{width:8px;height:8px;border-radius:50%;background:var(--neon);box-shadow:0 0 8px var(--neon)}
+.db-table tbody tr.fresh{animation:dbfresh 3.2s ease-out}@keyframes dbfresh{0%,30%{background:rgba(var(--neon-rgb),.16)}100%{background:transparent}}
 .db-skel{height:260px;border-radius:var(--r);background:linear-gradient(90deg,rgba(255,255,255,.03) 25%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.03) 75%);background-size:200% 100%;animation:dbsh 1.2s linear infinite}
 @keyframes dbsh{to{background-position:-200% 0}}
 @media(max-width:860px){.db-tpls{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -109,7 +122,7 @@
 
   /* ---------------- demo backend (the /client/demo page) ---------------- */
   function demoBackend() {
-    const K = "nw_demo_db_v1", rid = () => Math.random().toString(36).slice(2, 12);
+    const K = "nw_demo_db_v2", rid = () => Math.random().toString(36).slice(2, 12);
     const load = () => { try { const d = JSON.parse(localStorage.getItem(K) || "null"); if (d) return d; } catch (e) {} const d = seed(); save(d); return d; };
     const save = d => { try { localStorage.setItem(K, JSON.stringify(d)); } catch (e) {} };
     function seed() {
@@ -117,12 +130,34 @@
       const names = ["Aarav Mehta", "Isha Rawat", "Kabir Negi", "Meera Joshi", "Rohan Bisht", "Tanvi Sharma", "Dev Kapoor", "Ananya Rana"];
       const day = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
       const rows = names.map((n, i) => ({ _id: rid(), _ts: new Date(Date.now() - (30 - i) * 864e5).toISOString(), c1: n, c2: "+91 98" + (10000000 + i * 7311291 % 89999999), c3: cols[2].options[i % 4], c4: 450 + i * 615, c5: i % 3 !== 1, c6: day(i * 2 + 1) }));
-      return { tables: [{ id: "t1", name: "Customers", cols: cols, rows: rows }] };
+      const sc = [{ id: "s1", name: "Product", type: "text" }, { id: "s2", name: "Size", type: "text" }, { id: "s3", name: "In stock", type: "number" }, { id: "s4", name: "Reorder at", type: "number" }, { id: "s5", name: "Price", type: "money" }];
+      const prods = [["Cold brew bottle", "", 18, 6, 220], ["Sourdough loaf", "", 4, 5, 180], ["Coffee beans 250g", "", 0, 4, 650], ["Brunch voucher", "", 25, 5, 999], ["Mug", "Large", 9, 3, 450], ["Mug", "Small", 2, 3, 380]];
+      const stock = prods.map((x, i) => ({ _id: "p" + i, _ts: new Date(Date.now() - 40 * 864e5).toISOString(), s1: x[0], s2: x[1], s3: x[2], s4: x[3], s5: x[4] }));
+      const oc = [{ id: "o1", name: "Order ID", type: "text" }, { id: "o2", name: "Name", type: "text" }, { id: "o3", name: "Phone", type: "phone" }, { id: "o4", name: "Address", type: "longtext" }, { id: "o5", name: "Items", type: "longtext" }, { id: "o6", name: "Total", type: "money" },
+        { id: "o7", name: "Status", type: "choice", options: ["New", "Confirmed", "Packed", "Shipped", "Delivered", "Cancelled"] }, { id: "o8", name: "Came from", type: "text" }];
+      const orders = [["BB-7K2Q", "Isha Rawat", "2 × Cold brew bottle — ₹440", 440, "Delivered", "instagram · mobile"], ["BB-8P1D", "Kabir Negi", "1 × Coffee beans 250g — ₹650", 650, "Shipped", "google · mobile"], ["BB-9T4M", "Meera Joshi", "1 × Mug · Large — ₹450\n1 × Sourdough loaf — ₹180", 630, "New", "whatsapp · mobile"]]
+        .map((x, i) => ({ _id: "o" + i, _ts: new Date(Date.now() - (3 - i) * 7 * 36e5).toISOString(), o1: x[0], o2: x[1], o3: "+91 98" + (21000000 + i * 4417), o4: "Rajpur Road, Dehradun 248001", o5: x[2], o6: x[3], o7: x[4], o8: x[5] }));
+      return { rev: "1", tables: [{ id: "t2", name: "Orders", cols: oc, rows: orders }, { id: "t3", name: "Stock", cols: sc, rows: stock }, { id: "t1", name: "Customers", cols: cols, rows: rows }] };
+    }
+    let lastSim = Date.now();
+    function simulateOrder(d) {                       // the demo shows a website order arriving now and then
+      const o = d.tables.find(t => t.name === "Orders"), st = d.tables.find(t => t.name === "Stock");
+      if (!o || !st || !st.rows.length) return false;
+      const p = st.rows[Math.floor(Math.random() * st.rows.length)], q = 1 + (Math.random() < .3 ? 1 : 0);
+      const who = ["Aditi Bhatt", "Nikhil Rawat", "Sara Khan", "Vivek Joshi", "Pooja Negi"][Math.floor(Math.random() * 5)];
+      const r = { _id: rid(), _ts: new Date().toISOString() };
+      o.cols.forEach(c => r[c.id] = "");
+      const set = (n, v) => { const c = o.cols.find(c => c.name === n); if (c) r[c.id] = v; };
+      set("Order ID", "BB-" + Math.random().toString(36).slice(2, 6).toUpperCase()); set("Name", who); set("Phone", "+91 97" + Math.floor(10000000 + Math.random() * 89999999));
+      set("Address", "Sahastradhara Road, Dehradun 248013"); set("Items", q + " × " + p.s1 + (p.s2 ? " · " + p.s2 : "") + " — ₹" + (q * p.s5).toLocaleString("en-IN")); set("Total", q * p.s5); set("Status", "New"); set("Came from", "instagram · mobile");
+      o.rows.push(r); p.s3 = (+p.s3 || 0) - q; d.rev = String(Date.now()); return true;
     }
     return async function (action, x) {
       await new Promise(r => setTimeout(r, 220));
       const d = load(), find = id => { const t = d.tables.find(t => t.id === id); if (!t) throw new Error("That table no longer exists"); return t; };
       const shape = t => ({ id: t.id, name: t.name, cols: t.cols, count: t.rows.length });
+      if (action === "db_rev") { if (Date.now() - lastSim > 25000) { lastSim = Date.now(); if (simulateOrder(d)) save(d); } return { ok: true, rev: d.rev || "1" }; }
+      if (action !== "db_get") d.rev = String(Date.now());
       if (action === "db_get") { const t = d.tables.find(t => t.id === x.tableId) || d.tables[0]; return { ok: true, tables: d.tables.map(shape), tableId: t ? t.id : "", rows: t ? t.rows : [] }; }
       if (action === "db_save_table") {
         const cols = x.table.cols.map(c => Object.assign({}, c, { id: c.id || rid(), options: c.type === "choice" ? String(Array.isArray(c.options) ? c.options.join(",") : c.options || "").split(",").map(s => s.trim()).filter(Boolean) : undefined }));
@@ -147,7 +182,7 @@
   function mount(o) {
     const root = o.root, toast = o.toast || (m => alert(m));
     const call = o.demo ? (() => { const be = demoBackend(); return (a, x) => be(a, x || {}); })() : o.call;
-    const S = { tables: [], tableId: "", rows: [], q: "", sort: null, sel: new Set(), shown: PAGE, sheetUrl: "", loading: true };
+    const S = { tables: [], tableId: "", rows: [], q: "", sort: null, sel: new Set(), shown: PAGE, sheetUrl: "", loading: true, rev: "", fresh: new Set(), unseen: {}, onlyLow: false };
     if (!document.getElementById("db-css")) { const st = document.createElement("style"); st.id = "db-css"; st.textContent = CSS; document.head.appendChild(st); }
 
     const table = () => S.tables.find(t => t.id === S.tableId);
@@ -159,7 +194,13 @@
       if (c.type === "yesno") return v ? "Yes" : "No";
       return String(v);
     };
-    function cellHtml(c, v) {
+    const stockCol = t => t && t.cols.find(c => c.type === "number" && /stock|qty|quantity|available|in hand/i.test(c.name));
+    const reorderCol = t => t && t.cols.find(c => c.type === "number" && /reorder|low|minimum|min\b|alert/i.test(c.name));
+    const statusCol = t => t && t.cols.find(c => c.type === "choice" && /^(status|stage|state|order status)$/i.test(c.name));
+    function stockLevel(t, r) { const sc = stockCol(t); if (!sc) return ""; const v = r[sc.id]; if (v === "" || v == null) return ""; const rc = reorderCol(t), lim = rc && r[rc.id] !== "" ? +r[rc.id] : 3; return v <= 0 ? "out" : v <= lim ? "low" : "ok"; }
+    function cellHtml(c, v, t, r) {
+      if (t && c === stockCol(t)) { const lv = stockLevel(t, r); return '<span class="db-stock db-' + lv + '"><button type="button" data-stop data-adj="-1" aria-label="One less">−</button><b>' + (v === "" || v == null ? "—" : Number(v).toLocaleString("en-IN")) + '</b><button type="button" data-stop data-adj="1" aria-label="One more">+</button></span>'; }
+      if (t && c === statusCol(t)) return '<select class="db-st" data-stop data-status data-v="' + esc(String(v || "").toLowerCase()) + '" aria-label="' + esc(c.name) + '"><option value="">—</option>' + (c.options || []).map(x => "<option" + (x === v ? " selected" : "") + ">" + esc(x) + "</option>").join("") + "</select>";
       if (c.type === "yesno") return v ? '<span class="db-yes">Yes</span>' : '<span class="db-no">No</span>';
       if (v === "" || v == null) return '<span class="db-no">—</span>';
       if (c.type === "choice") return '<span class="db-pill">' + esc(v) + "</span>";
@@ -169,19 +210,57 @@
       return esc(cellText(c, v));
     }
 
-    async function load(tableId, quiet) {
+    async function load(tableId, quiet, live) {
       if (!quiet) { S.loading = true; draw(); }
       try {
+        const before = new Set(S.rows.map(r => r._id)), counts = {}; S.tables.forEach(t => counts[t.id] = t.count);
         const j = await call("db_get", { tableId: tableId || S.tableId || undefined });
         S.tables = j.tables || []; S.tableId = j.tableId || ""; S.rows = j.rows || []; S.sheetUrl = j.sheetUrl || "";
-        S.sel.clear(); S.shown = PAGE; if (tableId !== undefined) { S.q = ""; S.sort = null; }
-      } catch (x) { toast(x.message); }
-      S.loading = false; draw();
+        if (live) {                                  // what changed since the last look
+          const added = S.rows.filter(r => !before.has(r._id));
+          added.forEach(r => S.fresh.add(r._id));
+          setTimeout(() => { added.forEach(r => S.fresh.delete(r._id)); }, 3500);
+          S.tables.forEach(t => { if (t.id !== S.tableId && counts[t.id] !== undefined && t.count > counts[t.id]) S.unseen[t.id] = (S.unseen[t.id] || 0) + t.count - counts[t.id]; });
+          const t = table(), other = S.tables.filter(x => S.unseen[x.id] && counts[x.id] !== undefined && x.count > counts[x.id]);
+          if (added.length) toast(added.length === 1 ? "New " + singular(t.name).toLowerCase() + " just came in" : added.length + " new " + t.name.toLowerCase() + " just came in");
+          else if (other.length) toast("New in " + other.map(x => x.name).join(", "));
+          [...S.sel].forEach(id => { if (!S.rows.some(r => r._id === id)) S.sel.delete(id); });
+        } else { S.sel.clear(); S.shown = PAGE; if (tableId !== undefined) { S.q = ""; S.sort = null; S.onlyLow = false; } }
+        delete S.unseen[S.tableId];
+      } catch (x) { if (!live) toast(x.message); }
+      S.loading = false;
+      if (live) { const q = root.querySelector("#dbq"), had = q && document.activeElement === q, pos = had ? q.selectionStart : 0, sc = root.querySelector(".db-scroll"), top = sc ? sc.scrollTop : 0;
+        draw(); const sc2 = root.querySelector(".db-scroll"); if (sc2) sc2.scrollTop = top; if (had) { const n = root.querySelector("#dbq"); if (n) { n.focus(); n.setSelectionRange(pos, pos); } } }
+      else draw();
     }
+    /* live: a cheap revision check every few seconds; the table reloads only when something changed */
+    let near = true, polling = false;
+    if ("IntersectionObserver" in window) new IntersectionObserver(es => { near = es.some(e => e.isIntersecting); }, { rootMargin: "1200px 0px" }).observe(root);
+    async function poll() {
+      if (polling || document.hidden || !near || document.getElementById("dbModal") || !S.tables.length && S.loading) return;
+      polling = true;
+      try { const j = await call("db_rev", {}); if (S.rev && j.rev !== S.rev) await load(S.tableId, true, true); S.rev = j.rev; } catch (e) {}
+      polling = false;
+    }
+    const timer = setInterval(poll, o.demo ? 6000 : 8000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
 
+    function summary(t) {
+      const sc = stockCol(t); if (!sc || !S.rows.length) return "";
+      let low = 0, out = 0, units = 0; S.rows.forEach(r => { const lv = stockLevel(t, r); if (lv === "low") low++; if (lv === "out") out++; units += Math.max(0, +r[sc.id] || 0); });
+      return '<div class="db-sum"><button type="button" class="' + (S.onlyLow ? "" : "on") + '" data-low="0"><b>' + S.rows.length + "</b> items · <b>" + units.toLocaleString("en-IN") + "</b> pieces</button>" +
+        '<button type="button" class="warn' + (S.onlyLow ? " on" : "") + '" data-low="1"><b>' + low + "</b> running low · <b style=\"color:var(--rose)\">" + out + "</b> out of stock</button></div>";
+    }
+    function moneyTotal(t, rows) {
+      const m = t.cols.find(c => c.type === "money" && /total|amount/i.test(c.name)) || (t.cols.filter(c => c.type === "money").length === 1 ? t.cols.find(c => c.type === "money") : null);
+      if (!m || stockCol(t)) return "";
+      const st = statusCol(t), sum = rows.reduce((s, r) => s + (st && /cancel/i.test(r[st.id] || "") ? 0 : (+r[m.id] || 0)), 0);
+      return sum ? '<span style="margin-left:14px">' + esc(m.name) + ': <b style="color:var(--ink)">' + inr(sum) + "</b></span>" : "";
+    }
     function visibleRows() {
       const t = table(); if (!t) return [];
       let rows = S.rows;
+      if (S.onlyLow && stockCol(t)) rows = rows.filter(r => { const lv = stockLevel(t, r); return lv === "low" || lv === "out"; });
       const q = S.q.trim().toLowerCase();
       if (q) rows = rows.filter(r => t.cols.some(c => String(cellText(c, r[c.id])).toLowerCase().includes(q)));
       if (S.sort) {
@@ -203,8 +282,8 @@
       const t = table(), rows = visibleRows(), page = rows.slice(0, S.shown);
       const num = c => c.type === "number" || c.type === "money";
       root.innerHTML = '<div class="db-shell">' +
-        '<div class="db-tabs" role="tablist">' + S.tables.map(x => '<button class="db-tab' + (x.id === S.tableId ? " on" : "") + '" data-t="' + esc(x.id) + '" role="tab">' + esc(x.name) + " <small>" + (x.id === S.tableId ? S.rows.length : x.count) + "</small></button>").join("") +
-          '<button class="db-tab new" data-newtable>' + svg("plus", 15) + "New table</button></div>" +
+        '<div class="db-tabs" role="tablist">' + S.tables.map(x => '<button class="db-tab' + (x.id === S.tableId ? " on" : "") + '" data-t="' + esc(x.id) + '" role="tab">' + esc(x.name) + " <small>" + (x.id === S.tableId ? S.rows.length : x.count) + "</small>" + (S.unseen[x.id] ? '<span class="dot" title="New rows"></span>' : "") + "</button>").join("") +
+          '<button class="db-tab new" data-newtable>' + svg("plus", 15) + "New table</button></div>" + summary(t) +
         (S.sel.size ? '<div class="db-sel">' + S.sel.size + " selected<span class=\"sp\"></span><button class=\"btn ghost sm db-danger\" data-delsel>" + svg("trash", 15) + "Delete</button><button class=\"btn ghost sm\" data-clearsel>Cancel</button></div>" :
         '<div class="db-bar"><label class="db-search">' + svg("search") + '<input type="search" id="dbq" placeholder="Search ' + esc(t.name.toLowerCase()) + '…" value="' + esc(S.q) + '" aria-label="Search"></label>' +
           '<button class="btn sm" data-addrow>' + svg("plus", 15) + "Add " + esc(singular(t.name)) + "</button>" +
@@ -215,11 +294,11 @@
         '<div class="card db-card">' + (S.rows.length ?
           '<div class="db-scroll"><table class="db-table"><thead><tr><th class="ck db-ck"><input type="checkbox" data-all aria-label="Select all"' + (page.length && page.every(r => S.sel.has(r._id)) ? " checked" : "") + "></th>" +
             t.cols.map(c => '<th data-sort="' + esc(c.id) + '" class="' + (num(c) ? "num" : "") + '">' + esc(c.name) + (S.sort && S.sort.id === c.id ? '<span class="ar">' + (S.sort.dir > 0 ? "↑" : "↓") + "</span>" : "") + "</th>").join("") + "</tr></thead><tbody>" +
-            (page.length ? page.map(r => '<tr data-r="' + esc(r._id) + '" class="' + (S.sel.has(r._id) ? "sel" : "") + '"><td class="ck db-ck"><input type="checkbox" data-pick' + (S.sel.has(r._id) ? " checked" : "") + ' aria-label="Select row"></td>' +
-              t.cols.map(c => '<td class="' + (num(c) ? "num" : "") + '" title="' + esc(cellText(c, r[c.id])) + '">' + cellHtml(c, r[c.id]) + "</td>").join("") + "</tr>").join("")
+            (page.length ? page.map(r => '<tr data-r="' + esc(r._id) + '" class="' + (S.sel.has(r._id) ? "sel" : "") + (S.fresh.has(r._id) ? " fresh" : "") + '"><td class="ck db-ck"><input type="checkbox" data-pick' + (S.sel.has(r._id) ? " checked" : "") + ' aria-label="Select row"></td>' +
+              t.cols.map(c => '<td class="' + (num(c) ? "num" : "") + '" title="' + esc(cellText(c, r[c.id])) + '">' + cellHtml(c, r[c.id], t, r) + "</td>").join("") + "</tr>").join("")
               : '<tr><td colspan="' + (t.cols.length + 1) + '" class="muted" style="text-align:center;padding:36px">Nothing matches “' + esc(S.q) + "”.</td></tr>") +
           "</tbody></table></div>" +
-          '<div class="db-foot"><span>' + (S.q ? rows.length + " of " + S.rows.length : S.rows.length) + " " + (S.rows.length === 1 ? "row" : "rows") + "</span><span class=\"sp\"></span>" +
+          '<div class="db-foot"><span>' + (S.q || S.onlyLow ? rows.length + " of " + S.rows.length : S.rows.length) + " " + (S.rows.length === 1 ? "row" : "rows") + "</span>" + moneyTotal(t, rows) + '<span class="sp"></span><span class="db-live" title="New rows from your website appear here by themselves"><i></i>Live</span>' +
             (rows.length > S.shown ? '<button class="btn ghost sm" data-more>Show ' + Math.min(PAGE, rows.length - S.shown) + " more</button>" : "") + "</div>"
           : '<div class="db-none"><b>No ' + esc(t.name.toLowerCase()) + " yet.</b>Add your first one — it's saved straight away.<div style=\"margin-top:16px\"><button class=\"btn\" data-addrow>" + svg("plus", 15) + "Add " + esc(singular(t.name)) + "</button></div></div>") +
         "</div></div>";
@@ -238,7 +317,8 @@
       });
     }
 
-    function singular(n) { n = String(n || "row").trim(); const l = n.toLowerCase(); return l.endsWith("ies") ? n.slice(0, -3) + "y" : /(ss|us)$/.test(l) ? n : l.endsWith("s") ? n.slice(0, -1) : n; }
+    function singular(n) { if (stockCol(table()) && /^(stock|inventory|products?)$/i.test(String(n || "").trim())) return "item"; return singular0(n); }
+    function singular0(n) { n = String(n || "row").trim(); const l = n.toLowerCase(); return l.endsWith("ies") ? n.slice(0, -3) + "y" : /(ss|us)$/.test(l) ? n : l.endsWith("s") ? n.slice(0, -1) : n; }
 
     function wire() {
       const $ = s => root.querySelector(s), $$ = s => root.querySelectorAll(s);
@@ -259,6 +339,9 @@
         if (S.sel.size) { S.sel.has(id) ? S.sel.delete(id) : S.sel.add(id); return draw(); }
         editRow(S.rows.find(r => r._id === id));
       });
+      $$("[data-low]").forEach(b => b.onclick = () => { S.onlyLow = b.dataset.low === "1"; S.shown = PAGE; draw(); });
+      $$("[data-adj]").forEach(b => b.onclick = e => { e.stopPropagation(); const tr = b.closest("tr"); quickSave(tr.dataset.r, row => { const sc = stockCol(table()); row[sc.id] = Math.max(-999, (+row[sc.id] || 0) + (+b.dataset.adj)); }); });
+      $$("[data-status]").forEach(sel => { sel.onclick = e => e.stopPropagation(); sel.onchange = () => { const tr = sel.closest("tr"); sel.dataset.v = sel.value.toLowerCase(); quickSave(tr.dataset.r, row => { row[statusCol(table()).id] = sel.value; }, "Marked " + (sel.value || "blank")); }; });
       const ds = $("[data-delsel]"); if (ds) ds.onclick = delSelected;
       const cl = $("[data-clearsel]"); if (cl) cl.onclick = () => { S.sel.clear(); draw(); };
     }
@@ -332,6 +415,18 @@
         });
     }
 
+    /* one-tap changes (stock −/+, order status): update on screen at once, save in the background */
+    const pending = {};
+    function quickSave(id, change, msg) {
+      const t = table(), row = S.rows.find(r => r._id === id); if (!row) return;
+      change(row); draw();
+      clearTimeout(pending[id]);
+      pending[id] = setTimeout(async () => {
+        const out = { _id: id }; t.cols.forEach(c => out[c.id] = row[c.id]);
+        try { const j = await call("db_save_row", { tableId: t.id, row: out }); Object.assign(row, j.row); S.rev = ""; if (msg) toast(msg); }
+        catch (x) { toast(x.message); load(t.id, true); }
+      }, 450);                                         // several taps in a row become one save
+    }
     async function delSelected() {
       const t = table(), ids = [...S.sel];
       if (!confirm("Delete " + ids.length + " " + (ids.length === 1 ? "row" : "rows") + " from " + t.name + "? This can't be undone.")) return;
@@ -415,8 +510,8 @@
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     }
 
-    load("");
-    return { reload: () => load(S.tableId, true) };
+    load("").then(() => call("db_rev", {}).then(j => { S.rev = j.rev; }).catch(() => {}));
+    return { reload: () => load(S.tableId, true), stop: () => clearInterval(timer) };
   }
 
   window.NoworaDB = { mount: mount };
