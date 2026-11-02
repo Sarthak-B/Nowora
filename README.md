@@ -57,6 +57,11 @@ The repo is public, so nothing private lives in it:
 
 After editing Code.gs later, use **Deploy → Manage deployments → Edit → New version** so the URL stays the same.
 
+**How the data is laid out**
+- **Your studio sheet** holds only your own data, one readable tab each: Read me, Enquiries, Clients, Change requests, Outreach, Outreach messages, Showcase, Website visits, Automation log. Times show in India time; events are written in words ("Tapped WhatsApp").
+- **"NOWORA — Client sites"** is a separate spreadsheet (made automatically, saved next to your studio sheet). It has an **All clients** summary tab with live 30-day numbers, and one tab per client with their full log: visits, taps, enquiries, change requests, website edits, and downtime. A removed client's tab is kept and renamed "… (removed)".
+- Upgrading an existing sheet: paste the new Code.gs, redeploy, then select **tidyUp** in the Apps Script toolbar and press **Run** once. It is safe to run again any time.
+
 ### 2. WhatsApp alerts (CallMeBot)
 
 Follow the WhatsApp API steps on callmebot.com to get a free API key for your own number. Then run `testAlerts` in Apps Script.

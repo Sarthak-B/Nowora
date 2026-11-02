@@ -29,8 +29,53 @@ const SHEETS = {
   Portfolio:  ['id','ts','title','niche','type','url','image','description','visible','order','tag','embed','shot','theme','repo'],
   Pitches:    ['id','ts','prospectId','channel','template','message'],
   Automation: ['ts','workflow','status','summary','details'],
-  Requests:   ['id','ts','clientId','business','type','message','status','reply','updated','attachment'],
-  ClientEvents: ['ts','cid','vid','sid','type','label','ref','device','path']
+  Requests:   ['id','ts','clientId','business','type','message','status','reply','updated','attachment']
+};
+// Each client's log lives in its own tab of a separate spreadsheet ("NOWORA — Client sites").
+const CLIENT_LOG = ['ts','type','label','ref','device','path','vid','sid'];
+const LEGACY_CLIENT_EVENTS = ['ts','cid','vid','sid','type','label','ref','device','path'];   // old single tab, moved by tidyUp()
+
+/* ---------- how the spreadsheet looks: tab names, column headings, widths ---------- */
+const TAB_TITLE = { Leads: 'Enquiries', Clients: 'Clients', Requests: 'Change requests', Prospects: 'Outreach', Pitches: 'Outreach messages',
+  Portfolio: 'Showcase', Events: 'Website visits', Automation: 'Automation log' };
+const TAB_ORDER = ['Leads', 'Clients', 'Requests', 'Prospects', 'Pitches', 'Portfolio', 'Events', 'Automation'];
+const TAB_COLOR = { Leads: '#F2A33A', Clients: '#1D4A3D', Requests: '#5E8C7C', Prospects: '#C9D7CF', Pitches: '#C9D7CF', Portfolio: '#9DB8AC', Events: '#E1EEF5', Automation: '#D9D9D9' };
+const TAB_ABOUT = {
+  Leads: 'Every enquiry sent from the form on your website. Change Status as you follow up.',
+  Clients: 'Your clients: their website, plan, payments, care plan, dashboard link and PIN, and whether they can edit their site.',
+  Requests: 'Changes your clients asked for from their dashboard, with your reply (they see it).',
+  Prospects: 'Businesses you are reaching out to, with follow-up dates and website check results.',
+  Pitches: 'Each outreach message you sent from the dashboard.',
+  Portfolio: 'The websites shown in the showcase on your website.',
+  Events: 'Visits and taps on your own website (nowora.vercel.app), newest at the bottom.',
+  Automation: 'Every automatic job: uptime checks, website checks, preview captures, weekly review, client edits.'
+};
+// [heading, width in pixels] in the same order as SHEETS[name]
+const HEAD = {
+  Events: [['Time',150],['Visitor ID',110],['Visit ID',110],['What happened',170],['Detail',220],['Came from',120],['Device',90],['Campaign',110]],
+  Leads: [['ID',100],['Received',150],['Name',150],['Business',180],['Type of business',160],['Plan wanted',120],['Phone',130],['Email',200],['Reply by',100],['Message',320],['Status',120],['My notes',240],['Came from',110],['Last updated',150]],
+  Prospects: [['ID',100],['Added',150],['Contact',150],['Business',180],['Type of business',150],['Phone',130],['Their website',200],['Google Maps link',160],['Status',120],['Problem spotted',220],['Last contacted',120],['Follow up on',120],['Site score',90],['Site issues found',260],['Phone screenshot',160],['Website check queued',150],['My notes',240]],
+  Clients: [['ID',100],['Business',170],['Contact',150],['WhatsApp',130],['Email',190],['Website',210],['Plan',100],['Project price (₹)',130],['Delivered on',120],['Care plan',90],['Care fee / month (₹)',150],['Next renewal',120],['Status',100],['Site is',80],['Load time (ms)',110],['Last checked',150],['Onboarding steps done',160],['Notes',240],['Dashboard link name',160],['Dashboard PIN',110],['Visitor tracking ID',140],['First 50% paid',120],['Second 50% paid',130],['GitHub repo',170],['Website editing',130]],
+  Portfolio: [['ID',100],['Added',150],['Title',170],['Niche',150],['Kind',90],['Website',220],['Preview image',200],['Description',320],['Show on site',100],['Order',70],['Showcase filter',140],['Can show live',110],['Preview capture',120],['Theme',90],['GitHub repo',170]],
+  Pitches: [['ID',100],['Sent',150],['Prospect ID',110],['Sent via',100],['Template',140],['Message',420]],
+  Automation: [['Time',150],['Job',120],['Result',90],['Summary',360],['Details',420]],
+  Requests: [['ID',100],['Received',150],['Client ID',110],['Client',170],['Kind of change',170],['Message',360],['Status',110],['My reply',300],['Last updated',150],['Photo',200]],
+  _client: [['Time',150],['What happened',200],['Detail',260],['Came from',130],['Device',90],['Page',140],['Visitor ID',110],['Visit ID',110]]
+};
+const TECH_COLS = ['id','vid','sid','clientId','prospectId','trackId','checklist','portalKey'];   // shown in grey
+const TIME_COLS = { Events: ['ts'], Leads: ['ts','updated'], Prospects: ['ts'], Clients: ['lastCheck'], Portfolio: ['ts'], Pitches: ['ts'], Automation: ['ts'], Requests: ['ts','updated'], _client: ['ts'] };
+const TIME_FORMAT = 'd mmm yyyy, h:mm am/pm';
+// Plain-English words for event codes in the sheet; the code still reads both.
+const EVENT_WORDS = { pageview: 'Visited the site', section_view: 'Scrolled to', cta_whatsapp: 'Tapped WhatsApp', cta_email: 'Tapped email', cta_call: 'Tapped call',
+  package_click: 'Tapped a plan', lead_submit: 'Sent an enquiry', work_click: 'Opened a showcase site', faq_open: 'Read a question',
+  request: 'Sent a change request', publish: 'Published website changes', restore: 'Restored an older version', site_down: 'Website went down', site_up: 'Website back online' };
+const EVENT_CODE = Object.keys(EVENT_WORDS).reduce((o, k) => (o[EVENT_WORDS[k]] = k, o), {});
+const CHOICES = {
+  Leads: { status: ['new','contacted','call_booked','proposal','won','lost'], channel: ['whatsapp','email'] },
+  Prospects: { status: ['new','audited','messaged','followed_up','replied','call_booked','proposal','won','lost'] },
+  Clients: { status: ['onboarding','building','live','paused'], carePlan: ['yes','no'], editAccess: ['auto','on','off'], advancePaid: ['yes',''], balancePaid: ['yes',''], package: ['Starter','Business','Growth','Custom'] },
+  Requests: { status: ['new','progress','done'] },
+  Portfolio: { visible: ['TRUE','FALSE'], type: ['concept','client'] }
 };
 const EDITABLE = ['Leads','Prospects','Clients','Portfolio','Pitches','Requests'];
 const EVENT_TYPES = ['pageview','section_view','cta_whatsapp','cta_email','package_click','lead_submit','work_click','faq_open'];
@@ -41,16 +86,7 @@ const TZ = 'Asia/Kolkata';
 
 function setup() {
   const ss = SpreadsheetApp.getActive();
-  Object.keys(SHEETS).forEach(name => {
-    let sh = ss.getSheetByName(name);
-    if (!sh) sh = ss.insertSheet(name);
-    const headers = SHEETS[name];
-    sh.getRange('A:Z').setNumberFormat('@');           // keep everything as text (no auto date conversion)
-    sh.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold');
-    sh.setFrozenRows(1);
-  });
-  const blank = ss.getSheetByName('Sheet1');
-  if (blank && blank.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(blank);
+  Object.keys(SHEETS).forEach(name => sheet_(name));
 
   const p = PropertiesService.getScriptProperties();
   if (!p.getProperty('ADMIN_KEY')) p.setProperty('ADMIN_KEY', randomKey_(24));
@@ -67,6 +103,7 @@ function setup() {
   ScriptApp.newTrigger('weeklyReport').timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(19).inTimezone(TZ).create();
   ScriptApp.newTrigger('quickCheck').timeBased().everyMinutes(5).create();
 
+  tidyUp();
   showKeys();
 }
 
@@ -75,6 +112,7 @@ function showKeys() {
   Logger.log('ADMIN_KEY (dashboard login):         ' + p.ADMIN_KEY);
   Logger.log('AUTOMATION_KEY (GitHub secret):      ' + p.AUTOMATION_KEY);
   Logger.log('NOTIFY_EMAIL:                        ' + (p.NOTIFY_EMAIL || '(not set)'));
+  Logger.log('Client sites spreadsheet:            ' + (p.CLIENT_DB_ID ? 'https://docs.google.com/spreadsheets/d/' + p.CLIENT_DB_ID : '(made when you run tidyUp)'));
   Logger.log('WhatsApp alerts (CallMeBot):         ' + (p.CALLMEBOT_PHONE && p.CALLMEBOT_APIKEY ? 'on' : 'off — set CALLMEBOT_PHONE and CALLMEBOT_APIKEY'));
 }
 
@@ -137,6 +175,7 @@ function doPost(e) {
 
 function track_(ev) {
   if (!ev || EVENT_TYPES.indexOf(ev.type) < 0) return { ok: false, error: 'Unknown event' };
+  if (String(ev.ref || '') === 'setup-test') return { ok: true, skipped: true };
   if (ev.bot === true || ev.framed === true) return { ok: true, skipped: true };
   const row = {};
   SHEETS.Events.forEach(k => row[k] = clip_(ev[k], 120));
@@ -190,17 +229,19 @@ function upsert_(sheet, row) {
   if (!row || !row.id) throw new Error('Row needs an id');
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
-    if (sheet === 'Clients') CacheService.getScriptCache().remove('track_ids');
+    if (sheet === 'Clients') CacheService.getScriptCache().remove('track_map');
     const sh = sheet_(sheet), headers = SHEETS[sheet];
     const ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])) : [];
     const i = ids.indexOf(String(row.id));
     if (i >= 0) {
-      const current = rowToObj_(headers, sh.getRange(i + 2, 1, 1, headers.length).getDisplayValues()[0]);
+      const current = rowToObj_(headers, sh.getRange(i + 2, 1, 1, headers.length).getValues()[0], sheet);
       const merged = Object.assign(current, row);
-      sh.getRange(i + 2, 1, 1, headers.length).setValues([headers.map(h => cell_(merged[h]))]);
+      sh.getRange(i + 2, 1, 1, headers.length).setValues([rowCells_(sheet, merged)]);
+      if (sheet === 'Clients' && row.business !== undefined) afterClientChange_(merged);
       return merged;
     }
     append_(sheet, row);
+    if (sheet === 'Clients') afterClientChange_(row);
     return row;
   } finally { lock.releaseLock(); }
 }
@@ -213,7 +254,10 @@ function remove_(sheet, id) {
     if (sh.getLastRow() < 2) return;
     const ids = sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0]));
     const i = ids.indexOf(String(id));
-    if (i >= 0) sh.deleteRow(i + 2);
+    if (i >= 0) {
+      if (sheet === 'Clients') { const gone = rowToObj_(SHEETS.Clients, sh.getRange(i + 2, 1, 1, SHEETS.Clients.length).getValues()[0], 'Clients'); try { retireClientTab_(gone); } catch (e) { console.error(e); } CacheService.getScriptCache().remove('track_map'); }
+      sh.deleteRow(i + 2);
+    }
   } finally { lock.releaseLock(); }
 }
 
@@ -256,8 +300,8 @@ function automationReport_(body) {
   (body.clients || []).forEach(r => {
     const before = readAll_('Clients').find(c => c.id === r.id);
     if (!before) return;
-    if (r.uptime === 'down' && before.uptime !== 'down') wentDown.push(before.business + ' — ' + before.site + (r.error ? ' (' + r.error + ')' : ''));
-    if (r.uptime === 'up' && before.uptime === 'down') cameBack.push(before.business);
+    if (r.uptime === 'down' && before.uptime !== 'down') { wentDown.push(before.business + ' — ' + before.site + (r.error ? ' (' + r.error + ')' : '')); clientLog_(before, { ts: now, type: 'site_down', label: r.error || '', ref: 'browser check' }); }
+    if (r.uptime === 'up' && before.uptime === 'down') { cameBack.push(before.business); clientLog_(before, { ts: now, type: 'site_up', label: (r.responseMs || '') + ' ms', ref: 'browser check' }); }
     upsert_('Clients', { id: r.id, uptime: r.uptime, responseMs: r.responseMs, lastCheck: now });
   });
 
@@ -354,7 +398,9 @@ function portal_(c, sinceSec) {
 function clientEvents_(c) {
   if (c._ev) return c._ev;
   const since = Date.now() - 180 * 864e5;
-  c._ev = c.trackId ? readAll_('ClientEvents').filter(e => e.cid === c.trackId && new Date(e.ts).getTime() > since && !junkClientEvent_(e)) : [];
+  const own = readClientLog_(c).map(e => Object.assign(e, { cid: c.trackId }));
+  const legacy = c.trackId ? readLegacyClientEvents_().filter(e => e.cid === c.trackId) : [];      // until tidyUp() moves them
+  c._ev = c.trackId ? legacy.concat(own).filter(e => CLIENT_EVENTS.indexOf(e.type) >= 0 && new Date(e.ts).getTime() > since && !junkClientEvent_(e)) : [];
   return c._ev;
 }
 
@@ -379,6 +425,7 @@ function portalRequest_(c, r) {
   }
   const row = { id: randomKey_(12), ts: new Date().toISOString(), clientId: c.id, business: c.business, type: clip_(r.type || 'Change', 40), message: clip_(r.message, 2000), status: 'new', reply: '', updated: '', attachment: attachment };
   append_('Requests', row);
+  clientLog_(c, { ts: row.ts, type: 'request', label: clip_(row.type + ': ' + row.message, 200), ref: c._owner ? 'NOWORA' : 'client dashboard' });
   notify_('Request from ' + c.business, '📝 New request from ' + c.business + ' (' + row.type + ')\n\n' + row.message + (attachment ? '\n\nPhoto: ' + attachment : '') + '\n\nOpen your dashboard → Requests to reply.');
   return { ok: true, request: row };
 }
@@ -393,13 +440,14 @@ function clientTrack_(ev) {
   if (!ev || CLIENT_EVENTS.indexOf(ev.type) < 0) return { ok: false, error: 'Unknown event' };
   if (junkClientEvent_(ev)) return { ok: true, skipped: true };
   const cache = CacheService.getScriptCache();
-  let ids = cache.get('track_ids');
-  if (!ids) { ids = JSON.stringify(readAll_('Clients').map(c => c.trackId).filter(Boolean)); cache.put('track_ids', ids, 300); }
-  if (JSON.parse(ids).indexOf(String(ev.cid)) < 0) return { ok: false, error: 'Unknown site' };
+  let map = cache.get('track_map');
+  if (!map) { const m = {}; readAll_('Clients').forEach(c => { if (c.trackId) m[c.trackId] = { id: c.id, business: c.business }; }); map = JSON.stringify(m); cache.put('track_map', map, 300); }
+  const c = JSON.parse(map)[String(ev.cid)];
+  if (!c) return { ok: false, error: 'Unknown site' };
   const row = {};
-  SHEETS.ClientEvents.forEach(k => row[k] = clip_(ev[k], k === 'path' ? 80 : 60));
+  CLIENT_LOG.forEach(k => row[k] = clip_(ev[k], k === 'path' ? 80 : 60));
   row.ts = new Date().toISOString();
-  append_('ClientEvents', row);
+  clientLog_(c, row);
   return { ok: true };
 }
 
@@ -494,6 +542,7 @@ function sitePublish_(c, body) {
   const res = gh_('put', '/repos/' + repo + '/contents/' + path.split('/').map(encodeURIComponent).join('/'),
     { message: clip_(body.message || ('Website edited by ' + who), 120) + ' (NOWORA editor)', content: textToB64_(html), sha: body.sha });
   append_('Automation', { ts: new Date().toISOString(), workflow: 'editor', status: 'success', summary: c.business + ' published website changes', details: clip_(body.message, 300) });
+  clientLog_(c, { ts: new Date().toISOString(), type: 'publish', label: clip_(body.message || 'Website edited', 200), ref: who, path: path });
   if (!c._owner) notify_('Website published: ' + c.business, '✏️ ' + c.business + ' published changes from their dashboard editor.\n\n' + (body.message || '') + '\n\nCommit: ' + res.commit.html_url + '\nLive site: ' + (c.site || ''));
   return { ok: true, sha: res.content.sha, commit: res.commit.sha, url: res.commit.html_url };
 }
@@ -511,6 +560,7 @@ function siteRestore_(c, sha) {
   if (!old) return { ok: false, error: "That version couldn't be found" };
   const res = gh_('put', '/repos/' + s.repo + '/contents/' + s.file.path.split('/').map(encodeURIComponent).join('/'),
     { message: 'Restored an earlier version (' + String(sha).slice(0, 7) + ') by ' + (c.name || c.business) + ' (NOWORA editor)', content: textToB64_(old.text), sha: s.file.sha });
+  clientLog_(c, { ts: new Date().toISOString(), type: 'restore', label: 'Version ' + String(sha).slice(0, 7), ref: c._owner ? 'NOWORA' : (c.name || c.business) });
   notify_('Website restored: ' + c.business, '↩️ ' + c.business + ' restored an earlier version of their website.\nCommit: ' + res.commit.html_url);
   return { ok: true, sha: res.content.sha };
 }
@@ -736,8 +786,8 @@ function quickCheck() {
     let r = ping_(c.site);
     if (!r.up) { Utilities.sleep(10000); r = ping_(c.site); }   // one retry so a blip doesn't page you
     const state = r.up ? 'up' : 'down';
-    if (state === 'down' && c.uptime !== 'down') wentDown.push(c.business + ' — ' + c.site + ' (' + r.error + ')');
-    if (state === 'up' && c.uptime === 'down') cameBack.push(c.business);
+    if (state === 'down' && c.uptime !== 'down') { wentDown.push(c.business + ' — ' + c.site + ' (' + r.error + ')'); clientLog_(c, { ts: now, type: 'site_down', label: r.error, ref: '5-minute check' }); }
+    if (state === 'up' && c.uptime === 'down') { cameBack.push(c.business); clientLog_(c, { ts: now, type: 'site_up', label: r.ms + ' ms', ref: '5-minute check' }); }
     upsert_('Clients', { id: c.id, uptime: state, responseMs: r.ms, lastCheck: now });
   });
 
@@ -772,7 +822,7 @@ function weeklyReport() {
   const inWeek = r => new Date(r.ts).getTime() > weekAgo;
   const ev = readAll_('Events').filter(inWeek);
   const visitors = {}; ev.filter(e => e.type === 'pageview').forEach(e => visitors[e.vid] = 1);
-  const taps = ev.filter(e => /cta_|package_click/.test(e.type)).length;
+  const taps = ev.filter(e => /^cta_/.test(e.type)).length;
   const leads = readAll_('Leads').filter(inWeek);
   const pitches = readAll_('Pitches').filter(inWeek).length;
   const prospects = readAll_('Prospects');
@@ -798,6 +848,7 @@ function weeklyReport() {
     '3. Should prices go up?\n' +
     '4. What is one thing to stop doing next month?';
   notify_('Your weekly studio review', text);
+  try { refreshClientIndex_(); } catch (e) { console.error(e); }
   append_('Automation', { ts: new Date().toISOString(), workflow: 'weekly', status: 'success', summary: 'Weekly review sent · ' + leads.length + ' enquiries · ' + pitches + ' messages', details: '' });
 }
 
@@ -823,29 +874,261 @@ function requireAutomation_(body) {
 }
 function prop_(k) { return PropertiesService.getScriptProperties().getProperty(k) || ''; }
 
+/** True once tidyUp() has run: times are stored as real dates and events in plain words. */
+function tidy_() { if (tidy_.v === undefined) tidy_.v = prop_('SCHEMA') === '2'; return tidy_.v; }
+
 function sheet_(name) {
-  const ss = SpreadsheetApp.getActive();
-  let sh = ss.getSheetByName(name);
-  if (!sh && SHEETS[name]) {                                     // new tabs are created on first use
-    sh = ss.insertSheet(name);
-    sh.getRange('A:Z').setNumberFormat('@');
-    sh.getRange(1, 1, 1, SHEETS[name].length).setValues([SHEETS[name]]).setFontWeight('bold');
-    sh.setFrozenRows(1);
-  }
-  if (!sh) throw new Error('Missing sheet "' + name + '" — run setup() once');
-  const want = SHEETS[name];                                   // add any new columns automatically
-  if (want && sh.getLastColumn() < want.length) sh.getRange(1, 1, 1, want.length).setValues([want]).setFontWeight('bold');
+  const ss = SpreadsheetApp.getActive(), title = TAB_TITLE[name] || name;
+  let sh = ss.getSheetByName(title) || ss.getSheetByName(name);
+  if (sh && sh.getName() !== title) sh.setName(title);           // old short names are renamed to the readable ones
+  if (!sh && SHEETS[name]) { sh = ss.insertSheet(title); styleTab_(sh, name, SHEETS[name]); }
+  if (!sh) throw new Error('Missing sheet "' + title + '" — run setup() once');
+  const want = SHEETS[name];                                      // add any new columns automatically
+  if (want && sh.getLastColumn() < want.length) styleTab_(sh, name, want);
   return sh;
 }
 function readAll_(name) {
   const sh = sheet_(name), headers = SHEETS[name];
   if (sh.getLastRow() < 2) return [];
-  return sh.getRange(2, 1, sh.getLastRow() - 1, headers.length).getDisplayValues().map(r => rowToObj_(headers, r));
+  return sh.getRange(2, 1, sh.getLastRow() - 1, headers.length).getValues().map(r => rowToObj_(headers, r, name));
 }
 function append_(name, obj) {
-  sheet_(name).appendRow(SHEETS[name].map(h => cell_(obj[h])));
+  sheet_(name).appendRow(rowCells_(name, obj));
 }
-function rowToObj_(headers, row) { const o = {}; headers.forEach((h, i) => o[h] = row[i] === undefined ? '' : String(row[i])); return o; }
+/** A sheet row back into plain strings: times as ISO, dates as yyyy-MM-dd, event words as codes. */
+function rowToObj_(headers, row, name) {
+  const o = {}, times = TIME_COLS[name] || [];
+  headers.forEach((h, i) => {
+    let v = row[i];
+    if (v === undefined || v === null) v = '';
+    else if (v instanceof Date) v = isNaN(v) ? '' : (times.indexOf(h) >= 0 ? v.toISOString() : Utilities.formatDate(v, TZ, 'yyyy-MM-dd'));
+    else if (v === true || v === false) v = v ? 'TRUE' : 'FALSE';
+    else v = String(v);
+    if (h === 'type' && (name === 'Events' || name === '_client') && EVENT_CODE[v]) v = EVENT_CODE[v];
+    o[h] = v;
+  });
+  return o;
+}
+/** An object into the cells for one row of a tab. */
+function rowCells_(name, obj) {
+  const keys = name === '_client' ? CLIENT_LOG : SHEETS[name], times = TIME_COLS[name] || [];
+  return keys.map(k => {
+    const v = obj[k];
+    if (tidy_() && times.indexOf(k) >= 0 && v) { const d = v instanceof Date ? v : new Date(v); if (!isNaN(d)) return d; }
+    if (tidy_() && k === 'type' && (name === 'Events' || name === '_client') && EVENT_WORDS[v]) return EVENT_WORDS[v];
+    return cell_(v);
+  });
+}
+/** Headings, widths, colours, formats and drop-downs for one tab. Safe to run again. */
+function styleTab_(sh, name, keys) {
+  const head = HEAD[name] || keys.map(k => [k, 120]), n = keys.length, times = TIME_COLS[name] || [];
+  sh.getRange(1, 1, 1, n).setValues([head.map(h => h[0])])
+    .setFontWeight('bold').setFontColor('#FFFFFF').setBackground('#1D4A3D').setVerticalAlignment('middle').setWrap(true);
+  sh.setRowHeight(1, 34);
+  sh.setFrozenRows(1);
+  if (sh.getMaxColumns() > n) sh.deleteColumns(n + 1, sh.getMaxColumns() - n);
+  if (sh.getMaxColumns() < n) sh.insertColumnsAfter(sh.getMaxColumns(), n - sh.getMaxColumns());
+  const rows = Math.max(sh.getMaxRows() - 1, 1);
+  keys.forEach((k, i) => {
+    const col = sh.getRange(2, i + 1, rows, 1);
+    sh.setColumnWidth(i + 1, head[i] ? head[i][1] : 120);
+    col.setNumberFormat(times.indexOf(k) >= 0 ? TIME_FORMAT : '@');          // '@' = plain text, so PINs and phone numbers keep every digit
+    if (TECH_COLS.indexOf(k) >= 0) col.setFontColor('#8A9691'); else col.setFontColor('#14211D');
+    const ch = (CHOICES[name] || {})[k];
+    col.setDataValidation(ch ? SpreadsheetApp.newDataValidation().requireValueInList(ch, true).setAllowInvalid(true).build() : null);
+  });
+  sh.getRange(2, 1, rows, n).setWrap(false).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP).setVerticalAlignment('top').setFontSize(10);
+  sh.getBandings().forEach(b => b.remove());
+  sh.getRange(1, 1, sh.getMaxRows(), n).applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, true, false)
+    .setHeaderRowColor('#1D4A3D').setFirstRowColor('#FFFFFF').setSecondRowColor('#F4F6F2');
+  if (TAB_COLOR[name]) sh.setTabColor(TAB_COLOR[name]);
+  if (TAB_ABOUT[name]) sh.getRange(1, 1).setNote(TAB_ABOUT[name]);
+}
+
+/* ============================== client sites spreadsheet ============================== */
+// One spreadsheet, one tab per client, plus an "All clients" summary tab. Each tab is found by its
+// client ID (stored on the tab), so renaming the tab or the client never breaks the link.
+
+function clientDb_(create) {
+  if (clientDb_.ss) return clientDb_.ss;
+  const p = PropertiesService.getScriptProperties(), id = p.getProperty('CLIENT_DB_ID');
+  if (id) { try { return (clientDb_.ss = SpreadsheetApp.openById(id)); } catch (e) { if (!create) throw e; } }
+  if (!create) return null;
+  const ss = SpreadsheetApp.create('NOWORA — Client sites');
+  ss.setSpreadsheetTimeZone(TZ);
+  p.setProperty('CLIENT_DB_ID', ss.getId());
+  const idx = ss.getSheets()[0]; idx.setName('All clients');
+  try { const main = DriveApp.getFileById(SpreadsheetApp.getActive().getId()).getParents(); if (main.hasNext()) DriveApp.getFileById(ss.getId()).moveTo(main.next()); } catch (e) { /* stays in My Drive */ }
+  return (clientDb_.ss = ss);
+}
+function tabName_(business, ss, own) {
+  let base = String(business || 'Client').replace(/[\[\]\*\?\/\\:']/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Client';
+  if (base === 'All clients') base = 'Client ' + base;
+  let name = base, n = 2;
+  while (true) { const sh = ss.getSheetByName(name); if (!sh || (own && sh.getSheetId() === own.getSheetId())) return name; name = base + ' (' + n++ + ')'; }
+}
+/** The client's log tab; made the first time it is needed. */
+function clientTab_(c, create) {
+  if (!c || !c.id) return null;
+  const ss = clientDb_(create); if (!ss) return null;
+  const cache = CacheService.getScriptCache(), ck = 'ctab_' + c.id, sid = cache.get(ck);
+  if (sid) { const hit = ss.getSheets().find(s => String(s.getSheetId()) === sid); if (hit) return hit; }
+  const found = ss.createDeveloperMetadataFinder().withKey('nowora_client').withValue(String(c.id))
+    .withLocationType(SpreadsheetApp.DeveloperMetadataLocationType.SHEET).find();
+  let sh = found.length ? found[0].getLocation().getSheet() : null;
+  if (!sh && create) {
+    sh = ss.insertSheet(tabName_(c.business, ss), ss.getSheets().length);
+    sh.addDeveloperMetadata('nowora_client', String(c.id));
+    styleTab_(sh, '_client', CLIENT_LOG);
+    sh.setTabColor('#1D4A3D');
+    sh.getRange(1, 1).setNote((c.business || 'Client') + ' — every visit, tap, enquiry, change request and website edit, newest at the bottom.' + (c.site ? '\nWebsite: ' + c.site : ''));
+    try { refreshClientIndex_(); } catch (e) { console.error(e); }
+  }
+  if (sh) cache.put(ck, String(sh.getSheetId()), 21600);
+  return sh;
+}
+/** Adds one row to a client's log. Never breaks the request that called it. */
+function clientLog_(c, row) {
+  try {
+    if (!c || !c.id) return;
+    const sh = clientTab_(c, true);
+    if (sh) sh.appendRow(rowCells_('_client', row));
+  } catch (e) { console.error('client log: ' + e); }
+}
+function readClientLog_(c) {
+  let sh; try { sh = clientTab_(c, false); } catch (e) { return []; }
+  if (!sh || sh.getLastRow() < 2) return [];
+  return sh.getRange(2, 1, sh.getLastRow() - 1, CLIENT_LOG.length).getValues().map(r => rowToObj_(CLIENT_LOG, r, '_client'));
+}
+function readLegacyClientEvents_() {
+  if (readLegacyClientEvents_.rows) return readLegacyClientEvents_.rows;
+  const sh = SpreadsheetApp.getActive().getSheetByName('ClientEvents');
+  return (readLegacyClientEvents_.rows = sh && sh.getLastRow() > 1
+    ? sh.getRange(2, 1, sh.getLastRow() - 1, LEGACY_CLIENT_EVENTS.length).getDisplayValues().map(r => rowToObj_(LEGACY_CLIENT_EVENTS, r, 'ClientEvents')) : []);
+}
+/** Keeps the tab name in step with the client's business name. */
+function afterClientChange_(c) {
+  try {
+    const sh = clientTab_(c, !!prop_('CLIENT_DB_ID')); if (!sh) return;
+    const want = tabName_(c.business, sh.getParent(), sh);
+    if (sh.getName() !== want) { sh.setName(want); refreshClientIndex_(); }
+  } catch (e) { console.error('client tab: ' + e); }
+}
+/** A removed client's tab is kept (their history), renamed "… (removed)" and moved to the end. */
+function retireClientTab_(c) {
+  const sh = clientTab_(c, false); if (!sh) return;
+  const ss = sh.getParent();
+  sh.setName(tabName_(String(c.business || 'Client').slice(0, 70) + ' (removed)', ss, sh));
+  sh.setTabColor('#B5483A');
+  ss.setActiveSheet(sh); ss.moveActiveSheet(ss.getSheets().length);
+  sh.getDeveloperMetadata().forEach(m => { if (m.getKey() === 'nowora_client') m.setKey('nowora_removed'); });
+  CacheService.getScriptCache().remove('ctab_' + c.id);
+  refreshClientIndex_();
+}
+/** The "All clients" summary tab: one row per client with live 30-day numbers (Sheets formulas). */
+function refreshClientIndex_() {
+  const ss = clientDb_(false); if (!ss) return;
+  let idx = ss.getSheetByName('All clients'); if (!idx) idx = ss.insertSheet('All clients', 0);
+  ss.setActiveSheet(idx); ss.moveActiveSheet(1);
+  const clients = readAll_('Clients'), site = prop_('SITE_URL') || 'https://nowora.vercel.app';
+  const head = [['Client',170],['Website',210],['Status',90],['Care plan',90],['Visitors · 30 days',130],['WhatsApp & calls · 30 days',170],['Enquiries · 30 days',140],['Last activity',150],['Client dashboard',230],['Open their log',140]];
+  const q = n => "'" + String(n).replace(/'/g, "''") + "'";
+  const rows = clients.map(c => {
+    const sh = clientTab_(c, false), t = sh ? q(sh.getName()) : null, recent = t ? t + '!A2:A>=NOW()-30' : '';
+    return [c.business, c.site, c.status, c.carePlan === 'yes' ? 'yes' : 'no',
+      t ? '=IFERROR(COUNTUNIQUE(FILTER(' + t + '!G2:G,' + t + '!B2:B="' + EVENT_WORDS.pageview + '",' + recent + ')),0)' : 0,
+      t ? '=COUNTIFS(' + t + '!B2:B,"' + EVENT_WORDS.cta_whatsapp + '",' + t + '!A2:A,">="&(NOW()-30))+COUNTIFS(' + t + '!B2:B,"' + EVENT_WORDS.cta_call + '",' + t + '!A2:A,">="&(NOW()-30))' : 0,
+      t ? '=COUNTIFS(' + t + '!B2:B,"' + EVENT_WORDS.lead_submit + '",' + t + '!A2:A,">="&(NOW()-30))' : 0,
+      t ? '=IFERROR(MAX(' + t + '!A2:A),"")' : '',
+      c.portalKey ? site + '/client/' + c.portalKey : '',
+      sh ? '=HYPERLINK("#gid=' + sh.getSheetId() + '","Open log →")' : 'no activity yet'];
+  });
+  idx.clear(); idx.getBandings().forEach(b => b.remove());
+  if (idx.getMaxColumns() > head.length) idx.deleteColumns(head.length + 1, idx.getMaxColumns() - head.length);
+  idx.getRange(1, 1, 1, head.length).setValues([head.map(h => h[0])]).setFontWeight('bold').setFontColor('#FFFFFF').setBackground('#1D4A3D').setVerticalAlignment('middle').setWrap(true);
+  head.forEach((h, i) => idx.setColumnWidth(i + 1, h[1]));
+  idx.setRowHeight(1, 34); idx.setFrozenRows(1); idx.setTabColor('#F2A33A');
+  if (rows.length) {
+    idx.getRange(2, 1, rows.length, head.length).setValues(rows).setFontSize(10).setVerticalAlignment('top');
+    idx.getRange(2, 8, rows.length, 1).setNumberFormat(TIME_FORMAT);
+    idx.getRange(1, 1, rows.length + 1, head.length).applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, true, false)
+      .setHeaderRowColor('#1D4A3D').setFirstRowColor('#FFFFFF').setSecondRowColor('#F4F6F2');
+  }
+  idx.getRange(1, 1).setNote('One row per client. Numbers update by themselves from each client\'s tab. Each client\'s own tab has their full log.');
+}
+
+/**
+ * RUN THIS ONCE after pasting the new code (select tidyUp ▸ Run). Safe to run again.
+ *  - gives every tab a readable name and plain-English headings, colours, widths and drop-downs
+ *  - shows times as "2 Nov 2026, 5:47 am" (India time) and events in words
+ *  - makes the "NOWORA — Client sites" spreadsheet with one tab per client, and moves their logs there
+ *  - adds a "Read me" tab explaining each tab
+ */
+function tidyUp() {
+  const ss = SpreadsheetApp.getActive();
+  ss.setSpreadsheetTimeZone(TZ);
+  PropertiesService.getScriptProperties().setProperty('SCHEMA', '2'); tidy_.v = true;
+
+  // 1) your own tabs
+  TAB_ORDER.forEach(name => {
+    const sh = sheet_(name), keys = SHEETS[name], last = sh.getLastRow();
+    styleTab_(sh, name, keys);
+    if (last > 1) {                                  // rewrite the data so times become real dates and events become words
+      const range = sh.getRange(2, 1, last - 1, keys.length);
+      const fixed = range.getValues().map(r => rowCells_(name, rowToObj_(keys, r, name)));
+      range.setValues(fixed);
+    }
+  });
+  TAB_ORDER.forEach((name, i) => { ss.setActiveSheet(sheet_(name)); ss.moveActiveSheet(i + 2); });
+
+  // 2) client sites spreadsheet + move the old ClientEvents tab into it
+  const db = clientDb_(true), clients = readAll_('Clients');
+  clients.forEach(c => clientTab_(c, true));
+  const legacy = ss.getSheetByName('ClientEvents');
+  let moved = 0, dropped = 0;
+  if (legacy) {
+    const byTrack = {}; clients.forEach(c => { if (c.trackId) byTrack[c.trackId] = c; });
+    const groups = {};
+    readLegacyClientEvents_().forEach(e => {
+      const c = byTrack[e.cid];
+      if (!c || junkClientEvent_(e)) { dropped++; return; }
+      (groups[c.id] = groups[c.id] || { c: c, rows: [] }).rows.push(rowCells_('_client', e));
+    });
+    Object.keys(groups).forEach(id => {
+      const g = groups[id], sh = clientTab_(g.c, true), start = sh.getLastRow() + 1;
+      g.rows.sort((a, b) => a[0] - b[0]);
+      sh.getRange(start, 1, g.rows.length, CLIENT_LOG.length).setValues(g.rows);
+      moved += g.rows.length;
+    });
+    ss.deleteSheet(legacy);
+  }
+  db.getSheets().forEach(sh => { if (sh.getName() === 'Sheet1' && sh.getLastRow() === 0) db.deleteSheet(sh); });
+  refreshClientIndex_();
+
+  // 3) read-me tab + remove the empty default tab
+  let me = ss.getSheetByName('Read me'); if (!me) me = ss.insertSheet('Read me', 0);
+  ss.setActiveSheet(me); ss.moveActiveSheet(1);
+  me.clear(); me.getBandings().forEach(b => b.remove());
+  const dbUrl = 'https://docs.google.com/spreadsheets/d/' + db.getId();
+  const lines = [['NOWORA — your studio data', ''], ['', ''], ['Tab', 'What is in it']]
+    .concat(TAB_ORDER.map(n => [TAB_TITLE[n], TAB_ABOUT[n]]))
+    .concat([['', ''], ['Client logs', 'Each client has their own tab in the "NOWORA — Client sites" spreadsheet: ' + dbUrl],
+      ['', ''], ['Good to know', 'The website and dashboards write to these tabs. You can edit cells, but keep the columns in this order and don\'t rename tabs. Grey columns are IDs the system uses.']]);
+  me.getRange(1, 1, lines.length, 2).setValues(lines).setVerticalAlignment('top').setWrap(true);
+  me.getRange(1, 1).setFontSize(18).setFontWeight('bold').setFontColor('#1D4A3D');
+  me.getRange(3, 1, 1, 2).setFontWeight('bold').setFontColor('#FFFFFF').setBackground('#1D4A3D');
+  me.getRange(4, 1, TAB_ORDER.length, 1).setFontWeight('bold');
+  me.getRange(lines.length - 2, 1, 3, 1).setFontWeight('bold');
+  me.setColumnWidth(1, 200); me.setColumnWidth(2, 640); me.setTabColor('#F2A33A');
+  if (me.getMaxColumns() > 2) me.deleteColumns(3, me.getMaxColumns() - 2);
+  const blank = ss.getSheetByName('Sheet1'); if (blank && blank.getLastRow() === 0) ss.deleteSheet(blank);
+  ss.setActiveSheet(me);
+
+  Logger.log('Done. Your tabs are tidied.');
+  Logger.log('Client sites spreadsheet: ' + dbUrl);
+  Logger.log('Moved ' + moved + ' client log rows into it' + (dropped ? ' (skipped ' + dropped + ' test or preview rows)' : '') + '.');
+}
+
 function cell_(v) {
   if (v === undefined || v === null) return '';
   if (v instanceof Date) return isNaN(v) ? '' : Utilities.formatDate(v, TZ, 'yyyy-MM-dd');
