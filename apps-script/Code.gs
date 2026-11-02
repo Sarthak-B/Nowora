@@ -25,7 +25,7 @@ const SHEETS = {
   Events:     ['ts','vid','sid','type','label','ref','device','utm'],
   Leads:      ['id','ts','name','business','niche','package','phone','email','channel','message','status','notes','source','updated'],
   Prospects:  ['id','ts','name','business','niche','phone','website','maps','status','issue','lastContact','followUpDue','auditScore','auditIssues','screenshot','auditRequested','notes'],
-  Clients:    ['id','business','name','phone','email','site','package','price','delivered','carePlan','careFee','renewal','status','uptime','responseMs','lastCheck','checklist','notes','portalKey','pin','trackId','advancePaid','balancePaid','repo','editAccess'],
+  Clients:    ['id','business','name','phone','email','site','package','price','delivered','carePlan','careFee','renewal','status','uptime','responseMs','lastCheck','checklist','notes','portalKey','pin','trackId','advancePaid','balancePaid','repo','editAccess','dataSheet'],
   Portfolio:  ['id','ts','title','niche','type','url','image','description','visible','order','tag','embed','shot','theme','repo'],
   Pitches:    ['id','ts','prospectId','channel','template','message'],
   Automation: ['ts','workflow','status','summary','details'],
@@ -55,14 +55,14 @@ const HEAD = {
   Events: [['Time',150],['Visitor ID',110],['Visit ID',110],['What happened',170],['Detail',220],['Came from',120],['Device',90],['Campaign',110]],
   Leads: [['ID',100],['Received',150],['Name',150],['Business',180],['Type of business',160],['Plan wanted',120],['Phone',130],['Email',200],['Reply by',100],['Message',320],['Status',120],['My notes',240],['Came from',110],['Last updated',150]],
   Prospects: [['ID',100],['Added',150],['Contact',150],['Business',180],['Type of business',150],['Phone',130],['Their website',200],['Google Maps link',160],['Status',120],['Problem spotted',220],['Last contacted',120],['Follow up on',120],['Site score',90],['Site issues found',260],['Phone screenshot',160],['Website check queued',150],['My notes',240]],
-  Clients: [['ID',100],['Business',170],['Contact',150],['WhatsApp',130],['Email',190],['Website',210],['Plan',100],['Project price (₹)',130],['Delivered on',120],['Care plan',90],['Care fee / month (₹)',150],['Next renewal',120],['Status',100],['Site is',80],['Load time (ms)',110],['Last checked',150],['Onboarding steps done',160],['Notes',240],['Dashboard link name',160],['Dashboard PIN',110],['Visitor tracking ID',140],['First 50% paid',120],['Second 50% paid',130],['GitHub repo',170],['Website editing',130]],
+  Clients: [['ID',100],['Business',170],['Contact',150],['WhatsApp',130],['Email',190],['Website',210],['Plan',100],['Project price (₹)',130],['Delivered on',120],['Care plan',90],['Care fee / month (₹)',150],['Next renewal',120],['Status',100],['Site is',80],['Load time (ms)',110],['Last checked',150],['Onboarding steps done',160],['Notes',240],['Dashboard link name',160],['Dashboard PIN',110],['Visitor tracking ID',140],['First 50% paid',120],['Second 50% paid',130],['GitHub repo',170],['Website editing',130],['Their database (sheet ID)',200]],
   Portfolio: [['ID',100],['Added',150],['Title',170],['Niche',150],['Kind',90],['Website',220],['Preview image',200],['Description',320],['Show on site',100],['Order',70],['Showcase filter',140],['Can show live',110],['Preview capture',120],['Theme',90],['GitHub repo',170]],
   Pitches: [['ID',100],['Sent',150],['Prospect ID',110],['Sent via',100],['Template',140],['Message',420]],
   Automation: [['Time',150],['Job',120],['Result',90],['Summary',360],['Details',420]],
   Requests: [['ID',100],['Received',150],['Client ID',110],['Client',170],['Kind of change',170],['Message',360],['Status',110],['My reply',300],['Last updated',150],['Photo',200]],
   _client: [['Time',150],['What happened',200],['Detail',260],['Came from',130],['Device',90],['Page',140],['Visitor ID',110],['Visit ID',110]]
 };
-const TECH_COLS = ['id','vid','sid','clientId','prospectId','trackId','checklist','portalKey'];   // shown in grey
+const TECH_COLS = ['id','vid','sid','clientId','prospectId','trackId','checklist','portalKey','dataSheet'];   // shown in grey
 const TIME_COLS = { Events: ['ts'], Leads: ['ts','updated'], Prospects: ['ts'], Clients: ['lastCheck'], Portfolio: ['ts'], Pitches: ['ts'], Automation: ['ts'], Requests: ['ts','updated'], _client: ['ts'] };
 const TIME_FORMAT = 'd mmm yyyy, h:mm am/pm';
 // Plain-English words for event codes in the sheet; the code still reads both.
@@ -153,6 +153,12 @@ function doPost(e) {
       case 'site_publish':       return json_(sitePublish_(portalClient_(body), body));
       case 'site_versions':      return json_({ ok: true, versions: siteVersions_(portalClient_(body)) });
       case 'site_restore':       return json_(siteRestore_(portalClient_(body), body.sha));
+      /* ---- client database (portal link + PIN) ---- */
+      case 'db_get':             return json_(dbGet_(portalClient_(body), body.tableId));
+      case 'db_save_table':      return json_(dbSaveTable_(portalClient_(body), body.table));
+      case 'db_delete_table':    return json_(dbDeleteTable_(portalClient_(body), body.tableId));
+      case 'db_save_row':        return json_(dbSaveRow_(portalClient_(body), body.tableId, body.row));
+      case 'db_delete_rows':     return json_(dbDeleteRows_(portalClient_(body), body.tableId, body.ids));
       /* ---- owner dashboard ---- */
       case 'dashboard':          requireAdmin_(body); return json_({ ok: true, data: dashboard_() });
       case 'upsert':             requireAdmin_(body); return json_({ ok: true, row: upsert_(body.sheet, body.row), queued: body.sheet === 'Portfolio' && body.row && body.row.shot === 'pending' ? dispatchShots_() : undefined });
@@ -815,6 +821,204 @@ function ping_(url) {
   }
 }
 
+/* ============================== client database ============================== */
+// Free for now: each client's database is their own Google Sheet ("<Business> — Database"),
+// one tab per table. Clients add, edit and delete rows from their dashboard.
+// Column names and types live on each tab (developer metadata), so the tab stays readable.
+
+const DB_TYPES = ['text', 'longtext', 'number', 'money', 'date', 'phone', 'email', 'link', 'choice', 'yesno'];
+const DB_LIMIT = { tables: 20, columns: 30, rows: 5000, cell: 2000, perCall: 200 };
+
+function clientData_(c, create) {
+  if (c._data) return c._data;
+  if (c.dataSheet) { try { return (c._data = SpreadsheetApp.openById(c.dataSheet)); } catch (e) { if (!create) return null; } }
+  if (!create) return null;
+  const ss = SpreadsheetApp.create(String(c.business || 'Client').slice(0, 80) + ' — Database');
+  ss.setSpreadsheetTimeZone(TZ);
+  const me = ss.getSheets()[0]; me.setName('Read me');
+  me.getRange(1, 1, 3, 1).setValues([[(c.business || 'Client') + ' — database'], ['Managed from the client dashboard: ' + (prop_('SITE_URL') || 'https://nowora.vercel.app') + '/client/' + (c.portalKey || '')],
+    ['Each tab is one table. You can read or copy it here, but add, edit and delete rows from the dashboard so column settings stay in step.']]);
+  me.getRange(1, 1).setFontSize(16).setFontWeight('bold'); me.setColumnWidth(1, 720);
+  try { const db = clientDb_(false), from = db ? db.getId() : SpreadsheetApp.getActive().getId(), par = DriveApp.getFileById(from).getParents(); if (par.hasNext()) DriveApp.getFileById(ss.getId()).moveTo(par.next()); } catch (e) { /* stays in My Drive */ }
+  upsert_('Clients', { id: c.id, dataSheet: ss.getId() });
+  c.dataSheet = ss.getId();
+  try { refreshClientIndex_(); } catch (e) { console.error(e); }
+  return (c._data = ss);
+}
+function dbTables_(ss) {
+  const out = [];
+  ss.getSheets().forEach(sh => {
+    const m = sh.getDeveloperMetadata().find(x => x.getKey() === 'nowora_table');
+    if (!m) return;
+    let meta; try { meta = JSON.parse(m.getValue()); } catch (e) { return; }
+    out.push({ sh: sh, md: m, id: meta.id, cols: meta.cols || [] });
+  });
+  return out;
+}
+function dbFind_(ss, id) {
+  const t = dbTables_(ss).find(x => x.id === String(id || ''));
+  if (!t) throw new Error('That table no longer exists — refresh the page');
+  return t;
+}
+function dbCell_(col, v) {                 // what goes into the sheet
+  if (v === undefined || v === null || v === '') return '';
+  if (col.type === 'number' || col.type === 'money') { const n = Number(String(v).replace(/[^\d.\-]/g, '')); return isNaN(n) ? '' : n; }
+  if (col.type === 'date') { const d = new Date(String(v).slice(0, 10) + 'T00:00:00'); return isNaN(d) ? '' : d; }
+  if (col.type === 'yesno') return v === true || /^(yes|true|1|on)$/i.test(String(v)) ? 'Yes' : 'No';
+  if (col.type === 'choice') { const o = col.options || []; v = String(v).slice(0, 60); return o.length && o.indexOf(v) < 0 ? '' : v; }
+  return cell_(String(v).slice(0, col.type === 'longtext' ? DB_LIMIT.cell : 300));
+}
+function dbValue_(col, v) {                // what goes to the dashboard
+  if (v === '' || v === null || v === undefined) return '';
+  if (v instanceof Date) return isNaN(v) ? '' : Utilities.formatDate(v, TZ, 'yyyy-MM-dd');
+  if (col.type === 'number' || col.type === 'money') { const n = Number(v); return isNaN(n) ? '' : n; }
+  if (col.type === 'yesno') return v === true || /^(yes|true)$/i.test(String(v));
+  return String(v);
+}
+function dbRead_(t) {
+  const sh = t.sh, n = 2 + t.cols.length, last = sh.getLastRow();
+  if (last < 2) return [];
+  const vals = sh.getRange(2, 1, last - 1, n).getValues(), fix = [];
+  const rows = vals.map((r, i) => {
+    if (!r.some(v => v !== '' && v !== null)) return null;
+    let id = String(r[0] || '');
+    if (!id) { id = randomKey_(10); fix.push([i + 2, id]); }           // rows typed straight into the sheet get an ID
+    const o = { _id: id, _ts: r[1] instanceof Date ? r[1].toISOString() : String(r[1] || '') };
+    t.cols.forEach((c, j) => o[c.id] = dbValue_(c, r[j + 2]));
+    return o;
+  }).filter(Boolean);
+  fix.forEach(f => sh.getRange(f[0], 1).setValue(f[1]));
+  return rows;
+}
+function dbShape_(t, rows) { return { id: t.id, name: t.sh.getName(), cols: t.cols, count: rows ? rows.length : Math.max(0, t.sh.getLastRow() - 1) }; }
+function dbStyle_(sh, cols) {
+  const n = 2 + cols.length, rows = Math.max(sh.getMaxRows() - 1, 1);
+  if (sh.getMaxColumns() < n) sh.insertColumnsAfter(sh.getMaxColumns(), n - sh.getMaxColumns());
+  if (sh.getMaxColumns() > n) sh.deleteColumns(n + 1, sh.getMaxColumns() - n);
+  sh.getRange(1, 1, 1, n).setValues([['Row ID', 'Added'].concat(cols.map(c => c.name))])
+    .setFontWeight('bold').setFontColor('#FFFFFF').setBackground('#1D4A3D').setVerticalAlignment('middle');
+  sh.setFrozenRows(1); sh.setRowHeight(1, 32);
+  sh.setColumnWidth(1, 100); sh.setColumnWidth(2, 140);
+  sh.getRange(2, 1, rows, 1).setNumberFormat('@').setFontColor('#8A9691');
+  sh.getRange(2, 2, rows, 1).setNumberFormat(TIME_FORMAT).setFontColor('#8A9691');
+  cols.forEach((c, j) => {
+    const col = sh.getRange(2, j + 3, rows, 1);
+    col.setNumberFormat(c.type === 'number' ? '#,##0.##' : c.type === 'money' ? '"₹"#,##0.##' : c.type === 'date' ? 'd mmm yyyy' : '@').setFontColor('#14211D');
+    col.setDataValidation(c.type === 'choice' && (c.options || []).length ? SpreadsheetApp.newDataValidation().requireValueInList(c.options, true).setAllowInvalid(true).build()
+      : c.type === 'yesno' ? SpreadsheetApp.newDataValidation().requireValueInList(['Yes', 'No'], true).setAllowInvalid(true).build() : null);
+    sh.setColumnWidth(j + 3, c.type === 'longtext' ? 300 : c.type === 'yesno' ? 80 : 150);
+  });
+  sh.getRange(2, 1, rows, n).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP).setFontSize(10).setVerticalAlignment('top');
+  sh.getBandings().forEach(b => b.remove());
+  sh.getRange(1, 1, sh.getMaxRows(), n).applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, true, false)
+    .setHeaderRowColor('#1D4A3D').setFirstRowColor('#FFFFFF').setSecondRowColor('#F4F6F2');
+}
+function dbCleanCols_(cols) {
+  if (!Array.isArray(cols) || !cols.length) throw new Error('Add at least one column');
+  if (cols.length > DB_LIMIT.columns) throw new Error('A table can have up to ' + DB_LIMIT.columns + ' columns');
+  const seen = {};
+  return cols.map(c => {
+    const name = String(c.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    if (!name) throw new Error('Every column needs a name');
+    if (/^(row id|added)$/i.test(name)) throw new Error('"' + name + '" is used by the system — pick another column name');
+    if (seen[name.toLowerCase()]) throw new Error('Two columns are called "' + name + '"');
+    seen[name.toLowerCase()] = 1;
+    const type = DB_TYPES.indexOf(c.type) >= 0 ? c.type : 'text';
+    const id = /^[\w-]{4,20}$/.test(c.id || '') ? c.id : randomKey_(8);
+    const out = { id: id, name: name, type: type };
+    if (type === 'choice') out.options = (Array.isArray(c.options) ? c.options : String(c.options || '').split(','))
+      .map(o => String(o).trim().slice(0, 60)).filter(Boolean).filter((o, i, a) => a.indexOf(o) === i).slice(0, 40);
+    return out;
+  });
+}
+function dbTabName_(ss, name, own) {
+  let base = String(name || '').replace(/[\[\]\*\?\/\\:']/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
+  if (!base) throw new Error('Give the table a name');
+  if (/^read me$/i.test(base)) base = base + ' table';
+  let n = base, i = 2;
+  while (true) { const sh = ss.getSheetByName(n); if (!sh || (own && sh.getSheetId() === own.getSheetId())) return n; n = base + ' (' + i++ + ')'; }
+}
+
+function dbGet_(c, tableId) {
+  const ss = clientData_(c, false);
+  if (!ss) return { ok: true, tables: [], rows: [], tableId: '' };
+  const ts = dbTables_(ss), t = ts.find(x => x.id === tableId) || ts[0];
+  const rows = t ? dbRead_(t) : [];
+  return { ok: true, tables: ts.map(x => dbShape_(x, x === t ? rows : null)), tableId: t ? t.id : '', rows: rows, sheetUrl: c._owner && c.dataSheet ? 'https://docs.google.com/spreadsheets/d/' + c.dataSheet : undefined };
+}
+function dbSaveTable_(c, table) {
+  if (!table) throw new Error('Nothing to save');
+  const cols = dbCleanCols_(table.cols);
+  const ss = clientData_(c, true);                                   // made (and saved on the client row) before taking the lock
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    if (!table.id) {
+      if (dbTables_(ss).length >= DB_LIMIT.tables) throw new Error('You can have up to ' + DB_LIMIT.tables + ' tables');
+      const sh = ss.insertSheet(dbTabName_(ss, table.name));
+      const id = randomKey_(10);
+      sh.addDeveloperMetadata('nowora_table', JSON.stringify({ id: id, cols: cols }));
+      dbStyle_(sh, cols);
+      return { ok: true, table: { id: id, name: sh.getName(), cols: cols, count: 0 } };
+    }
+    const t = dbFind_(ss, table.id), rows = dbRead_(t), sh = t.sh;
+    const want = dbTabName_(ss, table.name, sh);
+    if (sh.getName() !== want) sh.setName(want);
+    // rewrite the tab in the new column order (handles added, removed, renamed and moved columns)
+    const data = rows.map(r => [r._id, r._ts ? new Date(r._ts) : ''].concat(cols.map(col => {
+      const old = t.cols.find(o => o.id === col.id);
+      return old ? dbCell_(col, old.type === 'yesno' ? (r[col.id] ? 'Yes' : 'No') : r[col.id]) : '';
+    })));
+    const last = Math.max(sh.getLastRow(), 1);
+    if (last > 1) sh.getRange(2, 1, last - 1, Math.max(sh.getMaxColumns(), 1)).clearContent();
+    t.md.setValue(JSON.stringify({ id: t.id, cols: cols }));
+    dbStyle_(sh, cols);
+    if (data.length) sh.getRange(2, 1, data.length, 2 + cols.length).setValues(data);
+    return { ok: true, table: { id: t.id, name: sh.getName(), cols: cols, count: data.length } };
+  } finally { lock.releaseLock(); }
+}
+function dbDeleteTable_(c, tableId) {
+  const ss = clientData_(c, false); if (!ss) return { ok: true };
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try { const t = dbFind_(ss, tableId); ss.deleteSheet(t.sh); return { ok: true }; }
+  finally { lock.releaseLock(); }
+}
+function dbSaveRow_(c, tableId, row) {
+  if (!row || typeof row !== 'object') throw new Error('Nothing to save');
+  const ss = clientData_(c, false); if (!ss) throw new Error('Create a table first');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const t = dbFind_(ss, tableId), sh = t.sh;
+    if (!t.cols.some(col => row[col.id] !== undefined && row[col.id] !== '' && row[col.id] !== false)) throw new Error('Fill in at least one field');
+    const last = sh.getLastRow();
+    const ids = last > 1 ? sh.getRange(2, 1, last - 1, 1).getValues().map(r => String(r[0])) : [];
+    let i = row._id ? ids.indexOf(String(row._id)) : -1, id = row._id, ts;
+    if (i < 0) {
+      if (ids.filter(Boolean).length >= DB_LIMIT.rows) throw new Error('This table is full (' + DB_LIMIT.rows + ' rows). Delete some rows or start a new table.');
+      id = randomKey_(10); ts = new Date(); i = ids.length;
+    } else ts = sh.getRange(i + 2, 2).getValue();
+    const cells = [id, ts].concat(t.cols.map(col => dbCell_(col, row[col.id])));
+    sh.getRange(i + 2, 1, 1, cells.length).setValues([cells]);
+    const out = { _id: id, _ts: ts instanceof Date ? ts.toISOString() : String(ts || '') };
+    t.cols.forEach((col, j) => out[col.id] = dbValue_(col, cells[j + 2]));
+    return { ok: true, row: out };
+  } finally { lock.releaseLock(); }
+}
+function dbDeleteRows_(c, tableId, ids) {
+  ids = (Array.isArray(ids) ? ids : []).map(String).filter(Boolean).slice(0, DB_LIMIT.perCall);
+  if (!ids.length) return { ok: true, deleted: 0 };
+  const ss = clientData_(c, false); if (!ss) return { ok: true, deleted: 0 };
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const t = dbFind_(ss, tableId), sh = t.sh, last = sh.getLastRow();
+    if (last < 2) return { ok: true, deleted: 0 };
+    const col = sh.getRange(2, 1, last - 1, 1).getValues().map(r => String(r[0]));
+    const at = [];
+    col.forEach((v, i) => { if (ids.indexOf(v) >= 0) at.push(i + 2); });
+    at.reverse().forEach(r => sh.deleteRow(r));
+    return { ok: true, deleted: at.length };
+  } finally { lock.releaseLock(); }
+}
+
 /* ============================== weekly review ============================== */
 
 function weeklyReport() {
@@ -1031,7 +1235,7 @@ function refreshClientIndex_() {
   let idx = ss.getSheetByName('All clients'); if (!idx) idx = ss.insertSheet('All clients', 0);
   ss.setActiveSheet(idx); ss.moveActiveSheet(1);
   const clients = readAll_('Clients'), site = prop_('SITE_URL') || 'https://nowora.vercel.app';
-  const head = [['Client',170],['Website',210],['Status',90],['Care plan',90],['Visitors · 30 days',130],['WhatsApp & calls · 30 days',170],['Enquiries · 30 days',140],['Last activity',150],['Client dashboard',230],['Open their log',140]];
+  const head = [['Client',170],['Website',210],['Status',90],['Care plan',90],['Visitors · 30 days',130],['WhatsApp & calls · 30 days',170],['Enquiries · 30 days',140],['Last activity',150],['Client dashboard',230],['Open their log',140],['Their database',150]];
   const q = n => "'" + String(n).replace(/'/g, "''") + "'";
   const rows = clients.map(c => {
     const sh = clientTab_(c, false), t = sh ? q(sh.getName()) : null, recent = t ? t + '!A2:A>=NOW()-30' : '';
@@ -1041,7 +1245,8 @@ function refreshClientIndex_() {
       t ? '=COUNTIFS(' + t + '!B2:B,"' + EVENT_WORDS.lead_submit + '",' + t + '!A2:A,">="&(NOW()-30))' : 0,
       t ? '=IFERROR(MAX(' + t + '!A2:A),"")' : '',
       c.portalKey ? site + '/client/' + c.portalKey : '',
-      sh ? '=HYPERLINK("#gid=' + sh.getSheetId() + '","Open log →")' : 'no activity yet'];
+      sh ? '=HYPERLINK("#gid=' + sh.getSheetId() + '","Open log →")' : 'no activity yet',
+      c.dataSheet ? '=HYPERLINK("https://docs.google.com/spreadsheets/d/' + c.dataSheet + '","Open database →")' : 'not started'];
   });
   idx.clear(); idx.getBandings().forEach(b => b.remove());
   if (idx.getMaxColumns() > head.length) idx.deleteColumns(head.length + 1, idx.getMaxColumns() - head.length);
