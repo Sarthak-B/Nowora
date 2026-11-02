@@ -833,7 +833,10 @@ const DB_LIMIT = { tables: 20, columns: 30, rows: 5000, cell: 2000, perCall: 200
 
 function clientData_(c, create) {
   if (c._data) return c._data;
-  if (c.dataSheet) { try { return (c._data = SpreadsheetApp.openById(c.dataSheet)); } catch (e) { if (!create) return null; } }
+  if (c.dataSheet) {
+    try { return (c._data = SpreadsheetApp.openById(c.dataSheet)); }
+    catch (e) { throw new Error('Your existing database is unavailable. Contact NOWORA to restore access; no replacement database has been created.'); }
+  }
   if (!create) return null;
   const ss = SpreadsheetApp.create(String(c.business || 'Client').slice(0, 80) + ' — Database');
   ss.setSpreadsheetTimeZone(TZ);
