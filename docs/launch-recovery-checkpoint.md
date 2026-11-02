@@ -6,9 +6,9 @@ Apps Script deployment version 14 was confirmed on 2 November 2026 at 08:33 Indi
 
 The actual backend was already version 13 when inspected; do not repeat the handoff's assumption that the November 2 changes are undeployed.
 
-## Backup execution and current blocker
+## Backup execution and resolved access issue
 
-Backups.gs is now saved in the bound Apps Script project. The owner completed the Google authorization. The first live run at 08:40 India time copied the studio and client database successfully but failed to copy the configured client-log spreadsheet: Drive reported that the file could not be found or accessed. The original data was not changed. The private backup folder contains manifest.json; locate it in the owner Drive account. Owner Drive search found no NOWORA client-log sheet, and Trash was empty. Asked the owner whether it was deleted or moved and for a working link. Do not replace the configured log ID without identifying the existing data.
+Backups.gs is installed in the bound project. The first run copied two spreadsheets and failed on the client-log sheet. Investigation confirmed that the log sheet belonged to a different Google account and was private. The owner authorized Editor access for the backend account; the sharing dialog verified Editor access with general access still Restricted. A subsequent backup on 2 November 2026 at 08:45 India time completed: three spreadsheets copied, zero failures. Its manifest is in the timestamped private backup folder in the owner Drive. No original records or spreadsheet references were replaced. Copies have not yet undergone a restore drill. No recurring backup schedule is enabled.
 
 ## Prepared but not activated
 
@@ -20,7 +20,7 @@ A new clientData_ safeguard is saved in source but NOT deployed: inaccessible ex
 
 Use the owner Chrome profile and open the script bound to the studio spreadsheet. The other Chrome profile has a multi-account Apps Script error. Never replace all code without comparing the current editor against the repository. Never run setup or tidyUp merely to test access.
 
-Next resolve the missing log spreadsheet, rerun the backup, verify the manifest and sample restored data, and only then change the order workflow. No new permission grant should be accepted without reviewing its scope.
+Next verify the latest backup manifest and sample restored data, deploy the tested database-access safeguard, then implement the order recovery journal and cancellation handling. No new permission grant should be accepted without reviewing its scope.
 
 ## Unfinished work
 
