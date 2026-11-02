@@ -8,6 +8,12 @@
   var END = (me && me.getAttribute('data-endpoint')) || 'https://script.google.com/macros/s/AKfycbwOFH3fuNlDOsOV59HZ4bmSYCZcsHMcNMtwc_qPF8Dn_-cOUN_NJVPoCoXx7WqWwWB7/exec';
   if (!cid || window.__noworaT) return; window.__noworaT = 1;
   if (/^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname) && !me.hasAttribute('data-test')) return;
+  // Not a real visitor: automated browsers (uptime checks, preview captures), bots, the NOWORA editor's
+  // preview (srcdoc) and copies of the site shown inside frames (showcase cards, dashboards, live viewer).
+  var uaRaw = navigator.userAgent || '';
+  if (navigator.webdriver || /bot|crawl|spider|headless|lighthouse|preview|screenshot|playwright|puppeteer|facebookexternalhit|whatsapp\//i.test(uaRaw)) return;
+  try { if (window.top !== window.self) return; } catch (e) { return; }
+  if (location.protocol === 'about:' || location.href === 'about:srcdoc' || /^\/__/.test(location.pathname)) return;
 
   function rid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
   function store(k, s) { try { var v = s.getItem(k); if (!v) { v = rid(); s.setItem(k, v); } return v; } catch (e) { return rid(); } }

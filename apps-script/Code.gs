@@ -137,6 +137,7 @@ function doPost(e) {
 
 function track_(ev) {
   if (!ev || EVENT_TYPES.indexOf(ev.type) < 0) return { ok: false, error: 'Unknown event' };
+  if (ev.bot === true || ev.framed === true) return { ok: true, skipped: true };
   const row = {};
   SHEETS.Events.forEach(k => row[k] = clip_(ev[k], 120));
   row.ts = new Date().toISOString();                       // trust the server clock
@@ -194,7 +195,7 @@ function upsert_(sheet, row) {
     const ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])) : [];
     const i = ids.indexOf(String(row.id));
     if (i >= 0) {
-      const current = rowToObj_(headers, sh.getRange(i + 2, 1, 1, headers.length).getValues()[0]);
+      const current = rowToObj_(headers, sh.getRange(i + 2, 1, 1, headers.length).getDisplayValues()[0]);
       const merged = Object.assign(current, row);
       sh.getRange(i + 2, 1, 1, headers.length).setValues([headers.map(h => cell_(merged[h]))]);
       return merged;
@@ -353,7 +354,7 @@ function portal_(c, sinceSec) {
 function clientEvents_(c) {
   if (c._ev) return c._ev;
   const since = Date.now() - 180 * 864e5;
-  c._ev = c.trackId ? readAll_('ClientEvents').filter(e => e.cid === c.trackId && new Date(e.ts).getTime() > since) : [];
+  c._ev = c.trackId ? readAll_('ClientEvents').filter(e => e.cid === c.trackId && new Date(e.ts).getTime() > since && !junkClientEvent_(e)) : [];
   return c._ev;
 }
 
@@ -383,8 +384,14 @@ function portalRequest_(c, r) {
 }
 
 /** Events from client websites (the t.js snippet). Only known tracking IDs are accepted. */
+/** Hits that are not real visitors: the website editor's preview, local tests, bots, and the site shown inside a frame. */
+function junkClientEvent_(e) {
+  const path = String(e.path || ''), ref = String(e.ref || '');
+  return e.bot === true || e.framed === true || path === 'srcdoc' || /^\/__/.test(path) || /^(localhost|127\.|0\.0\.0\.0)/.test(ref);
+}
 function clientTrack_(ev) {
   if (!ev || CLIENT_EVENTS.indexOf(ev.type) < 0) return { ok: false, error: 'Unknown event' };
+  if (junkClientEvent_(ev)) return { ok: true, skipped: true };
   const cache = CacheService.getScriptCache();
   let ids = cache.get('track_ids');
   if (!ids) { ids = JSON.stringify(readAll_('Clients').map(c => c.trackId).filter(Boolean)); cache.put('track_ids', ids, 300); }
@@ -841,6 +848,8 @@ function append_(name, obj) {
 function rowToObj_(headers, row) { const o = {}; headers.forEach((h, i) => o[h] = row[i] === undefined ? '' : String(row[i])); return o; }
 function cell_(v) {
   if (v === undefined || v === null) return '';
+  if (v instanceof Date) return isNaN(v) ? '' : Utilities.formatDate(v, TZ, 'yyyy-MM-dd');
+  if (typeof v === 'string' && /^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2} \d{4} \d{2}:\d{2}:\d{2} GMT/.test(v)) { const d = new Date(v.replace(/\s*\(.*\)$/, '')); if (!isNaN(d)) return Utilities.formatDate(d, TZ, 'yyyy-MM-dd'); }
   const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
   return /^[=+\-@]/.test(s) && !/^-?\d/.test(s) ? "'" + s : s;   // block formula injection
 }
