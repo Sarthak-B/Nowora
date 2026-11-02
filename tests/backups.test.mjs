@@ -31,3 +31,11 @@ test('partial failure retains successful copies and never reports success', () =
   assert.deepEqual(r.copied,['studio','client']); assert.equal(r.manifest.errors.length,1);
   assert.equal(r.props.LAST_BACKUP_SUCCESS,undefined); assert.equal(r.released,true);
 });
+test('restore fingerprint detects changes in values and table metadata', () => {
+  const context={};vm.createContext(context);vm.runInContext(code,context);
+  const book=(value,meta)=>({getSheets:()=>[{getName:()=> 'Orders',getDataRange:()=>({getValues:()=>[[value]],getFormulas:()=>[['']],getNumberFormats:()=>[['@']]}),getDeveloperMetadata:()=>[{getKey:()=> 'nowora_table',getValue:()=>meta}]}]});
+  const original=context.backupFingerprint_(book('saved','schema'));
+  assert.equal(original,context.backupFingerprint_(book('saved','schema')));
+  assert.notEqual(original,context.backupFingerprint_(book('changed','schema')));
+  assert.notEqual(original,context.backupFingerprint_(book('saved','missing')));
+});

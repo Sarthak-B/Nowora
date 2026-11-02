@@ -47,3 +47,36 @@ function backupNowora() {
     return { ok: true, copied: report.files.length, folder: batch.getUrl() };
   } finally { lock.releaseLock(); }
 }
+
+/** Restore drill: create independent copies from the latest complete backup.
+ * Never overwrites production. Retains restored copies and a verification report.
+ */
+function verifyLatestBackup() {
+  const id = PropertiesService.getScriptProperties().getProperty('LAST_BACKUP_FOLDER_ID');
+  if (!id) throw new Error('Run a complete backup first.');
+  const folder = DriveApp.getFolderById(id);
+  const manifests = folder.getFilesByName('manifest.json');
+  if (!manifests.hasNext()) throw new Error('Backup manifest missing.');
+  const manifest = JSON.parse(manifests.next().getBlob().getDataAsString());
+  if (!manifest.complete) throw new Error('Latest backup is incomplete.');
+  const restored = folder.createFolder('Restore verification ' + Date.now());
+  const results = manifest.files.map(file => {
+    const before = backupFingerprint_(SpreadsheetApp.openById(file.copyId));
+    const copy = DriveApp.getFileById(file.copyId).makeCopy('RESTORE TEST ' + file.label, restored);
+    const after = backupFingerprint_(SpreadsheetApp.openById(copy.getId()));
+    return { label: file.label, copyId: copy.getId(), passed: before === after };
+  });
+  const report = { verifiedAt: new Date().toISOString(), passed: results.every(x => x.passed), results: results };
+  restored.createFile('verification.json', JSON.stringify(report, null, 2), MimeType.PLAIN_TEXT);
+  console.log(JSON.stringify({ passed: report.passed, checked: results.length, folder: restored.getUrl() }));
+  if (!report.passed) throw new Error('Restore verification failed; inspect verification.json.');
+  return report;
+}
+
+function backupFingerprint_(ss) {
+  return JSON.stringify(ss.getSheets().map(sh => {
+    const range = sh.getDataRange();
+    return {name: sh.getName(), values: range.getValues(), formulas: range.getFormulas(),
+      formats: range.getNumberFormats(), metadata: sh.getDeveloperMetadata().map(m => [m.getKey(), m.getValue()]).sort()};
+  }));
+}
