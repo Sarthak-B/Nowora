@@ -1089,6 +1089,17 @@ function clientForm_(b) {
     want.push({ name: 'Came from', type: 'text' });
     const seen = {}, uniq = want.filter(w => { const k = w.name.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; });
     const t = dbEnsure_(ss, table, uniq);
+    // Match stable storefront order IDs under the same lock as the write.
+    // Retried submissions must never deduct inventory a second time.
+    const orderIdField = fields.find(f => /^order[ _-]?(id|no\.?|number)$/i.test(f.name));
+    if (isOrder && orderIdField && orderIdField.value) {
+      const orderIdCol = t.cols.findIndex(col => col.name.toLowerCase() === orderIdField.name.toLowerCase());
+      if (orderIdCol >= 0 && t.sh.getLastRow() > 1) {
+        const existing = t.sh.getRange(2, orderIdCol + 3, t.sh.getLastRow() - 1, 1).getDisplayValues();
+        const match = existing.findIndex(r => String(r[0]) === orderIdField.value);
+        if (match >= 0) return { ok: true, duplicate: true, id: String(t.sh.getRange(match + 2, 1).getValue()), table: t.sh.getName() };
+      }
+    }
     if (t.sh.getLastRow() - 1 >= DB_LIMIT.rows) {
       return { ok: false, error: 'This table is full. Please contact the business directly.' };
     }

@@ -20,7 +20,7 @@ The clientData_ safeguard is deployed in version 15 (2 November 2026 at 16:08 In
 
 Use the owner Chrome profile and open the script bound to the studio spreadsheet. The other Chrome profile has a multi-account Apps Script error. Never replace all code without comparing the current editor against the repository. Never run setup or tidyUp merely to test access.
 
-Next implement and test the durable order recovery journal and cancellation handling, followed by live customer-flow verification. Client approval of the storefront content was requested and remains pending. No new permission grant should be accepted without reviewing its scope.
+Next implement and test the durable order recovery journal and cancellation handling, followed by live customer-flow verification. The owner confirmed all current storefront prices, photos, size chart, reviews, delivery and returns statements are client-approved. No new permission grant should be accepted without reviewing its scope.
 
 ## Unfinished work
 
@@ -38,3 +38,7 @@ Next implement and test the durable order recovery journal and cancellation hand
 Run node --test tests/*.test.mjs. Seven tests passed at this checkpoint. These are local tests; they do not establish live end-to-end readiness.
 
 No unfinished order workflow has been deployed. Version 15 is the live backend. No unfinished order workflow has been deployed.
+
+## Prepared duplicate-order protection
+
+A stable Order ID check is prepared in clientForm_ under the existing write lock. Matching IDs return the saved row before stock processing, even when a table is full. Eight backend tests pass. The 52alive checkout prepares a fresh UUID for each new order, including New order resets; its syntax and identifier test pass. These changes are not deployed. They do not yet solve stock/order partial-write recovery, generic forms without order IDs, cancellation restocking, or acknowledged delivery. Keep this distinction explicit.

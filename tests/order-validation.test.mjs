@@ -26,3 +26,9 @@ test('full tables cannot trigger inventory deductions', () => {
   const result = backend(true).clientForm_({cid: 'test', items: [{name: 'Test', qty: 1, price: 10}]});
   assert.equal(result.ok, false); assert.match(result.error, /table is full/);
 });
+test('replayed order IDs return the existing row without stock processing, even at capacity', () => {
+  const ctx=backend(true);
+  ctx.dbEnsure_=()=>({cols:[{name:'Order ID'}],sh:{getLastRow:()=>5001,getName:()=> 'Orders',getRange:(row,col)=> col===3 ? {getDisplayValues:()=>[['52A-stable']]} : {getValue:()=> 'saved-row'}}});
+  const result=ctx.clientForm_({cid:'test',table:'Orders',fields:{'Order ID':'52A-stable'},items:[{name:'Test',qty:1,price:10}]});
+  assert.equal(result.ok,true);assert.equal(result.duplicate,true);assert.equal(result.id,'saved-row');
+});
