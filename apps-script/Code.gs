@@ -1059,7 +1059,13 @@ function clientForm_(b) {
     if (fields.some(f => f.name.toLowerCase() === name.toLowerCase())) return;
     fields.push({ name: name, value: v });
   });
-  const items = (Array.isArray(b.items) ? b.items : []).slice(0, 50).map(i => ({
+  const inputItems = Array.isArray(b.items) ? b.items : [];
+  if (inputItems.length > 50 || inputItems.some(i => !i || typeof i !== 'object' ||
+      !Number.isInteger(Number(i.qty)) || Number(i.qty) < 1 || Number(i.qty) > 999 ||
+      !Number.isFinite(Number(i.price)) || Number(i.price) < 0)) {
+    return { ok: false, error: 'Each item needs a quantity from 1 to 999 and a valid non-negative price.' };
+  }
+  const items = inputItems.map(i => ({
     name: String(i.name || '').slice(0, 80), variant: String(i.variant || '').slice(0, 80),
     size: String(i.size || '').slice(0, 30), colour: String(i.colour || i.color || '').slice(0, 40),
     qty: Math.max(1, Math.min(999, Math.round(+i.qty || 1))), price: +i.price || 0 })).filter(i => i.name);
@@ -1080,6 +1086,9 @@ function clientForm_(b) {
     want.push({ name: 'Came from', type: 'text' });
     const seen = {}, uniq = want.filter(w => { const k = w.name.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; });
     const t = dbEnsure_(ss, table, uniq);
+    if (t.sh.getLastRow() - 1 >= DB_LIMIT.rows) {
+      return { ok: false, error: 'This table is full. Please contact the business directly.' };
+    }
 
     const val = {};
     fields.forEach(f => val[f.name.toLowerCase()] = f.value);
