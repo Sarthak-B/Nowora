@@ -373,7 +373,7 @@
         '<div class="sh-row" style="margin-top:16px"><div class="card"><h2>Sales over time<span class="sp"></span><span class="sh-leg"><span><i style="background:var(--neon)"></i>Confirmed</span><span><i style="background:rgba(var(--neon-rgb),.35)"></i>Waiting</span></span></h2>' +
           (s.series.length ? '<div class="sh-bars">' + s.series.map(b => '<div class="b" data-t="' + esc(b.label + " · " + inr(b.c + b.w)) + '"><i class="c" style="height:' + (b.c / max * 100) + '%"></i><i class="w" style="height:' + (b.w / max * 100) + '%"></i></div>').join("") + "</div>" +
             '<div class="sh-axis"><span>' + esc(s.series[0].label) + "</span><span>" + esc(s.series[s.series.length - 1].label) + "</span></div>" : '<div class="sh-empty">No orders in this period.</div>') +
-          '<p class="sh-hint">New website orders count as <b>waiting</b> until you change their Status to Confirmed, Packed, Shipped or Delivered in Database → Orders. Cancelled orders are left out.</p></div>' +
+          '<p class="sh-hint">New website orders count as <b>waiting</b> until their Status is changed to Confirmed, Packed, Shipped or Delivered' + (o.readOnly ? "" : " in Database → Orders") + '. Cancelled orders are left out.</p></div>' +
           '<div class="card"><h2>Best sellers</h2>' + (s.top.length ? '<div class="sh-list">' + s.top.map(t => '<div class="sh-li"><span>' + esc(t.name) + "<small>" + t.qty + " sold</small></span><b class=\"num\">" + (t.revenue ? inr(t.revenue) : "") + "</b></div>").join("") + "</div>" : '<div class="sh-empty">Nothing sold in this period yet.</div>') + "</div></div>" +
         '<div class="card" style="margin-top:16px"><h2>Latest orders<span class="sp"></span><small style="color:var(--ink-3)">' + s.count + " in total</small></h2>" +
           (s.recent.length ? '<div class="sh-list">' + s.recent.map(r => '<div class="sh-li"><span>' + esc(r.name || "Customer") + " · " + inr(r.total) + "<small>" + esc(r.items.split("\n").join(" · ") || r.ref) + " · " + ago(r.ts) + '</small></span><span class="sh-st ' + STATUS(r.status) + '">' + esc(r.status) + "</span></div>").join("") + "</div>" : '<div class="sh-empty">No orders yet.</div>') + "</div>";
@@ -386,6 +386,7 @@
     const cats = () => S.data.categories;
     function drawProducts() {
       const el = $("#shProducts"); if (!el) return;
+      if (o.readOnly) { el.innerHTML = ""; return; }
       if (!S.data) {
         el.innerHTML = o.editable === false ? "" : '<div class="card"><h2>' + ic("bag", 18) + 'Your products</h2><div class="sh-empty">' + (o.html === undefined ? "Loading your products…" : "Your website isn't connected to the product editor yet. Message NOWORA and we'll switch it on.") + "</div></div>";
         return;

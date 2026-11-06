@@ -1959,7 +1959,7 @@ function wireStoreSales(){
 }
 function hostOf(u){return String(u||"").replace(/^https?:\/\//,"").replace(/\/$/,"")}
 function canEditOwner(c){ if(!c.repo) return false; const a=String(c.editAccess||"auto"); return a==="on"||(a!=="off"&&c.carePlan==="yes"&&c.status!=="paused"); }
-function editLabel(c){ if(!c.repo) return String(c.editAccess)==="on"||c.carePlan==="yes"?["pend","Editing: add GitHub repo"]:["muted","Editing: no repo linked"]; const a=String(c.editAccess||"auto"); if(a==="on") return ["up","Editing on"]; if(a==="off") return ["down","Editing off"]; return canEditOwner(c)?["up","Editing on · care plan"]:["muted","Editing off · no care plan"]; }
+function editLabel(c){ if(String(c.editAccess)==="off") return ["down","View-only"]; if(!c.repo) return String(c.editAccess)==="on"||c.carePlan==="yes"?["pend","Editing: add GitHub repo"]:["muted","Editing: no repo linked"]; const a=String(c.editAccess||"auto"); if(a==="on") return ["up","Editing on"]; if(a==="off") return ["down","View-only"]; return canEditOwner(c)?["up","Editing on · care plan"]:["muted","Editing off · no care plan"]; }
 function thumbFor(c){ const p=(A.data.Portfolio||[]).find(x=>x.url&&c.site&&hostOf(x.url)===hostOf(c.site)); return p&&p.image?p.image:""; }
 function dupOf(c){ const h=hostOf(c.site).toLowerCase(); return h?A.data.Clients.find(x=>x.id!==c.id&&hostOf(x.site).toLowerCase()===h):null; }
 function clientCard(c,open){
@@ -2054,9 +2054,9 @@ function cwAccess(c){
       :`<p class="sub" style="margin:6px 0 14px">Give ${esc(c.business)} a private dashboard: visitors, uptime, project, payments, requests — and the website editor when you allow it.</p><button class="btn btn-wa btn-sm" id="cwCreate">${KEY_ICON}Create dashboard</button>`}
     </div>
     <div class="panel"><h3>Website editing</h3>
-      <div class="seg3" id="cwEditAcc">${[["auto","Auto"],["on","Always on"],["off","Off"]].map(([k,l])=>`<button data-v="${k}" class="${a===k?"on":""}">${l}</button>`).join("")}</div>
-      <p class="sub" style="margin-top:10px">${a==="auto"?"On while their care plan is active, off when it isn't.":a==="on"?"They can always edit, with or without a care plan.":"They can't edit. You still can."}</p>
-      <div class="cw-eff ${eff?"ok":""}">${eff?"✓ "+esc(c.business)+" can edit their website now":!c.repo?"Not connected — add their GitHub repo below":"✕ Editing is off for them right now"+(a==="auto"&&c.carePlan!=="yes"?" (no care plan)":"")}</div>
+      <div class="seg3" id="cwEditAcc">${[["auto","Auto"],["on","Always on"],["off","View-only"]].map(([k,l])=>`<button data-v="${k}" class="${a===k?"on":""}">${l}</button>`).join("")}</div>
+      <p class="sub" style="margin-top:10px">${a==="auto"?"On while their care plan is active, off when it isn't.":a==="on"?"They can always edit, with or without a care plan.":"View-only: they can open their dashboard, see everything and download their data, but can't change anything — no website or product edits, no database changes, no new requests. You still can."}</p>
+      <div class="cw-eff ${eff?"ok":""}">${a==="off"?"👁 "+esc(c.business)+" has a view-only dashboard right now":eff?"✓ "+esc(c.business)+" can edit their website now":!c.repo?"Not connected — add their GitHub repo below":"✕ Editing is off for them right now"+(a==="auto"&&c.carePlan!=="yes"?" (no care plan)":"")}</div>
       <label class="pm-lbl" style="margin-top:16px">GitHub repository</label><div class="pm-row"><input id="cwRepo" value="${esc(c.repo||"")}" placeholder="Sarthak-B/client-site"><button class="btn btn-ghost btn-sm" id="cwRepoSave">Save</button></div>
       <p class="pm-note">Sites with a nowora.json file are linked automatically.</p></div>
   </div>
@@ -2066,7 +2066,7 @@ function cwAccess(c){
   const cr=$("#cwCreate"); if(cr) cr.onclick=()=>save({portalKey:uniqueSlug(c.business,c.id),pin:rndStr(6,"0123456789"),trackId:c.trackId||rndStr(10,KCH)},"Dashboard created — send them the link and PIN");
   const np=$("#cwPin"); if(np) np.onclick=()=>resetPin(c);
   const sl=$("#cwSlug"); if(sl) sl.onclick=()=>{const v=prompt("Link name (letters, numbers and dashes). The current link stops working.",c.portalKey);if(v===null)return;const s2=slugify(v);if(s2.length<3)return toast("Use at least 3 characters.",true);if(s2==="demo"||A.data.Clients.some(x=>x.id!==c.id&&String(x.portalKey).toLowerCase()===s2))return toast("Another client already uses that link.",true);save({portalKey:s2},"Link changed")};
-  $$("#cwEditAcc button").forEach(b=>b.onclick=()=>save({editAccess:b.dataset.v},"Editing access updated"));
+  $$("#cwEditAcc button").forEach(b=>b.onclick=()=>save({editAccess:b.dataset.v},b.dataset.v==="off"?"View-only — their open dashboard switches within a minute":"Editing access updated"));
   $("#cwRepoSave").onclick=()=>{const v=$("#cwRepo").value.trim().replace(/^https?:\/\/github\.com\//,"").replace(/\.git$/,"").replace(/\/$/,"");if(v&&!/^[\w.-]+\/[\w.-]+$/.test(v))return toast("Use the form owner/repo",true);save({repo:v},v?"Repository linked":"Repository removed")};
 }
 function cwBilling(c){
@@ -2340,7 +2340,7 @@ function clientForm(c){
     ${F("site","Live site URL",c.site,"url")}${F("status","Status",c.status||"onboarding","text",["onboarding","building","live","paused"])}
     ${F("package","Package",c.package||"Starter","text",["Starter","Business","Growth","Custom"])}${F("price","Project price (₹)",c.price,"number")}
     ${F("delivered","Delivered on",c.delivered,"date")}${F("carePlan","Care plan",c.carePlan||"no","text",[["yes","Yes"],["no","No"]])}
-    ${F("careFee","Care fee per month (₹)",c.careFee||1499,"number")}${F("repo","GitHub repo (owner/repo, needed for editing)",c.repo||guessRepo(c))}${F("editAccess","Website editing",c.editAccess||"auto","text",[["auto","Auto (with care plan)"],["on","Always on"],["off","Off"]])}${F("renewal","Next renewal",c.renewal,"date")}
+    ${F("careFee","Care fee per month (₹)",c.careFee||1499,"number")}${F("repo","GitHub repo (owner/repo, needed for editing)",c.repo||guessRepo(c))}${F("editAccess","Website editing",c.editAccess||"auto","text",[["auto","Auto (with care plan)"],["on","Always on"],["off","Off — view-only dashboard"]])}${F("renewal","Next renewal",c.renewal,"date")}
     <div class="checklist"><b style="grid-column:1/-1;font-size:14px">Onboarding checklist</b>${CHECKLIST.map((t,i)=>`<label><input type="checkbox" data-ck="${i}" ${ck.includes(i)?"checked":""}>${t}</label>`).join("")}</div>
     ${F("notes","Notes",c.notes,"textarea",null,true)}
     <div class="row-end"><button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button><button class="btn btn-wa btn-sm">Save client</button></div></form>`);

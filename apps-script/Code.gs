@@ -148,19 +148,19 @@ function doPost(e) {
       case 'cform':              return json_(clientForm_(body));
       /* ---- client portal (portal link + PIN) ---- */
       case 'portal':             return json_({ ok: true, data: portal_(portalClient_(body), +body.since || 0) });
-      case 'portal_request':     return json_(portalRequest_(portalClient_(body), body.request));
+      case 'portal_request':     return json_(portalRequest_(writable_(portalClient_(body)), body.request));
       /* ---- website editor (client portal) ---- */
       case 'site_source':        return json_({ ok: true, site: siteSource_(portalClient_(body)) });
-      case 'site_publish':       return json_(sitePublish_(portalClient_(body), body));
+      case 'site_publish':       return json_(sitePublish_(writable_(portalClient_(body)), body));
       case 'site_versions':      return json_({ ok: true, versions: siteVersions_(portalClient_(body)) });
-      case 'site_restore':       return json_(siteRestore_(portalClient_(body), body.sha));
+      case 'site_restore':       return json_(siteRestore_(writable_(portalClient_(body)), body.sha));
       /* ---- client database (portal link + PIN) ---- */
       case 'db_get':             return json_(dbGet_(portalClient_(body), body.tableId));
       case 'db_rev':             return json_({ ok: true, rev: dbRev_(portalClient_(body)) });
-      case 'db_save_table':      return json_(dbSaveTable_(portalClient_(body), body.table));
-      case 'db_delete_table':    return json_(dbDeleteTable_(portalClient_(body), body.tableId));
-      case 'db_save_row':        return json_(dbSaveRow_(portalClient_(body), body.tableId, body.row));
-      case 'db_delete_rows':     return json_(dbDeleteRows_(portalClient_(body), body.tableId, body.ids));
+      case 'db_save_table':      return json_(dbSaveTable_(writable_(portalClient_(body)), body.table));
+      case 'db_delete_table':    return json_(dbDeleteTable_(writable_(portalClient_(body)), body.tableId));
+      case 'db_save_row':        return json_(dbSaveRow_(writable_(portalClient_(body)), body.tableId, body.row));
+      case 'db_delete_rows':     return json_(dbDeleteRows_(writable_(portalClient_(body)), body.tableId, body.ids));
       /* ---- owner dashboard ---- */
       case 'dashboard':          requireAdmin_(body); return json_({ ok: true, data: dashboard_() });
       case 'upsert':             requireAdmin_(body); return json_({ ok: true, row: upsert_(body.sheet, body.row), queued: body.sheet === 'Portfolio' && body.row && body.row.shot === 'pending' ? dispatchShots_() : undefined });
@@ -386,7 +386,7 @@ function portal_(c, sinceSec) {
       business: c.business, name: c.name, site: c.site, status: c.status, package: c.package, price: c.price,
       delivered: c.delivered, carePlan: c.carePlan, careFee: c.careFee, renewal: c.renewal,
       uptime: c.uptime, responseMs: c.responseMs, lastCheck: c.lastCheck,
-      advancePaid: c.advancePaid, balancePaid: c.balancePaid, tracking: !!c.trackId, checklist: c.checklist, editable: canEdit_(c), editReason: editReason_(c), owner: !!c._owner, id: c._owner ? c.id : undefined, portalKey: c.portalKey
+      advancePaid: c.advancePaid, balancePaid: c.balancePaid, tracking: !!c.trackId, checklist: c.checklist, editable: canEdit_(c), editReason: editReason_(c), readOnly: readOnly_(c), owner: !!c._owner, id: c._owner ? c.id : undefined, portalKey: c.portalKey
     },
     stats: {
       days: days, hasData: ev.length > 0,
@@ -498,6 +498,17 @@ function editReason_(c) {
   return c.carePlan === 'yes' && c.status !== 'paused' ? '' : 'no-plan';
 }
 function canEdit_(c) { return !editReason_(c); }
+
+/**
+ * View-only clients: when the Clients tab "editAccess" is "off", the client can still open their
+ * dashboard, see everything and download their data, but every change is refused here — website
+ * edits, product edits, database rows and tables, and change requests. You (the owner) are never blocked.
+ */
+function readOnly_(c) { return !c._owner && String(c.editAccess || '').trim().toLowerCase() === 'off'; }
+function writable_(c) {
+  if (readOnly_(c)) throw new Error('Your dashboard is view-only right now. You can see and download everything, but changes are switched off — message NOWORA if you need something changed.');
+  return c;
+}
 
 function siteRepo_(c) {
   const why = editReason_(c);
