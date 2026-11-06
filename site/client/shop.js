@@ -166,6 +166,14 @@
     return html.replace(BLOCK_RE, () => '<script type="application/json" id="nowora-products">\n' + json + "\n</script>");
   }
 
+  /* ============================== stock ============================== */
+  // Per colour: stock = { size: count }. No stock object = not tracked (always on the website).
+  // On the website a size at 0 disappears, a colour with nothing left disappears, and so does a product.
+  // Website orders take stock off when Shiprocket dispatches them (52 Alive: /api/courier-updates).
+  const tracked = p => (p.colours || []).some(c => c.stock && typeof c.stock === "object");
+  const stockOf = (p, c) => !c.stock ? null : (p.sizes || []).reduce((t, z) => t + Math.max(0, Number(c.stock[z]) || 0), 0);
+  const productLeft = p => tracked(p) ? (p.colours || []).reduce((t, c) => t + (stockOf(p, c) || 0), 0) : null;
+
   /* ============================== sales (Orders table) ============================== */
   async function loadSales(call) {
     const first = await call("db_get", { tableId: "" });
@@ -337,6 +345,18 @@
 .sh-foot{position:sticky;bottom:0;display:flex;gap:10px;align-items:center;padding:14px 20px;background:var(--panel,#0E1613);border-top:1px solid var(--line)}
 .sh-foot .sp{flex:1}
 .sh-err{color:var(--rose);font-size:13.5px;font-weight:600}
+.sh-stock{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.sh-stock table{border-collapse:collapse;width:100%;font-size:13px}
+.sh-stock th,.sh-stock td{padding:6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.sh-stock tbody tr:last-child th,.sh-stock tbody tr:last-child td{border-bottom:0}
+.sh-stock thead th{color:var(--ink-2);font-weight:700}
+.sh-stock tbody th{text-align:left;font-weight:600;display:flex;align-items:center;gap:7px}
+.sh-stock tbody th i{width:14px;height:14px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
+.sh-stock input{width:50px;height:34px;border-radius:8px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--ink);text-align:center;font-size:14px}
+.sh-stock input:focus{outline:none;border-color:var(--neon)}
+.sh-tag.out{background:var(--rose);color:#fff}
+.sh-low{color:var(--amber);font-weight:700}
+.sh-stocknote{font-size:13px;color:var(--ink-2);margin-left:6px}.sh-stocknote b{color:var(--rose)}
 .btn.danger{background:rgba(255,92,122,.1);color:var(--rose);border:1px solid rgba(255,92,122,.35)}
 @media (max-width:900px){.sh-kpis{grid-template-columns:1fr 1fr}.sh-row,.sh-body{grid-template-columns:1fr}}
 `;
@@ -400,10 +420,13 @@
         '<div class="sh-grid"><button class="sh-add" id="shAdd">' + ic("plus", 28) + "Add a product<small style=\"font-weight:500;color:var(--ink-3)\">Upload photos — colours are detected for you</small></button>" +
         list.map(p => { const c0 = p.colours[0] || { photos: [] }, img = c0.photos[0], catName = (cats().find(c => c.id === p.category) || {}).name || p.category;
           return '<button class="sh-card" data-id="' + esc(p.id) + '"><span class="im">' + (img ? '<img src="' + esc(abs(img)) + '" alt="" loading="lazy">' : "") +
-            (p._new ? '<span class="sh-tag new">Not published</span>' : p._changed ? '<span class="sh-tag new">Edited</span>' : p.hidden ? '<span class="sh-tag">Hidden</span>' : "") + '</span><span class="bd"><b>' + esc(p.name) + '</b><span class="meta">' + esc(catName) + " · " + esc((p.sizes || []).join(" ")) + '</span><span class="pr">' + inr(p.price) +
-            '</span><span class="sh-dots">' + p.colours.map(c => '<i title="' + esc(c.name) + '" style="background:' + esc(c.hex) + '"></i>').join("") + "</span></span></button>"; }).join("") +
+            (p._new ? '<span class="sh-tag new">Not published</span>' : p._changed ? '<span class="sh-tag new">Edited</span>' : p.hidden ? '<span class="sh-tag">Hidden</span>' : productLeft(p) === 0 ? '<span class="sh-tag out">Sold out</span>' : "") + '</span><span class="bd"><b>' + esc(p.name) + '</b><span class="meta">' + esc(catName) + " · " + (tracked(p) ? '<span class="' + (productLeft(p) <= 3 ? "sh-low" : "") + '">' + productLeft(p) + " in stock</span>" : esc((p.sizes || []).join(" "))) + '</span><span class="pr">' + inr(p.price) +
+            '</span><span class="sh-dots">' + p.colours.map(c => '<i title="' + esc(c.name + (stockOf(p, c) === 0 ? " — sold out" : stockOf(p, c) !== null ? " — " + stockOf(p, c) + " left" : "")) + '" style="background:' + esc(c.hex) + (stockOf(p, c) === 0 ? ";opacity:.25" : "") + '"></i>').join("") + "</span></span></button>"; }).join("") +
         "</div>" + (newPhotos ? '<p class="sh-hint">' + newPhotos + " new photo" + (newPhotos === 1 ? "" : "s") + " will upload when you publish (up to " + MAX_NEW_PHOTOS + " at a time).</p>" : '<p class="sh-hint">Changes stay here until you press Publish. Your website updates about a minute later.</p>') + "</div>";
       $("#shCats").onclick = e => { const b = e.target.closest("button"); if (!b) return; S.cat = b.dataset.c; drawProducts(); };
+      const out = [], low = [];
+      P.forEach(p => (p.colours || []).forEach(c => { if (!c.stock) return; (p.sizes || []).forEach(z => { const n = Number(c.stock[z]) || 0; if (n <= 0) out.push(p.name + " " + c.name + " " + z); else if (n <= 2) low.push(p.name + " " + c.name + " " + z + " (" + n + ")"); }); }));
+      if (out.length || low.length) $("#shCats").insertAdjacentHTML("afterend", '<span class="sh-stocknote" title="' + esc(out.concat(low).join("\n")) + '">' + (out.length ? '<b>' + out.length + " sold out</b>" : "") + (out.length && low.length ? " · " : "") + (low.length ? low.length + " running low" : "") + "</span>");
       $("#shAdd").onclick = () => editProduct(null);
       root.querySelectorAll(".sh-card").forEach(b => b.onclick = () => editProduct(S.data.products.find(p => p.id === b.dataset.id)));
       const pub = $("#shPub"); if (pub) pub.onclick = publish;
@@ -417,7 +440,7 @@
       const firstSizes = (S.data.products[0] && S.data.products[0].sizes) || ["S", "M", "L", "XL", "XXL"];
       const p = orig ? JSON.parse(JSON.stringify(orig)) : { id: "", name: "", category: "", price: "", sizes: firstSizes.slice(), desc: "", details: [], colours: [] };
       // photos are edited as a flat list, each tagged with its colour
-      const st = { catTouched: !isNew, err: "", busy: "" };
+      const st = { catTouched: !isNew, err: "", busy: "", track: isNew ? true : tracked(p) };
       const m = document.createElement("div"); m.className = "sh-modal"; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true");
       document.body.appendChild(m); requestAnimationFrame(() => m.classList.add("on"));
       const close = () => { m.classList.remove("on"); setTimeout(() => m.remove(), 250); document.removeEventListener("keydown", onKey); };
@@ -444,6 +467,12 @@
             '<div class="sh-f"><label for="pPrice">Price (₹)</label><input type="number" id="pPrice" min="1" step="1" inputmode="numeric" placeholder="e.g. 1299" value="' + esc(p.price) + '"></div>' +
             '<div class="sh-f"><span class="lbl">Sizes</span><div class="sh-sizes" id="pSizes">' + allSizes().map(s => '<button type="button" class="' + (p.sizes.indexOf(s) >= 0 ? "on" : "") + '">' + esc(s) + "</button>").join("") + '<input id="pSizeAdd" placeholder="+ other size" maxlength="12"></div>' +
               '<div class="sh-presets">Quick pick: ' + PRESETS.map((x, i) => '<button type="button" data-preset="' + i + '">' + x[0] + "</button>").join(" · ") + ' · <button type="button" data-preset="none">None</button></div></div>' +
+            '<div class="sh-f"><span class="lbl">Stock <label class="sh-toggle" style="margin-left:auto;text-transform:none;letter-spacing:0;font-size:13px"><input type="checkbox" id="pTrack"' + (st.track ? " checked" : "") + "> Track stock</label></span>" +
+              (st.track ? (p.colours.length && p.sizes.length ? '<div class="sh-stock"><table><thead><tr><th></th>' + p.sizes.map(z => "<th>" + esc(z) + "</th>").join("") + "</tr></thead><tbody>" +
+                p.colours.map((c, ci) => '<tr><th><i style="background:' + esc(c.hex) + '"></i>' + esc(c.name) + "</th>" + p.sizes.map(z => '<td><input type="number" min="0" max="9999" step="1" inputmode="numeric" data-st="' + ci + '" data-z="' + esc(z) + '" value="' + esc(c.stock && c.stock[z] !== undefined ? c.stock[z] : "") + '" placeholder="0" aria-label="' + esc(c.name + " " + z + " in stock") + '"></td>').join("") + "</tr>").join("") +
+                '</tbody></table></div><p class="sh-hint" style="margin-top:6px">How many of each you have. A size at 0 disappears from your website; when a colour runs out it disappears too. Dispatched website orders are taken off automatically.</p>'
+                : '<p class="sh-hint">Add photos and sizes first, then set how many of each you have.</p>')
+              : '<p class="sh-hint" style="margin-top:0">Off: this product always shows as available. Switch on to set how many of each size and colour you have — sold-out sizes then disappear from your website by themselves.</p>') + "</div>" +
             '<div class="sh-f"><label for="pDesc">Short description <span style="text-transform:none;letter-spacing:0;color:var(--ink-3);font-weight:500">optional</span></label><textarea id="pDesc" maxlength="300" placeholder="One or two lines shoppers see on the product page">' + esc(p.desc) + "</textarea></div>" +
             '<div class="sh-f"><label for="pDet">Details <span style="text-transform:none;letter-spacing:0;color:var(--ink-3);font-weight:500">optional, one per line</span></label><textarea id="pDet" maxlength="600" placeholder="Fleece lined&#10;Two zip pockets">' + esc((p.details || []).join("\n")) + "</textarea></div>" +
             '<label class="sh-toggle"><input type="checkbox" id="pShow"' + (p.hidden ? "" : " checked") + "> Show on my website</label>" +
@@ -458,6 +487,10 @@
         p.desc = $m("#pDesc").value.trim();
         p.details = $m("#pDet").value.split("\n").map(x => x.trim()).filter(Boolean).slice(0, 8);
         p.hidden = !$m("#pShow").checked;
+        const tr = $m("#pTrack"); if (tr) st.track = tr.checked;
+        m.querySelectorAll("[data-st]").forEach(inp => { const c = p.colours[+inp.dataset.st]; if (!c) return; c.stock = c.stock || {}; const v = inp.value.trim(); c.stock[inp.dataset.z] = v === "" ? 0 : Math.max(0, Math.min(9999, Math.round(Number(v) || 0))); });
+        if (st.track) p.colours.forEach(c => { c.stock = c.stock || {}; p.sizes.forEach(z => { if (c.stock[z] === undefined) c.stock[z] = 0; }); Object.keys(c.stock).forEach(z => { if (p.sizes.indexOf(z) < 0) delete c.stock[z]; }); });
+        else p.colours.forEach(c => { delete c.stock; });
         m.querySelectorAll("[data-cname]").forEach((inp, i) => { const v = inp.value.replace(/\s+/g, " ").trim(); if (v) p.colours[i].name = v.slice(0, 40); });
         m.querySelectorAll("[data-cfam]").forEach((sel, i) => { p.colours[i].family = sel.value; });
       }
@@ -473,7 +506,8 @@
             const id = slug(nm) || "cat"; if (!cats().some(c => c.id === id)) S.data.categories.push({ id: id, name: nm, _new: true }); p.category = id; }
           else p.category = v;
           draw(); };
-        $m("#pSizes").onclick = e => { const b = e.target.closest("button"); if (!b) return; const s = b.textContent, i = p.sizes.indexOf(s); if (i >= 0) p.sizes.splice(i, 1); else p.sizes.push(s); b.classList.toggle("on", i < 0); };
+        $m("#pSizes").onclick = e => { const b = e.target.closest("button"); if (!b) return; readFields(); const s = b.textContent, i = p.sizes.indexOf(s); if (i >= 0) p.sizes.splice(i, 1); else p.sizes.push(s); draw(); };
+        const trk = $m("#pTrack"); if (trk) trk.onchange = () => { readFields(); draw(); };
         $m("#pSizeAdd").onkeydown = e => { if (e.key !== "Enter") return; e.preventDefault(); const v = e.target.value.trim().slice(0, 12); if (v && p.sizes.indexOf(v) < 0) p.sizes.push(v); readFields(); draw(); const a = $m("#pSizeAdd"); a.focus(); };
         m.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { readFields(); p.sizes = b.dataset.preset === "none" ? [] : PRESETS[+b.dataset.preset][1].slice(); draw(); });
         const drop = $m("#pDrop"), file = $m("#pFile");
@@ -523,6 +557,8 @@
         if (!p.category) { const g = guess(); if (g) p.category = g.id; else return err("Choose a category"); }
         if (!p.sizes.length) p.sizes = ["Free size"];
         const names = p.colours.map(c => c.name.toLowerCase()); if (names.some((n, i) => names.indexOf(n) !== i)) return err("Two colours have the same name");
+        if (st.track) { p.colours.forEach(c => { c.stock = c.stock || {}; p.sizes.forEach(z => { if (c.stock[z] === undefined) c.stock[z] = 0; }); });
+          if (!p.hidden && productLeft(p) === 0 && !confirm("Every size is at 0, so " + (p.name || "this product") + " won't show on your website until you add stock. Save anyway?")) return; }
         p.price = price;
         if (!cats().some(c => c.id === p.category)) { const g = guess(); S.data.categories.push({ id: p.category, name: g && g.id === p.category ? g.name : p.category }); }
         p.colours.forEach(c => { delete c._lab; c.family = c.family || (nearest(hexLab(c.hex)).family); });
@@ -543,6 +579,12 @@
         if (!readCatalogue(site.html)) throw new Error("Your website isn't set up for the product editor yet — ask NOWORA to switch it on.");
         const images = [], stamp = Date.now().toString(36);
         const data = { v: 1, note: S.data.note || "Managed from the NOWORA client dashboard (Shop → Products).", categories: [], products: [] };
+        /* Stock can change on the live site while this page is open (dispatched orders take items off).
+           Where the client didn't touch a colour's stock here, keep the live numbers; where they did, theirs win. */
+        const live = readCatalogue(site.html) || { products: [] }, pick = (d, pid, cn) => { const pp = (d.products || []).find(x => x.id === pid); const cc = pp && (pp.colours || []).find(x => x.name === cn); return cc ? cc.stock : undefined; };
+        const liveStock = (p, c) => { const was = pick(S.saved || {}, p.id, c.name), now = pick(live, p.id, c.name);
+          return JSON.stringify(c.stock) === JSON.stringify(was) && now && typeof now === "object" ? Object.assign({}, now) : Object.assign({}, c.stock); };
+        if (Array.isArray(live.dispatched)) data.dispatched = live.dispatched;
         const usedCats = new Set(S.data.products.map(p => p.category));
         data.categories = S.data.categories.filter(c => usedCats.has(c.id)).map(c => ({ id: c.id, name: c.name }));
         let k = 0;
@@ -551,7 +593,7 @@
           if (p.hidden) out.hidden = true;
           if (p.desc) out.desc = p.desc;
           if (p.details && p.details.length) out.details = p.details;
-          out.colours = p.colours.map(c => ({ name: c.name, hex: c.hex, family: c.family, photos: c.photos.map(ph => {
+          out.colours = p.colours.map(c => ({ name: c.name, hex: c.hex, family: c.family, ...(c.stock ? { stock: liveStock(p, c) } : {}), photos: c.photos.map(ph => {
             if (!/^data:/.test(ph)) return ph;
             const name = (slug(p.id).slice(0, 24) || "product") + "-" + stamp + "-" + (k++) + ".jpg";
             images.push({ name: name, data: ph });
