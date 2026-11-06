@@ -182,6 +182,7 @@
   function mount(o) {
     const root = o.root, toast = o.toast || (m => alert(m));
     const call = o.demo ? (() => { const be = demoBackend(); return (a, x) => be(a, x || {}); })() : o.call;
+    const RO = !!o.readOnly;                         // view-only: look, search, sort and download — no changes
     const S = { tables: [], tableId: "", rows: [], q: "", sort: null, sel: new Set(), shown: PAGE, sheetUrl: "", loading: true, rev: "", fresh: new Set(), unseen: {}, onlyLow: false };
     if (!document.getElementById("db-css")) { const st = document.createElement("style"); st.id = "db-css"; st.textContent = CSS; document.head.appendChild(st); }
 
@@ -199,6 +200,8 @@
     const statusCol = t => t && t.cols.find(c => c.type === "choice" && /^(status|stage|state|order status)$/i.test(c.name));
     function stockLevel(t, r) { const sc = stockCol(t); if (!sc) return ""; const v = r[sc.id]; if (v === "" || v == null) return ""; const rc = reorderCol(t), lim = rc && r[rc.id] !== "" ? +r[rc.id] : 3; return v <= 0 ? "out" : v <= lim ? "low" : "ok"; }
     function cellHtml(c, v, t, r) {
+      if (RO && t && c === stockCol(t)) { const lv = stockLevel(t, r); return '<span class="db-stock db-' + lv + '"><b>' + (v === "" || v == null ? "—" : Number(v).toLocaleString("en-IN")) + "</b></span>"; }
+      if (RO && t && c === statusCol(t)) return v ? '<span class="db-pill">' + esc(v) + "</span>" : '<span class="db-no">—</span>';
       if (t && c === stockCol(t)) { const lv = stockLevel(t, r); return '<span class="db-stock db-' + lv + '"><button type="button" data-stop data-adj="-1" aria-label="One less">−</button><b>' + (v === "" || v == null ? "—" : Number(v).toLocaleString("en-IN")) + '</b><button type="button" data-stop data-adj="1" aria-label="One more">+</button></span>'; }
       if (t && c === statusCol(t)) return '<select class="db-st" data-stop data-status data-v="' + esc(String(v || "").toLowerCase()) + '" aria-label="' + esc(c.name) + '"><option value="">—</option>' + (c.options || []).map(x => "<option" + (x === v ? " selected" : "") + ">" + esc(x) + "</option>").join("") + "</select>";
       if (c.type === "yesno") return v ? '<span class="db-yes">Yes</span>' : '<span class="db-no">No</span>';
@@ -283,29 +286,31 @@
       const num = c => c.type === "number" || c.type === "money";
       root.innerHTML = '<div class="db-shell">' +
         '<div class="db-tabs" role="tablist">' + S.tables.map(x => '<button class="db-tab' + (x.id === S.tableId ? " on" : "") + '" data-t="' + esc(x.id) + '" role="tab">' + esc(x.name) + " <small>" + (x.id === S.tableId ? S.rows.length : x.count) + "</small>" + (S.unseen[x.id] ? '<span class="dot" title="New rows"></span>' : "") + "</button>").join("") +
-          '<button class="db-tab new" data-newtable>' + svg("plus", 15) + "New table</button></div>" + summary(t) +
+          (RO ? "" : '<button class="db-tab new" data-newtable>' + svg("plus", 15) + "New table</button>") + "</div>" +
+        (RO ? '<div class="db-intro">' + svg("db", 18) + "<span><b>View-only.</b> You can search, sort and download everything here. Changes are switched off — message NOWORA if something needs updating.</span></div>" : "") + summary(t) +
         (S.sel.size ? '<div class="db-sel">' + S.sel.size + " selected<span class=\"sp\"></span><button class=\"btn ghost sm db-danger\" data-delsel>" + svg("trash", 15) + "Delete</button><button class=\"btn ghost sm\" data-clearsel>Cancel</button></div>" :
         '<div class="db-bar"><label class="db-search">' + svg("search") + '<input type="search" id="dbq" placeholder="Search ' + esc(t.name.toLowerCase()) + '…" value="' + esc(S.q) + '" aria-label="Search"></label>' +
-          '<button class="btn sm" data-addrow>' + svg("plus", 15) + "Add " + esc(singular(t.name)) + "</button>" +
-          '<button class="db-ib" data-editcols title="Edit columns" aria-label="Edit columns">' + svg("cols") + "</button>" +
+          (RO ? "" : '<button class="btn sm" data-addrow>' + svg("plus", 15) + "Add " + esc(singular(t.name)) + "</button>" +
+          '<button class="db-ib" data-editcols title="Edit columns" aria-label="Edit columns">' + svg("cols") + "</button>") +
           '<button class="db-ib" data-csv title="Download as CSV (opens in Excel)" aria-label="Download CSV">' + svg("dl") + "</button>" +
           (S.sheetUrl ? '<a class="db-ib" href="' + esc(S.sheetUrl) + '" target="_blank" rel="noopener" title="Open in Google Sheets (only you see this)" aria-label="Open in Google Sheets">' + svg("sheet") + "</a>" : "") +
-          '<button class="db-ib danger" data-deltable title="Delete this table" aria-label="Delete table">' + svg("trash") + "</button></div>") +
+          (RO ? "" : '<button class="db-ib danger" data-deltable title="Delete this table" aria-label="Delete table">' + svg("trash") + "</button>") + "</div>") +
         '<div class="card db-card">' + (S.rows.length ?
-          '<div class="db-scroll"><table class="db-table"><thead><tr><th class="ck db-ck"><input type="checkbox" data-all aria-label="Select all"' + (page.length && page.every(r => S.sel.has(r._id)) ? " checked" : "") + "></th>" +
+          '<div class="db-scroll"><table class="db-table"><thead><tr>' + (RO ? "" : '<th class="ck db-ck"><input type="checkbox" data-all aria-label="Select all"' + (page.length && page.every(r => S.sel.has(r._id)) ? " checked" : "") + "></th>") +
             t.cols.map(c => '<th data-sort="' + esc(c.id) + '" class="' + (num(c) ? "num" : "") + '">' + esc(c.name) + (S.sort && S.sort.id === c.id ? '<span class="ar">' + (S.sort.dir > 0 ? "↑" : "↓") + "</span>" : "") + "</th>").join("") + "</tr></thead><tbody>" +
-            (page.length ? page.map(r => '<tr data-r="' + esc(r._id) + '" class="' + (S.sel.has(r._id) ? "sel" : "") + (S.fresh.has(r._id) ? " fresh" : "") + '"><td class="ck db-ck"><input type="checkbox" data-pick' + (S.sel.has(r._id) ? " checked" : "") + ' aria-label="Select row"></td>' +
+            (page.length ? page.map(r => '<tr data-r="' + esc(r._id) + '" class="' + (S.sel.has(r._id) ? "sel" : "") + (S.fresh.has(r._id) ? " fresh" : "") + '">' + (RO ? "" : '<td class="ck db-ck"><input type="checkbox" data-pick' + (S.sel.has(r._id) ? " checked" : "") + ' aria-label="Select row"></td>') +
               t.cols.map(c => '<td class="' + (num(c) ? "num" : "") + '" title="' + esc(cellText(c, r[c.id])) + '">' + cellHtml(c, r[c.id], t, r) + "</td>").join("") + "</tr>").join("")
-              : '<tr><td colspan="' + (t.cols.length + 1) + '" class="muted" style="text-align:center;padding:36px">Nothing matches “' + esc(S.q) + "”.</td></tr>") +
+              : '<tr><td colspan="' + (t.cols.length + (RO ? 0 : 1)) + '" class="muted" style="text-align:center;padding:36px">Nothing matches “' + esc(S.q) + "”.</td></tr>") +
           "</tbody></table></div>" +
           '<div class="db-foot"><span>' + (S.q || S.onlyLow ? rows.length + " of " + S.rows.length : S.rows.length) + " " + (S.rows.length === 1 ? "row" : "rows") + "</span>" + moneyTotal(t, rows) + '<span class="sp"></span><span class="db-live" title="New rows from your website appear here by themselves"><i></i>Live</span>' +
             (rows.length > S.shown ? '<button class="btn ghost sm" data-more>Show ' + Math.min(PAGE, rows.length - S.shown) + " more</button>" : "") + "</div>"
-          : '<div class="db-none"><b>No ' + esc(t.name.toLowerCase()) + " yet.</b>Add your first one — it's saved straight away.<div style=\"margin-top:16px\"><button class=\"btn\" data-addrow>" + svg("plus", 15) + "Add " + esc(singular(t.name)) + "</button></div></div>") +
+          : '<div class="db-none"><b>No ' + esc(t.name.toLowerCase()) + " yet.</b>" + (RO ? "New rows from your website still appear here." : "Add your first one — it's saved straight away.<div style=\"margin-top:16px\"><button class=\"btn\" data-addrow>" + svg("plus", 15) + "Add " + esc(singular(t.name)) + "</button></div>") + "</div>") +
         "</div></div>";
       wire();
     }
 
     function drawStart() {
+      if (RO) { root.innerHTML = '<div class="card"><div class="empty" style="margin:0">Nothing saved yet. Orders and forms from your website appear here by themselves.</div></div>'; return; }
       root.innerHTML = '<div class="db-intro">' + svg("db", 20) + "<span>Pick a starting point — you can rename, add or remove columns any time.</span></div>" +
         '<div class="db-tpls">' + TEMPLATES.map((t, i) => '<button class="card db-tpl" data-tpl="' + i + '"><span class="ico">' + svg(t.icon, 20) + "</span><b>" + esc(t.name) + "</b><p>" + esc(t.blurb) + "</p><small>" + t.cols.map(c => esc(c[0])).join(" · ") + "</small></button>").join("") +
         '<button class="card db-tpl" data-tpl="blank"><span class="ico">' + svg("blank", 20) + "</span><b>Start blank</b><p>Name your own table and choose its columns.</p><small>Anything you need to keep track of</small></button></div>";
@@ -336,6 +341,7 @@
         if (e.target.closest("[data-stop]")) return;
         const id = tr.dataset.r;
         if (e.target.closest(".ck")) { if (e.target.matches("input")) { if (e.target.checked) S.sel.add(id); else S.sel.delete(id); } else { S.sel.has(id) ? S.sel.delete(id) : S.sel.add(id); } return draw(); }
+        if (RO) return viewRow(S.rows.find(r => r._id === id));
         if (S.sel.size) { S.sel.has(id) ? S.sel.delete(id) : S.sel.add(id); return draw(); }
         editRow(S.rows.find(r => r._id === id));
       });
@@ -374,7 +380,17 @@
       return '<div class="db-field">' + lab + '<input id="' + id + '" name="' + c.id + '" type="' + t + '"' + extra + ' value="' + esc(v) + '" maxlength="300"></div>';
     }
 
+    /* view-only: the whole row, nothing editable */
+    function viewRow(row) {
+      const t = table(); if (!t || !row) return;
+      modal("<h2>" + esc(singular(t.name)) + '<span class="sp"></span><button class="db-ib" data-close aria-label="Close">' + svg("x") + "</button></h2>" +
+        '<p class="sub">Added ' + (row._ts ? new Date(row._ts).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) : "") + " · view-only</p>" +
+        '<div class="db-form">' + t.cols.map(c => '<div class="db-field' + (c.type === "longtext" ? " full" : "") + '"><label>' + esc(c.name) + '</label><div style="white-space:pre-wrap;padding:10px 0;font-size:15px">' + (cellText(c, row[c.id]) ? esc(cellText(c, row[c.id])) : '<span class="db-no">—</span>') + "</div></div>").join("") + "</div>" +
+        '<div class="db-acts"><span class="sp"></span><button class="btn sm" data-close>Close</button></div>', bg => setTimeout(() => { const b = bg.querySelector(".db-acts [data-close]"); if (b) b.focus(); }, 60));
+    }
+
     function editRow(row) {
+      if (RO) return;
       const t = table(); if (!t) return;
       const isNew = !row; row = row || {};
       modal("<h2>" + (isNew ? "Add " + esc(singular(t.name)) : "Edit " + esc(singular(t.name))) + '<span class="sp"></span><button class="db-ib" data-close aria-label="Close">' + svg("x") + "</button></h2>" +
@@ -418,6 +434,7 @@
     /* one-tap changes (stock −/+, order status): update on screen at once, save in the background */
     const pending = {};
     function quickSave(id, change, msg) {
+      if (RO) return;
       const t = table(), row = S.rows.find(r => r._id === id); if (!row) return;
       change(row); draw();
       clearTimeout(pending[id]);
@@ -427,7 +444,7 @@
         catch (x) { toast(x.message); load(t.id, true); }
       }, 450);                                         // several taps in a row become one save
     }
-    async function delSelected() {
+    async function delSelected() { if (RO) return;
       const t = table(), ids = [...S.sel];
       if (!confirm("Delete " + ids.length + " " + (ids.length === 1 ? "row" : "rows") + " from " + t.name + "? This can't be undone.")) return;
       try {
@@ -436,7 +453,7 @@
       } catch (x) { toast(x.message); load(t.id, true); }
     }
 
-    function chooseNew() {
+    function chooseNew() { if (RO) return;
       modal('<h2>New table<span class="sp"></span><button class="db-ib" data-close aria-label="Close">' + svg("x") + '</button></h2><p class="sub">Start from a ready-made table or a blank one.</p>' +
         '<div class="db-tpls" style="grid-template-columns:repeat(2,minmax(0,1fr))">' + TEMPLATES.map((t, i) => '<button class="card db-tpl" data-tpl="' + i + '"><span class="ico">' + svg(t.icon, 18) + "</span><b>" + esc(t.name) + "</b><small>" + t.cols.map(c => esc(c[0])).join(" · ") + "</small></button>").join("") +
         '<button class="card db-tpl" data-tpl="blank"><span class="ico">' + svg("blank", 18) + "</span><b>Start blank</b><small>Choose your own columns</small></button></div>",
@@ -448,7 +465,7 @@
         }));
     }
 
-    function editTable(t, fromTemplate) {
+    function editTable(t, fromTemplate) { if (RO) return;
       const isNew = !t || !t.id;
       t = t || { name: "", cols: [{ name: "Name", type: "text" }, { name: "Phone", type: "phone" }, { name: "Notes", type: "longtext" }] };
       const colRow = (c, i) => '<div class="db-col" data-i="' + i + '" data-id="' + esc(c.id || "") + '">' +
@@ -492,7 +509,7 @@
         });
     }
 
-    async function delTable() {
+    async function delTable() { if (RO) return;
       const t = table();
       const n = S.rows.length;
       if (!confirm("Delete the whole “" + t.name + "” table" + (n ? " and its " + n + " " + (n === 1 ? "row" : "rows") : "") + "? This can't be undone." + (n ? "\n\nTip: download it as CSV first." : ""))) return;
