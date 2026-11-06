@@ -1903,6 +1903,7 @@ function vClients(soft){
     <div class="panel kpi"><div class="lbl">Can edit their site</div><div class="val">${editOn}</div><span class="delta flat">of ${C.length} clients</span></div>
     <div class="panel kpi"><div class="lbl">Open requests</div><div class="val">${R.filter(r=>r.status!=="done").length}</div><span class="delta flat">${R.filter(r=>r.status==="new").length} new</span></div>
   </div>
+  <div class="panel" id="storeSales" style="margin-top:18px"${storeSales.none?' hidden':''}>${storeSalesHtml()}</div>
   <div class="cl-bar"><div class="cl-filters">${[["all","All"],["live","Live"],["building","Building"],["care","Care plan"],["attention","Needs attention"]].map(([k,l])=>`<button data-f="${k}" class="${f===k?"on":""}">${l}</button>`).join("")}</div><input class="cl-search" id="clQ" placeholder="Search clients" value="${esc(A.clientQ||"")}"></div>
   ${list.length?`<div class="cl-grid">${list.map(c=>clientCard(c,openReq(c))).join("")}</div>`:`<div class="panel"><div class="empty">${C.length?"No clients match.":"No clients yet. Sites in your GitHub with a nowora.json file appear here automatically, or add one by hand."}</div></div>`}`;
   $$(".cl-filters button").forEach(b=>b.onclick=()=>{A.clientFilter=b.dataset.f;vClients()});
@@ -1914,6 +1915,46 @@ function vClients(soft){
     if(e.target.closest("[data-remove]")) return removeClient(c);
     if(e.target.closest("a")) return;
     A.clientView=c.id; A.cwTab="overview"; vClients();});
+  wireStoreSales(); storeSales();
+}
+
+/* ---------- client store sales: read from each client's Orders table (same data as their Shop tab) ---------- */
+A.sales=A.sales||{};
+function loadShopJs(){ if(window.NoworaShop) return Promise.resolve(); return loadShopJs.p=loadShopJs.p||new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="/client/shop.js?v=1";sc.onload=res;sc.onerror=()=>{loadShopJs.p=null;rej(new Error("Couldn't load the sales module"))};document.head.appendChild(sc);}); }
+async function salesFor(c){
+  const call=(a,x)=>API.post(Object.assign({action:a,key:ADMIN.key,portalKey:c.portalKey},x||{}));
+  const o=await NoworaShop.loadSales(call);
+  A.sales[c.id]=o?{m30:NoworaShop.summarise(o,30),all:NoworaShop.summarise(o,0),at:Date.now()}:{none:true,at:Date.now()};
+  return A.sales[c.id];
+}
+async function storeSales(force){
+  if(!API.live||storeSales.busy) return;
+  if(!force&&storeSales.at&&Date.now()-storeSales.at<5*60e3) return;
+  storeSales.busy=true;
+  try{ await loadShopJs();
+    for(const c of A.data.Clients.filter(x=>x.portalKey)){ try{ await salesFor(c); }catch(e){ console.warn("sales",c.business,e.message); } }
+    storeSales.at=Date.now(); storeSales.none=!A.data.Clients.some(c=>A.sales[c.id]&&!A.sales[c.id].none);
+  }catch(e){ storeSales.err=e.message; }
+  storeSales.busy=false;
+  if(A.tab==="clients"&&!A.clientView&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) vClients();
+}
+function storeSalesHtml(){
+  if(!API.live) return `<h3>Client store sales</h3><div class="sub">Connect your backend to see your clients' website sales here.</div>`;
+  const shops=A.data.Clients.filter(c=>A.sales[c.id]&&!A.sales[c.id].none);
+  if(!shops.length) return `<h3>Client store sales</h3><div class="sub">${storeSales.busy||!storeSales.at?"Loading sales from your clients' websites…":"No client has website orders yet."}</div>`;
+  const sum=k=>shops.reduce((t,c)=>t+(A.sales[c.id].m30[k]||0),0);
+  return `<h3>Client store sales<small>last 30 days · from each client's Orders table</small><span class="sp"></span><button class="btn btn-ghost btn-sm" id="ssRefresh">${storeSales.busy?"Refreshing…":"Refresh"}</button></h3>
+    <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+      <div><div class="sub">Confirmed sales</div><div style="font-family:var(--display);font-size:28px;font-weight:700">${inr(sum("confirmed"))}</div></div>
+      <div><div class="sub">Waiting to confirm</div><div style="font-family:var(--display);font-size:28px;font-weight:700">${inr(sum("waiting"))}</div></div>
+      <div><div class="sub">Orders</div><div style="font-family:var(--display);font-size:28px;font-weight:700">${num(sum("orders"))}</div></div>
+      <div><div class="sub">Stores selling</div><div style="font-family:var(--display);font-size:28px;font-weight:700">${shops.length}</div></div></div>
+    ${shops.sort((a,b)=>A.sales[b.id].m30.sales-A.sales[a.id].m30.sales).map(c=>{const s=A.sales[c.id].m30,all=A.sales[c.id].all;
+      return `<div class="cw-row" data-sales="${c.id}" style="cursor:pointer"><span><b>${esc(c.business)}</b> <span class="sub" style="display:inline">· ${s.orders} order${s.orders===1?"":"s"} · ${inr(s.confirmed)} confirmed${s.waiting?` · ${inr(s.waiting)} waiting`:""}</span></span><span class="sub">${inr(all.sales)} all time${all.last?" · last "+ago(all.last):""}</span></div>`}).join("")}`;
+}
+function wireStoreSales(){
+  const r=$("#ssRefresh"); if(r) r.onclick=()=>{storeSales(true);r.textContent="Refreshing…"};
+  $$("[data-sales]").forEach(el=>el.onclick=()=>{A.clientView=el.dataset.sales;A.cwTab="overview";vClients();});
 }
 function hostOf(u){return String(u||"").replace(/^https?:\/\//,"").replace(/\/$/,"")}
 function canEditOwner(c){ if(!c.repo) return false; const a=String(c.editAccess||"auto"); return a==="on"||(a!=="off"&&c.carePlan==="yes"&&c.status!=="paused"); }
@@ -1925,7 +1966,7 @@ function clientCard(c,open){
   return `<article class="cl-card" data-id="${c.id}">
     <div class="cl-thumb">${th?`<img src="${esc(th)}" alt="" loading="lazy">`:`<span>${esc((c.business||"?").slice(0,1))}</span>`}<i class="cl-dot ${c.uptime==="down"?"down":c.uptime==="up"?"up":""}" title="${c.uptime||"not checked"}"></i></div>
     <div class="cl-body"><div class="cl-head"><b>${esc(c.business||"Untitled")}</b><span class="cl-mini"><button class="cl-icon" data-edit title="Edit details" aria-label="Edit ${esc(c.business||"client")}">${ICON.edit}</button><button class="cl-icon danger" data-remove title="Remove client" aria-label="Remove ${esc(c.business||"client")}">${ICON.trash}</button></span></div><span class="sub">${c.site?esc(hostOf(c.site)):"no site yet"}</span>
-      <div class="cl-tags"><span class="st ${esc(c.status)}">${esc(c.status||"—")}</span>${c.carePlan==="yes"?`<span class="st up">Care ${inr(c.careFee||1499)}</span>`:""}<span class="st ${el[0]}">${el[1]}</span>${open?`<span class="st pend">${open} request${open>1?"s":""}</span>`:""}${c.uptime==="up"&&c.responseMs?`<span class="st">${c.responseMs} ms</span>`:""}${dup?`<span class="st down" title="Two client entries share this website">Same site as ${esc(dup.business||"another client")}</span>`:""}</div></div>
+      <div class="cl-tags"><span class="st ${esc(c.status)}">${esc(c.status||"—")}</span>${c.carePlan==="yes"?`<span class="st up">Care ${inr(c.careFee||1499)}</span>`:""}<span class="st ${el[0]}">${el[1]}</span>${open?`<span class="st pend">${open} request${open>1?"s":""}</span>`:""}${c.uptime==="up"&&c.responseMs?`<span class="st">${c.responseMs} ms</span>`:""}${A.sales&&A.sales[c.id]&&!A.sales[c.id].none?`<span class="st up" title="Website sales, last 30 days (confirmed + waiting)">${inr(A.sales[c.id].m30.sales)} sales · 30d</span>`:""}${dup?`<span class="st down" title="Two client entries share this website">Same site as ${esc(dup.business||"another client")}</span>`:""}</div></div>
     <div class="cl-acts">${c.portalKey?`<button class="btn btn-ghost btn-sm" data-view>${ICON.eye}View as client</button>${c.repo?`<button class="btn btn-ghost btn-sm" data-editsite>${ICON.edit}Edit site</button>`:""}`:`<span class="sub">No dashboard yet</span>`}<span class="sp"></span><span class="cl-open">Open →</span></div>
   </article>`;
 }
@@ -1972,7 +2013,9 @@ async function cwOverview(c){
       <div class="panel"><h3>Setup checklist</h3><div class="meter" style="margin-top:8px"><i style="width:${ck.length/CHECKLIST.length*100}%"></i></div><span class="sub">${ck.length}/${CHECKLIST.length} done · status: ${esc(c.status||"—")}</span></div>
       <div class="panel"><h3>Recent website edits</h3>${edits.length?edits.map(a=>`<div class="cw-row"><span>${esc(a.details||"Edited")}</span><span class="sub">${ago(a.ts)}</span></div>`).join(""):`<div class="sub">No edits published from the editor yet.</div>`}</div>
     </div></div>
+  <div class="panel" style="margin-top:18px" id="cwSales"${A.sales[c.id]&&A.sales[c.id].none?" hidden":""}><h3>Store sales</h3><div class="sub">Loading…</div></div>
   <div class="panel" style="margin-top:18px"><h3>Latest activity on their site</h3><div id="cwFeed" class="sub">Loading…</div></div>`;
+  cwSales(c);
   fitFrames($("#cwBody"));
   const put=(vals,feed)=>{$$("#cwStats .val").forEach((el,i)=>{el.classList.remove("sk-val");el.textContent=vals[i]});$("#cwFeed").innerHTML=feed};
   if(!c.portalKey) return put(["—","—","—","—"],`Create their dashboard (Access tab) and add the visitor-stats snippet to see visits here.`);
@@ -1984,6 +2027,18 @@ async function cwOverview(c){
     put([t.visitors,t.whatsapp+t.calls,t.enquiries,rec[0]?ago(rec[0].ts):"—"],
       rec.length?rec.slice(0,8).map(e=>`<div class="cw-row"><span>${L[e.type]||e.type}${e.ref&&e.ref!=="direct"?` · from ${esc(e.ref)}`:""}${e.device?` · ${esc(e.device)}`:""}</span><span class="sub">${ago(e.ts)}</span></div>`).join(""):(c.trackId?"No visits recorded yet.":"Add the visitor-stats snippet (Access tab) to start counting visits."));
   }catch(x){put(["—","—","—","—"],"Couldn't load stats: "+esc(x.message))}
+}
+async function cwSales(c){
+  const el=()=>A.clientView===c.id&&A.cwTab==="overview"?$("#cwSales"):null;
+  if(!c.portalKey||!API.live){ const e=el(); if(e) e.hidden=true; return; }
+  let s=A.sales[c.id];
+  try{ if(!s||Date.now()-s.at>5*60e3){ await loadShopJs(); s=await salesFor(c); } }catch(x){ const e=el(); if(e) e.innerHTML=`<h3>Store sales</h3><div class="sub">Couldn't load sales: ${esc(x.message)}</div>`; return; }
+  const e=el(); if(!e) return;
+  if(s.none){ e.hidden=true; return; }
+  const m=s.m30, all=s.all;
+  e.innerHTML=`<h3>Store sales<small>from their website's Orders table</small></h3>
+    <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">${[["Confirmed · 30 days",inr(m.confirmed)],["Waiting · 30 days",inr(m.waiting)],["Orders · 30 days",num(m.orders)],["All time",inr(all.sales)]].map(([l,v])=>`<div><div class="sub">${l}</div><div style="font-family:var(--display);font-size:26px;font-weight:700">${v}</div></div>`).join("")}</div>
+    ${all.recent.length?all.recent.slice(0,5).map(r=>`<div class="cw-row"><span>${esc(r.name||"Customer")} · ${inr(r.total)} <span class="sub" style="display:inline">· ${esc((r.items||"").split("\n")[0])}</span></span><span class="sub">${esc(r.status)} · ${ago(r.ts)}</span></div>`).join(""):`<div class="sub">No orders yet.</div>`}`;
 }
 function cwAccess(c){
   const a=String(c.editAccess||"auto"), first=(c.name||"").split(" ")[0]||"there";
