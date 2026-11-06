@@ -456,6 +456,7 @@ var I = {
   send:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>',
   grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>',
   chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 15 4-5 4 3 5-7"/></svg>',
+  bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
   db:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg>',
   globe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
   flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
@@ -594,10 +595,10 @@ function render(){
 
   $("#app").innerHTML=(c.owner?'<div class="ownerbar">Owner view — this is exactly what '+esc(c.business)+' sees. You can edit their website from here.</div>':'')+(DEMO?'<div class="demo">Demo dashboard with sample numbers — your clients see their own website here.</div>':'')+
   '<header class="top"><div class="wrap"><span class="brand">'+MARK+'NOWORA<small>'+esc(c.business)+'</small></span>'+
-    '<nav class="tabs" id="tabs"><span class="ind"></span><a href="#overview">Overview</a><a href="#traffic">Traffic</a><a href="#website">Website</a><a href="#database">Database</a><a href="#project">Project</a><a href="#requests">Requests</a></nav>'+
+    '<nav class="tabs" id="tabs"><span class="ind"></span><a href="#overview">Overview</a><a href="#shop" hidden>Shop</a><a href="#traffic">Traffic</a><a href="#website">Website</a><a href="#database">Database</a><a href="#project">Project</a><a href="#requests">Requests</a></nav>'+
     '<span class="sp"></span><span class="live"><i class="dot up"></i><span>Live</span></span>'+
     '<button class="icon-btn" data-edit title="Edit my website">'+I.pen+'</button><button class="icon-btn" id="print" title="Download report (PDF)">'+I.print+'</button><button class="icon-btn" id="out" title="Sign out">'+I.out+'</button></div></header>'+
-  '<nav class="botnav" id="botnav"><a href="#overview">'+I.grid+'Overview</a><a href="#traffic">'+I.chart+'Traffic</a><a href="#website">'+I.globe+'Website</a><a href="#database">'+I.db+'Database</a><a href="#project">'+I.flag+'Project</a><a href="#requests">'+I.chat+'Requests</a></nav>'+
+  '<nav class="botnav" id="botnav"><a href="#overview">'+I.grid+'Overview</a><a href="#shop" hidden>'+I.bag+'Shop</a><a href="#traffic">'+I.chart+'Traffic</a><a href="#website">'+I.globe+'Website</a><a href="#database">'+I.db+'Database</a><a href="#project">'+I.flag+'Project</a><a href="#requests">'+I.chat+'Requests</a></nav>'+
   '<main class="wrap">'+
   '<section id="overview" class="hero"><div class="hero-grid"><div><span class="eyebrow">'+esc(c.business)+' · client dashboard</span><h1>'+h1+'</h1>'+
     (c.site?'<a class="site-link" href="'+esc(c.site)+'" target="_blank" rel="noopener">'+esc(host)+' '+I.ext.replace("<svg",'<svg width="14" height="14"')+'</a>':'<span class="site-link">Your web address appears here once it\'s live</span>')+
@@ -607,6 +608,8 @@ function render(){
       '<span class="filter-chip" id="fchip"><span></span><button aria-label="Clear filter">×</button></span><span class="sp"></span>'+
       '<button class="btn ghost sm" id="share">'+I.share+'Share my site</button><button class="btn sm" data-edit>'+I.pen+'Edit my website</button></div>'+
     '<div class="grid kpis" id="kpis"></div></section>'+
+
+  '<section id="shop" class="sec" hidden><div class="sec-title in"><h3>Your <em>shop.</em></h3><p>Sales from your website and the products on it. Add a product with its photos — we work out the colours and the category for you.</p></div><div id="shopRoot"></div></section>'+
 
   '<section id="traffic" class="sec"><div class="sec-title in"><h3>Who\'s <em>visiting.</em></h3><p>Tap a source to see only those visitors everywhere on this page.</p></div>'+
     '<div class="grid two"><div class="card in"><h2>Over time<span class="sp"></span><label class="cmp"><input type="checkbox" id="cmp">Compare</label></h2><div class="metric-tabs" id="mtabs" style="margin-top:12px">'+METRICS.map(function(m){return '<button data-m="'+m[0]+'">'+m[1]+'</button>'}).join("")+'</div><div class="chart" id="chart"><div class="tip" id="tip"></div></div></div>'+
@@ -633,7 +636,7 @@ function render(){
   '<div class="help in"><div><h3>Prefer to <em style="font-style:normal;color:var(--neon)">talk?</em></h3><p>Message NOWORA directly — we usually reply within a few hours.</p></div><div class="acts"><a class="btn" target="_blank" rel="noopener" href="'+waLink("Hi NOWORA, it's "+(first||"")+" from "+c.business+". ")+'">'+I.wa+'WhatsApp NOWORA</a></div></div>'+
   '<div class="foot"><span>© '+new Date().getFullYear()+' NOWORA · Make it happen</span><span id="updated"></span></div></main>';
 
-  wire(); drawAll(true); drawProject(); drawRequests(); drawHealth(); initPreview(); initQR(); motion(); initDB();
+  wire(); drawAll(true); drawProject(); drawRequests(); drawHealth(); initPreview(); initQR(); motion(); initDB(); initShop();
 }
 
 function drawAll(first){
@@ -888,7 +891,7 @@ function wire(){
   // nav scroll-spy
   var links=$$("#tabs a,#botnav a"), ind=$("#tabs .ind");
   var setActive=function(id){links.forEach(function(a){a.classList.toggle("on",a.getAttribute("href")==="#"+id)});var a=$('#tabs a[href="#'+id+'"]');if(a&&ind){ind.style.left=a.offsetLeft+"px";ind.style.width=a.offsetWidth+"px";ind.style.opacity=1}};
-  var secs=["overview","traffic","website","database","project","requests"].map(function(id){return document.getElementById(id)});
+  var secs=["overview","shop","traffic","website","database","project","requests"].map(function(id){return document.getElementById(id)});
   var spy=function(){var y=scrollY+innerHeight*.35,cur="overview";secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s.id});if(innerHeight+scrollY>=document.documentElement.scrollHeight-4)cur="requests";setActive(cur)};
   addEventListener("scroll",spy,{passive:true}); spy(); setTimeout(spy,400);
   // card spotlight
@@ -928,6 +931,22 @@ function initDB(){
   if(!("IntersectionObserver" in window)) return go();
   var io=new IntersectionObserver(function(es){if(es.some(function(e){return e.isIntersecting})){io.disconnect();go()}},{rootMargin:"800px 0px"}); io.observe(root);
   $$('a[href="#database"]').forEach(function(a){a.addEventListener("click",go)});
+}
+
+/* ---------- shop (store clients: a product catalogue on their site, or website orders) ---------- */
+function initShop(){
+  var c=S.data.client, root=$("#shopRoot"); if(!root||DEMO||initShop.on) return; initShop.on=1;
+  var htmlP=c.editable?call("site_source").then(function(j){return j.site&&j.site.html||null}).catch(function(){return null}):Promise.resolve(null);
+  var ordersP=call("db_get",{tableId:""}).then(function(j){return (j.tables||[]).some(function(t){return /^(orders?|website orders|checkout)$/i.test(String(t.name).trim())})}).catch(function(){return false});
+  Promise.all([htmlP,ordersP]).then(function(r){
+    var html=r[0], hasCat=!!(html&&/id=["']nowora-products["']/.test(html));
+    if(!hasCat&&!r[1]) return;
+    var go=function(){ $("#shop").hidden=false; $$('a[href="#shop"]').forEach(function(a){a.hidden=false});
+      window.NoworaShop.mount({root:root,call:call,toast:toast,owner:!!c.owner,business:c.business,site:c.site,editable:hasCat,html:hasCat?html:null});
+      $$(".sec-title",$("#shop")).forEach(function(x){x.classList.add("vis")}); dispatchEvent(new Event("scroll")); };
+    if(window.NoworaShop) return go();
+    var sc=document.createElement("script");sc.src="/client/shop.js?v=1";sc.onload=go;sc.onerror=function(){initShop.on=0};document.head.appendChild(sc);
+  });
 }
 
 /* ---------- live polling ---------- */
@@ -991,7 +1010,7 @@ function lockedEditor(why){
 }
 
 /* ---------- start ---------- */
-addEventListener("hashchange",function(){if(!/^#(overview|traffic|website|project|requests)$/.test(location.hash))location.reload()});
+addEventListener("hashchange",function(){if(!/^#(overview|shop|traffic|website|database|project|requests)$/.test(location.hash))location.reload()});
 var remembered=KEY?saved():"";
 if(OWNER_KEY&&KEY&&!DEMO){loading();call("portal").then(function(j){boot(j.data);if(AUTO_EDIT)setTimeout(openEditor,600)}).catch(function(x){login("Owner view failed: "+x.message)})}
 else if(remembered){S.pin=remembered;loading();call("portal").then(function(j){boot(j.data)}).catch(function(x){forget();login(/PIN|valid/i.test(x.message)?"Please enter your PIN again.":x.message)})}
