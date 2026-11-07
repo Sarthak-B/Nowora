@@ -1030,7 +1030,7 @@ function initShop(){
       window.NoworaShop.mount({root:root,call:call,toast:toast,owner:!!c.owner,business:c.business,site:c.site,editable:hasCat&&!isRO(),html:hasCat?html:null,readOnly:isRO()});
       $$(".sec-title",$("#shop")).forEach(function(x){x.classList.add("vis")}); dispatchEvent(new Event("scroll")); };
     if(window.NoworaShop) return go();
-    var sc=document.createElement("script");sc.src="/client/shop.js?v=6";sc.onload=go;sc.onerror=function(){initShop.on=0};document.head.appendChild(sc);
+    var sc=document.createElement("script");sc.src="/client/shop.js?v=7";sc.onload=go;sc.onerror=function(){initShop.on=0};document.head.appendChild(sc);
   });
 }
 
