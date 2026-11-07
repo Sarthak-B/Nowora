@@ -1054,7 +1054,7 @@ window.fitFrames=function(root){
       </div>
       <div class="pkgs" id="pkgs"></div>
       <div class="offers">
-        <div class="offer"><b>2 months of care, free</b><span>Every project gets hosting, backups and small edits free for the first 2 months. Then <span data-care-price>₹1,499</span>/month, including editing your site yourself — cancel anytime.</span></div>
+        <div class="offer"><b>2 months of care, free</b><span>Every project gets hosting, backups and small edits free for the first 2 months. Then <span data-care-price>₹1,999</span>/month, including editing your site yourself — cancel anytime.</span></div>
         <div class="offer"><b>20% off for students</b><span>Show a valid student ID. Works on any plan.</span></div>
         <div class="offer"><b>Refer a friend, get a free month</b><span>Every referral who signs up adds one more free care month.</span></div>
         <div class="offer"><b>Last 50% only if you love it</b><span>50% in advance to start. The other 50% only after you've seen the finished site and you're happy with it.</span></div>
@@ -1068,7 +1068,7 @@ window.fitFrames=function(root){
       <div>
         <h2 class="reveal"><span class="mask"><span>After launch,</span></span><span class="mask"><span>we look after it.</span></span></h2>
         <p class="lead">Small-business sites break quietly — an expired SSL, an update, a form that stops sending. The care plan means we catch it before your customers do.</p>
-        <div class="care-price"><b>2 months free</b><br>then <b class="sm" data-care-price>₹1,499</b> / month</div>
+        <div class="care-price"><b>2 months free</b><br>then <b class="sm" data-care-price>₹1,999</b> / month</div>
         <div style="margin-top:30px"><a class="btn btn-gold magnet" href="#contact" data-form="Care plan only" data-track="cta_whatsapp:care">Ask about the care plan</a></div>
       </div>
       <div class="care-list">
@@ -1303,7 +1303,7 @@ const FAQ=[
   ["Who owns the website and the domain?","You do. Domains are registered in your name, and once the final payment is made the site and everything in it is yours."],
   ["How do payments work?","50% in advance to start the build. The other 50% only after you've seen the finished site and you're happy with it. UPI and bank transfer in India; card or transfer for international clients."],
   ["What if I don't like the finished site?","Tell us what feels off — two rounds of changes are included. If you're still not happy, you don't pay the remaining 50%."],
-  ["What does the care plan cover?","Hosting, SSL, backups, updates, uptime checks and small edits like new prices, photos or timings. It's free for the first 2 months on every project, then ₹1,499/month. It also gives you your own dashboard and a visual editor, so you can change text, photos, prices and whole sections of your website yourself. Cancel anytime with a month's notice."]
+  ["What does the care plan cover?","Hosting, SSL, backups, updates, uptime checks and small edits like new prices, photos or timings. It's free for the first 2 months on every project, then ₹1,999/month. It also gives you your own dashboard and a visual editor, so you can change text, photos, prices and whole sections of your website yourself. Cancel anytime with a month's notice."]
 ];
 const ISSUES=["isn’t loading well on mobile","is missing","doesn’t have online booking","looks outdated","loads very slowly"];
 const PROSPECT_STATUS=["new","audited","messaged","followed_up","replied","call_booked","proposal","won","lost"];
@@ -1321,7 +1321,7 @@ const TEMPLATES={
   cold:{label:"First message",text:"Hi [Name], I came across [Business] on Google Maps. Your reviews are great, but your site [issue]. I made a quick concept of what it could look like: [screenshot]. I build websites for [niche] businesses and handle hosting too, so you don’t have to deal with anything technical. Open to a 10-min call this week?"},
   samples:{label:"Free samples offer",text:"Hi [Name], I run NOWORA, a small web studio. I’d love to make [Business] two free website samples — no cost and no commitment. If you like one, we build it; if not, you keep the ideas. Shall I send them this week?"},
   follow:{label:"Follow-up",text:"Hi [Name], just bumping this up. Happy to share the full concept if you’d like to see it. No pressure either way."},
-  care:{label:"Care plan offer",text:"Hi [Name], [Business]’s site is live and running well. Your first 2 months of care are free — hosting, SSL, backups, updates, uptime checks and small edits. After that it’s ₹1,499/month (that also lets you edit your website yourself) and you can cancel anytime. Want me to keep it switched on?"},
+  care:{label:"Care plan offer",text:"Hi [Name], [Business]’s site is live and running well. Your first 2 months of care are free — hosting, SSL, backups, updates, uptime checks and small edits. After that it’s ₹1,999/month (that also lets you edit your website yourself) and you can cancel anytime. Want me to keep it switched on?"},
   referral:{label:"Ask for referral",text:"Hi [Name], glad the new site is working for you. If you know someone who needs a website, send them my way — you’ll get one more free care month for every referral who signs up."}
 };
 const ICON={
@@ -1464,7 +1464,7 @@ function initSite(){
     cur=b.dataset.cur; $$("button",tg).forEach(x=>x.classList.toggle("on",x===b)); placeKnob();
     $$(".price span").forEach(s=>{s.style.transform="translateY(-100%)";s.style.opacity=0});
     setTimeout(()=>{renderPkgs(); $$(".price span").forEach(s=>{s.style.transition="none";s.style.transform="translateY(100%)";s.style.opacity=0; requestAnimationFrame(()=>{s.style.transition="";s.style.transform="";s.style.opacity=1})})},260);
-    $$("[data-care-price]").forEach(e=>e.textContent=cur==="INR"?"₹1,499":"$19");
+    $$("[data-care-price]").forEach(e=>e.textContent=cur==="INR"?"₹1,999":"$19");
   });
 
   /* uptime ticks */
@@ -1696,7 +1696,7 @@ function stats(days,offset){
   return {ev,visitors,wa:ev.filter(e=>e.type==="cta_whatsapp").length,mail:ev.filter(e=>e.type==="cta_email").length,leads:leads.length};
 }
 function delta(a,b){if(!b) return a?'<span class="delta up">new</span>':'<span class="delta flat">—</span>'; const p=Math.round((a-b)/b*100); return `<span class="delta ${p>0?"up":p<0?"down":"flat"}">${p>0?"▲":p<0?"▼":""} ${Math.abs(p)}% vs last ${A.range}d</span>`;}
-const mrr=()=>A.data.Clients.filter(c=>c.carePlan==="yes"&&c.status!=="paused").reduce((s,c)=>s+(+c.careFee||1499),0);
+const mrr=()=>A.data.Clients.filter(c=>c.carePlan==="yes"&&c.status!=="paused").reduce((s,c)=>s+(+c.careFee||1999),0);
 
 function vOverview(soft){
   const r=A.range, cur=stats(r,0), prev=stats(r,r);
@@ -1967,7 +1967,7 @@ function clientCard(c,open){
   return `<article class="cl-card" data-id="${c.id}">
     <div class="cl-thumb">${th?`<img src="${esc(th)}" alt="" loading="lazy">`:`<span>${esc((c.business||"?").slice(0,1))}</span>`}<i class="cl-dot ${c.uptime==="down"?"down":c.uptime==="up"?"up":""}" title="${c.uptime||"not checked"}"></i></div>
     <div class="cl-body"><div class="cl-head"><b>${esc(c.business||"Untitled")}</b><span class="cl-mini">${c.portalKey?`<button class="cl-icon" data-pin title="Reset dashboard PIN" aria-label="Reset dashboard PIN for ${esc(c.business||"client")}">${PIN_ICON}</button>`:""}<button class="cl-icon" data-edit title="Edit details" aria-label="Edit ${esc(c.business||"client")}">${ICON.edit}</button><button class="cl-icon danger" data-remove title="Remove client" aria-label="Remove ${esc(c.business||"client")}">${ICON.trash}</button></span></div><span class="sub">${c.site?esc(hostOf(c.site)):"no site yet"}</span>
-      <div class="cl-tags"><span class="st ${esc(c.status)}">${esc(c.status||"—")}</span>${c.carePlan==="yes"?`<span class="st up">Care ${inr(c.careFee||1499)}</span>`:""}<span class="st ${el[0]}">${el[1]}</span>${open?`<span class="st pend">${open} request${open>1?"s":""}</span>`:""}${c.uptime==="up"&&c.responseMs?`<span class="st">${c.responseMs} ms</span>`:""}${A.sales&&A.sales[c.id]&&!A.sales[c.id].none?`<span class="st up" title="Website sales, last 30 days (confirmed + waiting)">${inr(A.sales[c.id].m30.sales)} sales · 30d</span>`:""}${dup?`<span class="st down" title="Two client entries share this website">Same site as ${esc(dup.business||"another client")}</span>`:""}</div></div>
+      <div class="cl-tags"><span class="st ${esc(c.status)}">${esc(c.status||"—")}</span>${c.carePlan==="yes"?`<span class="st up">Care ${inr(c.careFee||1999)}</span>`:""}<span class="st ${el[0]}">${el[1]}</span>${open?`<span class="st pend">${open} request${open>1?"s":""}</span>`:""}${c.uptime==="up"&&c.responseMs?`<span class="st">${c.responseMs} ms</span>`:""}${A.sales&&A.sales[c.id]&&!A.sales[c.id].none?`<span class="st up" title="Website sales, last 30 days (confirmed + waiting)">${inr(A.sales[c.id].m30.sales)} sales · 30d</span>`:""}${dup?`<span class="st down" title="Two client entries share this website">Same site as ${esc(dup.business||"another client")}</span>`:""}</div></div>
     <div class="cl-acts">${c.portalKey?`<button class="btn btn-ghost btn-sm" data-view>${ICON.eye}View as client</button>${c.repo?`<button class="btn btn-ghost btn-sm" data-editsite>${ICON.edit}Edit site</button>`:""}`:`<span class="sub">No dashboard yet</span>`}<span class="sp"></span><span class="cl-open">Open →</span></div>
   </article>`;
 }
@@ -2079,14 +2079,14 @@ function cwBilling(c){
       ${price?"":`<p class="pm-note">Add the price in Details so payments show on their dashboard.</p>`}</div>
     <div class="panel"><h3>Care plan</h3>
       <label class="pm-tog"><input type="checkbox" id="cwCare" ${c.carePlan==="yes"?"checked":""}><span>Care plan active ${String(c.editAccess||"auto")==="auto"?"<small class='sub'>(also switches website editing)</small>":""}</span></label>
-      <div class="pm-row" style="margin-top:10px"><label class="pm-lbl" style="flex:1">Monthly fee (₹)<input id="cwFee" type="number" value="${esc(c.careFee||1499)}"></label><label class="pm-lbl" style="flex:1">Next renewal<input id="cwRen" type="date" value="${esc(c.renewal||"")}"></label></div>
-      <div class="pm-actions"><button class="btn btn-ghost btn-sm" id="cwCareSave">Save</button>${c.phone&&c.carePlan==="yes"&&c.renewal?`<a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${waLink(c.phone,`Hi ${first}, a quick reminder that the NOWORA care plan for ${c.business} renews on ${fmtDate(c.renewal)} (${inr(c.careFee||1499)}). It covers hosting, backups, uptime checks, small changes and editing your website yourself. Reply here if you have any questions!`)}">${ICON.wa}Send renewal reminder</a>`:""}</div></div>
+      <div class="pm-row" style="margin-top:10px"><label class="pm-lbl" style="flex:1">Monthly fee (₹)<input id="cwFee" type="number" value="${esc(c.careFee||1999)}"></label><label class="pm-lbl" style="flex:1">Next renewal<input id="cwRen" type="date" value="${esc(c.renewal||"")}"></label></div>
+      <div class="pm-actions"><button class="btn btn-ghost btn-sm" id="cwCareSave">Save</button>${c.phone&&c.carePlan==="yes"&&c.renewal?`<a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${waLink(c.phone,`Hi ${first}, a quick reminder that the NOWORA care plan for ${c.business} renews on ${fmtDate(c.renewal)} (${inr(c.careFee||1999)}). It covers hosting, backups, uptime checks, small changes and editing your website yourself. Reply here if you have any questions!`)}">${ICON.wa}Send renewal reminder</a>`:""}</div></div>
   </div>`;
   const save=async(row,note)=>{if(await saveRow("Clients",Object.assign({id:c.id},row))){toast(note);vClientWorkspace(c.id)}};
   $("#cwAdv").onchange=e=>save({advancePaid:e.target.checked?"yes":""},"Payment updated");
   $("#cwBal").onchange=e=>save({balancePaid:e.target.checked?"yes":""},"Payment updated");
-  $("#cwCare").onchange=e=>save({carePlan:e.target.checked?"yes":"no",careFee:e.target.checked?(+$("#cwFee").value||1499):c.careFee},e.target.checked?"Care plan on":"Care plan off");
-  $("#cwCareSave").onclick=()=>save({careFee:+$("#cwFee").value||1499,renewal:$("#cwRen").value},"Care plan saved");
+  $("#cwCare").onchange=e=>save({carePlan:e.target.checked?"yes":"no",careFee:e.target.checked?(+$("#cwFee").value||1999):c.careFee},e.target.checked?"Care plan on":"Care plan off");
+  $("#cwCareSave").onclick=()=>save({careFee:+$("#cwFee").value||1999,renewal:$("#cwRen").value},"Care plan saved");
 }
 function cwRequests(c,R){
   const lbl={new:"New",progress:"In progress",done:"Done"};
@@ -2340,12 +2340,12 @@ function clientForm(c){
     ${F("site","Live site URL",c.site,"url")}${F("status","Status",c.status||"onboarding","text",["onboarding","building","live","paused"])}
     ${F("package","Package",c.package||"Starter","text",["Starter","Business","Growth","Custom"])}${F("price","Project price (₹)",c.price,"number")}
     ${F("delivered","Delivered on",c.delivered,"date")}${F("carePlan","Care plan",c.carePlan||"no","text",[["yes","Yes"],["no","No"]])}
-    ${F("careFee","Care fee per month (₹)",c.careFee||1499,"number")}${F("repo","GitHub repo (owner/repo, needed for editing)",c.repo||guessRepo(c))}${F("editAccess","Website editing",c.editAccess||"auto","text",[["auto","Auto (with care plan)"],["on","Always on"],["off","Off — view-only dashboard"]])}${F("renewal","Next renewal",c.renewal,"date")}
+    ${F("careFee","Care fee per month (₹)",c.careFee||1999,"number")}${F("repo","GitHub repo (owner/repo, needed for editing)",c.repo||guessRepo(c))}${F("editAccess","Website editing",c.editAccess||"auto","text",[["auto","Auto (with care plan)"],["on","Always on"],["off","Off — view-only dashboard"]])}${F("renewal","Next renewal",c.renewal,"date")}
     <div class="checklist"><b style="grid-column:1/-1;font-size:14px">Onboarding checklist</b>${CHECKLIST.map((t,i)=>`<label><input type="checkbox" data-ck="${i}" ${ck.includes(i)?"checked":""}>${t}</label>`).join("")}</div>
     ${F("notes","Notes",c.notes,"textarea",null,true)}
     <div class="row-end"><button type="button" class="btn btn-ghost btn-sm" data-close>Cancel</button><button class="btn btn-wa btn-sm">Save client</button></div></form>`);
   $("#mf").onsubmit=async e=>{e.preventDefault(); const v=Object.fromEntries(new FormData(e.target)); if(!v.business.trim()) return toast("Add the business name.",true);
-    v.checklist=JSON.stringify($$("[data-ck]:checked").map(x=>+x.dataset.ck)); v.price=+v.price||0; v.careFee=v.carePlan==="yes"?(+v.careFee||1499):(+v.careFee||0);
+    v.checklist=JSON.stringify($$("[data-ck]:checked").map(x=>+x.dataset.ck)); v.price=+v.price||0; v.careFee=v.carePlan==="yes"?(+v.careFee||1999):(+v.careFee||0);
     v.repo=String(v.repo||"").trim().replace(/^https?:\/\/github\.com\//i,"").replace(/\.git$|\/$/g,""); if(v.repo&&!/^[\w.-]+\/[\w.-]+$/.test(v.repo)) return toast("GitHub repo should look like owner/repo.",true);
     const dup=dupOf(Object.assign({},c,v)); if(dup&&!c.id&&!confirm(dup.business+" already uses this website. Add a second entry anyway?\n\nTip: cancel and edit "+dup.business+" instead.")) return;
     const row=Object.assign({id:uid(),uptime:"",responseMs:"",lastCheck:""},c,v); if(!await saveRow("Clients",row)) return; closeModal(); A.tab="clients"; if(!c.id) A.clientView=row.id; render(); toast(c.id?"Changes saved":"Client added");};
