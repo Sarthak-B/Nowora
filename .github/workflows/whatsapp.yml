@@ -31,6 +31,7 @@ jobs:
     env:
       STUDIO_ENDPOINT: ${{ secrets.STUDIO_ENDPOINT }}
       STUDIO_AUTOMATION_KEY: ${{ secrets.STUDIO_AUTOMATION_KEY }}
+      # (a skipped check has no output, and GitHub treats that as equal to '0' — so only the schedule looks at it)
       MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '17 3 */3 * *' && 'keepalive' || 'alerts') }}
     steps:
       - uses: actions/checkout@v4
@@ -54,28 +55,28 @@ jobs:
         if: env.MODE == 'alerts' && github.event_name == 'schedule'
         run: node scripts/whatsapp.mjs check
       - name: Cache browser
-        if: env.MODE != 'alerts' || steps.check.outputs.pending != '0'
+        if: env.MODE != 'alerts' || github.event_name != 'schedule' || steps.check.outputs.pending != '0'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install browser
-        if: env.MODE != 'alerts' || steps.check.outputs.pending != '0'
+        if: env.MODE != 'alerts' || github.event_name != 'schedule' || steps.check.outputs.pending != '0'
         run: npm ci --no-audit --no-fund && npx playwright install --with-deps --only-shell chromium
       - name: Run (${{ env.MODE }})
-        if: env.MODE != 'alerts' || steps.check.outputs.pending != '0'
+        if: env.MODE != 'alerts' || github.event_name != 'schedule' || steps.check.outputs.pending != '0'
         env:
           WA_PHONE: ${{ inputs.phone }}
         run: node scripts/whatsapp.mjs "$MODE"
       - name: Lock and save login
-        if: always() && (env.MODE != 'alerts' || steps.check.outputs.pending != '0')
+        if: always() && (env.MODE != 'alerts' || github.event_name != 'schedule' || steps.check.outputs.pending != '0')
         run: |
           [ -d wa-profile ] || exit 0
           rm -rf wa-profile/Default/{Cache,"Code Cache",GPUCache,"Service Worker/CacheStorage","Service Worker/ScriptCache"} wa-profile/{ShaderCache,GrShaderCache,component_crx_cache} 2>/dev/null || true
           tar -cz wa-profile | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -pass env:STUDIO_AUTOMATION_KEY -out wa-session.enc
           ls -lh wa-session.enc
       - uses: actions/cache/save@v4
-        if: always() && hashFiles('wa-session.enc') != '' && (env.MODE != 'alerts' || steps.check.outputs.pending != '0')
+        if: always() && hashFiles('wa-session.enc') != '' && (env.MODE != 'alerts' || github.event_name != 'schedule' || steps.check.outputs.pending != '0')
         with:
           path: wa-session.enc
           key: wa-session-${{ github.run_id }}
