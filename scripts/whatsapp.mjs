@@ -57,12 +57,13 @@ async function browser() {
 }
 const CHATS = '#pane-side, [aria-label="Chat list"], [data-testid="chat-list"]';
 async function useHere(page) { const b = page.getByRole("button", { name: /use here/i }); if (await b.isVisible().catch(() => false)) { log("another session was open — taking over"); await b.click(); } }
-async function loggedIn(page, ms) {
+/* waitForLink: keep waiting while the login screen is up (the person is typing the code on their phone) */
+async function loggedIn(page, ms, waitForLink = false) {
   const end = Date.now() + ms;
   while (Date.now() < end) {
     await useHere(page);
     if (await page.locator(CHATS).first().isVisible().catch(() => false)) return true;
-    if (await page.getByText(/scan to log in|link with phone number|enter phone number/i).first().isVisible().catch(() => false)) return false;
+    if (!waitForLink && await page.getByText(/scan to log in|link with phone number|enter phone number/i).first().isVisible().catch(() => false)) return false;
     await page.waitForTimeout(1500);
   }
   return false;
@@ -91,6 +92,7 @@ async function login() {
   if (phone.length < 10) return fail("Give the number that should SEND the alerts, with country code (e.g. 916397988191)");
   const { ctx, page } = await browser();
   await page.goto("https://web.whatsapp.com/", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(8000);
   if (await loggedIn(page, 25000)) { log("Already logged in — nothing to do."); await page.waitForTimeout(15000); return ctx.close(); }
   const link = page.getByText(/(log ?in|link) with phone number/i).first();
   await link.waitFor({ timeout: 60000 });
@@ -116,7 +118,7 @@ async function login() {
   const pretty = code.replace(/-/g, "").replace(/^(.{4})(.{4})$/, "$1-$2");
   for (const l of ["", "========================================================", "  ON THE PHONE " + tail(phone) + ": WhatsApp → Settings → Linked devices", "  → Link a device → Link with phone number instead → enter:", "", "        " + pretty, "", "  You have about 3 minutes.", "========================================================"]) log(l);
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "### WhatsApp code: `" + pretty + "`\nOn the phone: Linked devices → Link a device → Link with phone number instead.\n");
-  if (!(await loggedIn(page, 4 * 60000))) { await ctx.close(); return fail("Not linked in time — run the login again and enter the new code"); }
+  if (!(await loggedIn(page, 4 * 60000, true))) { await ctx.close(); return fail("Not linked in time — run the login again and enter the new code"); }
   log("Linked! Letting WhatsApp finish syncing…");
   await page.waitForTimeout(60000);
   if (!readState()) writeState({ since: new Date().toISOString(), sent: [], tries: {} });
