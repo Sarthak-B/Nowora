@@ -1175,7 +1175,7 @@ function orderEmail_(c, fields, items, val, table) {
     const text = ['New order — ' + (c.business || ''), '', 'Order: ' + orderId, 'Customer: ' + name, 'Phone: ' + phone, 'Address: ' + addr]
       .concat(other.map(f => f.name + ': ' + f.value), [''], items.map(i => i.qty + ' x ' + i.name + ' ' + [i.variant, i.colour, i.size].filter(Boolean).join(' / ') + ' — ' + inr(i.price * i.qty)),
         ['Total: ' + inr(total), '', 'Dashboard: ' + dash]).join('\n');
-    MailApp.sendEmail({ to: to, subject: subject, body: text, htmlBody: html, name: 'NOWORA orders' });
+    MailApp.sendEmail({ to: to, subject: subject, body: text, htmlBody: html, name: 'NOWORA orders', replyTo: prop_('REPLY_TO') || 'noworasites@gmail.com' });
   } catch (e) { console.error('order email: ' + e); }
 }
 /** Orders placed after `since` on every client's website, for the alert workflow. */
