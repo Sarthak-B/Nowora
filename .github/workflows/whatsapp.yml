@@ -1,0 +1,74 @@
+# WhatsApp order alerts for every client, sent from the NOWORA number via WhatsApp Web (Playwright).
+#  - Apps Script pings this workflow on every new website order (script property GITHUB_ALERT_TOKEN),
+#    and it also checks every 15 minutes, so nothing is missed.
+#  - First time (and if WhatsApp ever logs out): Actions → WhatsApp order alerts → Run workflow → mode "login",
+#    open the run and enter the 8-character code on the NOWORA phone.
+#  - Uses the existing STUDIO_ENDPOINT and STUDIO_AUTOMATION_KEY secrets (the saved login is encrypted with the key).
+name: WhatsApp order alerts
+on:
+  repository_dispatch:
+    types: [order-alert]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "login = link the NOWORA number · test = send a test message · alerts = send waiting orders now"
+        type: choice
+        options: [login, test, alerts, keepalive]
+        default: login
+      phone:
+        description: "login: number that SENDS (NOWORA) · test: number to send the test to — with 91"
+        default: "916397988191"
+  schedule:
+    - cron: "*/15 * * * *"    # safety net: any order the instant ping missed
+    - cron: "17 3 */3 * *"    # keep the saved login fresh
+concurrency: { group: whatsapp, cancel-in-progress: false }
+permissions:
+  contents: read
+jobs:
+  whatsapp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      STUDIO_ENDPOINT: ${{ secrets.STUDIO_ENDPOINT }}
+      STUDIO_AUTOMATION_KEY: ${{ secrets.STUDIO_AUTOMATION_KEY }}
+      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '17 3 */3 * *' && 'keepalive' || 'alerts') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Restore WhatsApp login
+        uses: actions/cache/restore@v4
+        with:
+          path: wa-session.enc
+          key: wa-session-${{ github.run_id }}
+          restore-keys: wa-session-
+      - name: Unlock login
+        run: |
+          [ -n "$STUDIO_AUTOMATION_KEY" ] || { echo "::error::STUDIO_AUTOMATION_KEY secret is missing"; exit 1; }
+          if [ -f wa-session.enc ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:STUDIO_AUTOMATION_KEY -in wa-session.enc | tar -xz && echo "login restored" || echo "::warning::saved login couldn't be opened"
+          else echo "no saved login yet"; fi
+      - name: Any new orders?
+        id: check
+        if: env.MODE == 'alerts'
+        run: node scripts/whatsapp.mjs check
+      - name: Install browser
+        if: env.MODE != 'alerts' || steps.check.outputs.pending != '0'
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: Run (${{ env.MODE }})
+        if: env.MODE != 'alerts' || steps.check.outputs.pending != '0'
+        env:
+          WA_PHONE: ${{ inputs.phone }}
+        run: node scripts/whatsapp.mjs "$MODE"
+      - name: Lock and save login
+        if: always() && (env.MODE != 'alerts' || steps.check.outputs.pending != '0')
+        run: |
+          [ -d wa-profile ] || exit 0
+          rm -rf wa-profile/Default/{Cache,"Code Cache",GPUCache,"Service Worker/CacheStorage","Service Worker/ScriptCache"} wa-profile/{ShaderCache,GrShaderCache,component_crx_cache} 2>/dev/null || true
+          tar -cz wa-profile | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -pass env:STUDIO_AUTOMATION_KEY -out wa-session.enc
+          ls -lh wa-session.enc
+      - uses: actions/cache/save@v4
+        if: always() && hashFiles('wa-session.enc') != '' && (env.MODE != 'alerts' || steps.check.outputs.pending != '0')
+        with:
+          path: wa-session.enc
+          key: wa-session-${{ github.run_id }}

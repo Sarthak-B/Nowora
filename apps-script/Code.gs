@@ -172,6 +172,7 @@ function doPost(e) {
       case 'automation_report':  requireAutomation_(body); return json_(automationReport_(body));
       case 'register_site':      requireAutomation_(body); return json_(registerSite_(body.site || {}));
       case 'portfolio_targets':  requireAutomation_(body); return json_({ ok: true, items: portfolioTargets_() });
+      case 'order_alerts':       requireAutomation_(body); return json_({ ok: true, orders: orderAlerts_(body.since) });
       default:                   return json_({ ok: false, error: 'Unknown action' });
     }
   } catch (err) {
@@ -1119,9 +1120,46 @@ function clientForm_(b) {
     const sh = t.sh, id = randomKey_(10);
     sh.appendRow([id, new Date()].concat(t.cols.map(col => dbCell_(col, val[col.name.toLowerCase()]))));
     bumpRev_(c);
+    if (isOrder) orderAlertPing_();
     clientLog_(c, { ts: new Date().toISOString(), type: 'lead_submit', label: clip_(table + (items.length ? ' · ' + items.length + ' item(s)' : ''), 60), ref: String(b.ref || 'direct').slice(0, 30), device: String(b.device || '').slice(0, 10), path: String(b.path || '').slice(0, 80), vid: vid });
     return { ok: true, id: id, table: sh.getName(), stock: stockNote || undefined };
   } finally { lock.releaseLock(); }
+}
+
+/* ============================== WhatsApp order alerts ==============================
+ * Every new order on any client's website is sent to that client's WhatsApp (their number in Clients)
+ * from the NOWORA number, by the GitHub workflow .github/workflows/whatsapp.yml (Playwright + WhatsApp Web).
+ * A new order pings the workflow straight away when the script property GITHUB_ALERT_TOKEN is set
+ * (fine-grained GitHub token, Contents: read & write on the NOWORA repo); the workflow also checks every
+ * 15 minutes, so nothing is missed. Set a client's Notes to include "alerts off" to skip them. */
+function orderAlertPing_() {
+  const tok = prop_('GITHUB_ALERT_TOKEN'); if (!tok) return;
+  try {
+    UrlFetchApp.fetch('https://api.github.com/repos/' + (prop_('GITHUB_ALERT_REPO') || 'Sarthak-B/Nowora') + '/dispatches', {
+      method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+      headers: { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json' }, payload: JSON.stringify({ event_type: 'order-alert' }) });
+  } catch (e) { console.error('order alert ping: ' + e); }
+}
+/** Orders placed after `since` on every client's website, for the alert workflow. */
+function orderAlerts_(since) {
+  let from = new Date(since || Date.now() - 36e5); if (isNaN(from)) from = new Date(Date.now() - 36e5);
+  from = new Date(Math.max(from.getTime(), Date.now() - 2 * 864e5));
+  const site = prop_('SITE_URL') || 'https://nowora.vercel.app', out = [];
+  readAll_('Clients').forEach(c => {
+    if (!c.dataSheet || c.status === 'paused' || /alerts? off/i.test(String(c.notes || ''))) return;
+    let ss; try { ss = clientData_(c, false); } catch (e) { return; } if (!ss) return;
+    dbTables_(ss).filter(t => /order|checkout|cart|purchase/i.test(t.sh.getName())).forEach(t => {
+      dbRead_(t).forEach(r => {
+        const ts = new Date(r._ts); if (isNaN(ts) || ts <= from) return;
+        const fields = [];
+        t.cols.forEach(col => { const v = r[col.id]; if (v === '' || v == null || v === false || /^(status|stock|came from|item count)$/i.test(col.name)) return;
+          fields.push([col.name, col.type === 'money' ? '₹' + Number(v).toLocaleString('en-IN') : String(v)]); });
+        out.push({ client: c.id, business: c.business, to: String(c.phone || '').replace(/\D/g, ''), id: r._id, ts: ts.toISOString(), table: t.sh.getName(),
+          dashboard: c.portalKey ? site + '/client/' + c.portalKey : '', fields: fields });
+      });
+    });
+  });
+  return out.sort((a, b) => a.ts < b.ts ? -1 : 1).slice(-100);
 }
 
 /** Finds a table by name (any case) or makes it, and adds any columns it is missing. */
