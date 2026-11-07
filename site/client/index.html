@@ -847,7 +847,7 @@ function drawProject(){
       '<div class="care">'+(c.carePlan==="yes"&&left!==null?'<div class="days"><svg viewBox="0 0 96 96"><circle class="bg" cx="48" cy="48" r="42"/><circle class="fg" id="dring" cx="48" cy="48" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9" data-frac="'+Math.min(1,left/30)+'"/></svg><div><b>'+left+'</b><small>days to renewal</small></div></div>':'')+
       '<div><span class="eyebrow" style="color:var(--mint)">Care plan</span>'+
       (c.carePlan==="yes"?'<div class="amt">'+inr(c.careFee)+'<small> / month</small></div><ul><li>Hosting, SSL and backups</li><li>Uptime checks every few minutes</li><li>Small text and photo changes</li><li>Edit your website yourself</li><li>This live dashboard</li></ul>'+(ren?'<p>Renews on <b style="color:var(--ink)">'+fmtDate(c.renewal)+'</b></p>':''):
-        '<div class="amt" style="font-size:22px;margin-top:6px">Not active yet</div><p>Your first 2 months of care are free after launch, then ₹1,499/month for hosting, backups, uptime checks, small changes — and editing your website yourself.</p>')+'</div></div></div>';
+        '<div class="amt" style="font-size:22px;margin-top:6px">Not active yet</div><p>Your first 2 months of care are free after launch, then ₹1,999/month for hosting, backups, uptime checks, small changes — and editing your website yourself.</p>')+'</div></div></div>';
   S.pct=pct; S.stage=stage;
 }
 function payRow(a,t,s,p){return '<div class="pay-row"><div class="what"><b>'+t+'</b>'+s+'</div><span class="amt num">'+inr(a)+'</span><span class="tag '+(p?"paid":"due")+'">'+(p?"Paid ✓":"Due")+'</span></div>'}
@@ -1027,7 +1027,7 @@ function demoCall(action,extra){
 
 function lockedEditor(why){
   var first=(S.data.client.name||"").split(" ")[0], biz=S.data.client.business;
-  var copy=why==="no-plan"?{t:'Edit your website <em>yourself.</em>',p:'Website editing comes with the NOWORA care plan — <b>₹1,499/month</b>. Change text, photos, prices and whole sections whenever you like, and publish in a minute.',l:['Edit text, photos, buttons and animations','Add new sections made for your business','Hosting, SSL, backups and uptime checks','Small changes done by us on WhatsApp','This live dashboard'],cta:'Get the care plan',msg:"Hi NOWORA, it's "+first+" from "+biz+". I'd like the care plan with website editing."}
+  var copy=why==="no-plan"?{t:'Edit your website <em>yourself.</em>',p:'Website editing comes with the NOWORA care plan — <b>₹1,999/month</b>. Change text, photos, prices and whole sections whenever you like, and publish in a minute.',l:['Edit text, photos, buttons and animations','Add new sections made for your business','Hosting, SSL, backups and uptime checks','Small changes done by us on WhatsApp','This live dashboard'],cta:'Get the care plan',msg:"Hi NOWORA, it's "+first+" from "+biz+". I'd like the care plan with website editing."}
     :why==="off"?{t:'Editing is <em>paused.</em>',p:'Website editing is turned off for your site right now. Message NOWORA and we\'ll help with any change you need.',l:[],cta:'Message NOWORA',msg:"Hi NOWORA, it's "+first+" from "+biz+". I'd like to make a change to my website."}
     :{t:'Almost <em>ready.</em>',p:'We\'re still connecting your website to the editor. Message NOWORA and we\'ll switch it on.',l:[],cta:'Message NOWORA',msg:"Hi NOWORA, it's "+first+" from "+biz+". Can you switch on website editing for me?"};
   var m=document.createElement("div");m.className="upsell";

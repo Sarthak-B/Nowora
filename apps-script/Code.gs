@@ -512,7 +512,7 @@ function writable_(c) {
 
 function siteRepo_(c) {
   const why = editReason_(c);
-  if (why === 'no-plan') throw new Error('Website editing comes with the NOWORA care plan (₹1,499/month). Message NOWORA to switch it on.');
+  if (why === 'no-plan') throw new Error('Website editing comes with the NOWORA care plan (₹1,999/month). Message NOWORA to switch it on.');
   if (why === 'off') throw new Error('Website editing is turned off for this website. Message NOWORA if you need it.');
   if (!c.repo) throw new Error("This website isn't connected for editing yet — ask NOWORA to connect it.");
   if (!/^[\w.-]+\/[\w.-]+$/.test(c.repo)) throw new Error('The linked repository name looks wrong');
@@ -631,7 +631,7 @@ function registerSite_(site) {
       const live = (site.status || 'live') === 'live';
       upsert_('Clients', { id: randomKey_(12), business: name, name: clip_(cl.name, 60), phone: digits_(cl.phone), email: clip_(cl.email, 80), site: url,
         package: clip_(cl.package, 20), price: clip_(cl.price, 12), delivered: live ? Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd') : '',
-        carePlan: cl.carePlan ? 'yes' : '', careFee: cl.carePlan ? String(cl.careFee || 1499) : '', renewal: '', status: live ? 'live' : 'building',
+        carePlan: cl.carePlan ? 'yes' : '', careFee: cl.carePlan ? String(cl.careFee || 1999) : '', renewal: '', status: live ? 'live' : 'building',
         uptime: '', responseMs: '', lastCheck: '', checklist: live ? '[0,1,2,3,4,5,6]' : '[]', notes: 'Added automatically from GitHub: ' + site.repo,
         portalKey: slug, pin: pin, trackId: site.trackId || slug, advancePaid: '', balancePaid: '', repo: site.repo });
       const link = (prop_('SITE_URL') || 'https://nowora.vercel.app') + '/client/' + slug;
