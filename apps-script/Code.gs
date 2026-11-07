@@ -1175,9 +1175,35 @@ function orderEmail_(c, fields, items, val, table) {
     const text = ['New order — ' + (c.business || ''), '', 'Order: ' + orderId, 'Customer: ' + name, 'Phone: ' + phone, 'Address: ' + addr]
       .concat(other.map(f => f.name + ': ' + f.value), [''], items.map(i => i.qty + ' x ' + i.name + ' ' + [i.variant, i.colour, i.size].filter(Boolean).join(' / ') + ' — ' + inr(i.price * i.qty)),
         ['Total: ' + inr(total), '', 'Dashboard: ' + dash]).join('\n');
-    MailApp.sendEmail({ to: to, subject: subject, body: text, htmlBody: html, name: 'NOWORA orders', replyTo: prop_('REPLY_TO') || 'noworasites@gmail.com' });
+    sendMail_({ to: to, subject: subject, body: text, htmlBody: html, name: 'NOWORA orders' });
   } catch (e) { console.error('order email: ' + e); }
 }
+/* ============================== sending email as NOWORA ==============================
+ * Emails go out FROM noworasites@gmail.com (script property MAIL_FROM to change it) when that address is a
+ * "Send mail as" alias of the Gmail account that owns this script (Gmail → Settings → Accounts and Import →
+ * Send mail as → Add another email address). Until the alias is added, they go from this account with
+ * Reply-To set to noworasites@gmail.com, so replies still land in the NOWORA inbox. */
+function mailFrom_() { return prop_('MAIL_FROM') || 'noworasites@gmail.com'; }
+function sendMail_(o) {
+  const from = mailFrom_();
+  try {
+    if (Session.getEffectiveUser().getEmail().toLowerCase() === from.toLowerCase() || GmailApp.getAliases().map(a => a.toLowerCase()).indexOf(from.toLowerCase()) > -1) {
+      const opt = { name: o.name || 'NOWORA', replyTo: from };
+      if (o.htmlBody) opt.htmlBody = o.htmlBody;
+      if (Session.getEffectiveUser().getEmail().toLowerCase() !== from.toLowerCase()) opt.from = from;
+      GmailApp.sendEmail(o.to, o.subject, o.body || '', opt);
+      return 'from ' + from;
+    }
+  } catch (e) { console.error('send as ' + from + ' failed, using the script account: ' + e); }
+  MailApp.sendEmail(Object.assign({ replyTo: from }, o));
+  return 'from the script account (add ' + from + ' as a Send mail as alias to send from it)';
+}
+/** Run this once from the editor (select it, press Run): grants email permission and sends you a test. */
+function testOrderEmail() {
+  const how = sendMail_({ to: mailFrom_(), subject: 'NOWORA order email test', body: 'If this arrived, order emails work.', htmlBody: '<p>If this arrived, order emails work. ✅</p>', name: 'NOWORA orders' });
+  Logger.log('Test email sent ' + how);
+}
+
 /** Orders placed after `since` on every client's website, for the alert workflow. */
 function orderAlerts_(since) {
   let from = new Date(since || Date.now() - 36e5); if (isNaN(from)) from = new Date(Date.now() - 36e5);
@@ -1306,7 +1332,7 @@ function weeklyReport() {
 function notify_(subject, text) {
   const p = PropertiesService.getScriptProperties().getProperties();
   if (p.NOTIFY_EMAIL) {
-    try { MailApp.sendEmail(p.NOTIFY_EMAIL, subject, text); } catch (e) { console.error('Email failed: ' + e); }
+    try { sendMail_({ to: p.NOTIFY_EMAIL, subject: subject, body: text, name: 'NOWORA' }); } catch (e) { console.error('Email failed: ' + e); }
   }
   if (p.CALLMEBOT_PHONE && p.CALLMEBOT_APIKEY) {
     const url = 'https://api.callmebot.com/whatsapp.php?phone=' + encodeURIComponent(p.CALLMEBOT_PHONE) +
