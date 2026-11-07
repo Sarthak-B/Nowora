@@ -361,6 +361,7 @@ form.lead.nudge{animation:formNudge 1.2s var(--ease) 2;border-radius:18px}
 .offer:first-child>span{color:#C6D8CE}
 .care-price{line-height:1.25}
 .care-price b.sm{font-size:30px;color:#fff}
+.care-note{margin-top:14px;max-width:44ch;font-size:14.5px;line-height:1.55;color:rgba(255,255,255,.72)}
 
 /* footer */
 footer.foot{background:var(--pine-deep);color:#C9D8D0;padding:120px 0 44px;margin-top:20px;font-size:15px;overflow:hidden}
@@ -1054,7 +1055,7 @@ window.fitFrames=function(root){
       </div>
       <div class="pkgs" id="pkgs"></div>
       <div class="offers">
-        <div class="offer"><b>2 months of care, free</b><span>Every project gets hosting, backups and small edits free for the first 2 months. Then <span data-care-price>₹1,999</span>/month, including editing your site yourself — cancel anytime.</span></div>
+        <div class="offer"><b>2 months of care, free</b><span>Every project gets hosting, backups and small edits free for the first 2 months. Then from <span data-care-price>₹1,999</span>/month depending on how much maintenance your site needs, including editing your site yourself — cancel anytime.</span></div>
         <div class="offer"><b>20% off for students</b><span>Show a valid student ID. Works on any plan.</span></div>
         <div class="offer"><b>Refer a friend, get a free month</b><span>Every referral who signs up adds one more free care month.</span></div>
         <div class="offer"><b>Last 50% only if you love it</b><span>50% in advance to start. The other 50% only after you've seen the finished site and you're happy with it.</span></div>
@@ -1068,7 +1069,8 @@ window.fitFrames=function(root){
       <div>
         <h2 class="reveal"><span class="mask"><span>After launch,</span></span><span class="mask"><span>we look after it.</span></span></h2>
         <p class="lead">Small-business sites break quietly — an expired SSL, an update, a form that stops sending. The care plan means we catch it before your customers do.</p>
-        <div class="care-price"><b>2 months free</b><br>then <b class="sm" data-care-price>₹1,999</b> / month</div>
+        <div class="care-price"><b>2 months free</b><br>then from <b class="sm" data-care-price>₹1,999</b> / month</div>
+        <p class="care-note">The care plan price depends on how much maintenance your site needs — a simple site needs less looking after than a busy online store. We'll confirm your exact monthly price before launch.</p>
         <div style="margin-top:30px"><a class="btn btn-gold magnet" href="#contact" data-form="Care plan only" data-track="cta_whatsapp:care">Ask about the care plan</a></div>
       </div>
       <div class="care-list">
@@ -1303,7 +1305,7 @@ const FAQ=[
   ["Who owns the website and the domain?","You do. Domains are registered in your name, and once the final payment is made the site and everything in it is yours."],
   ["How do payments work?","50% in advance to start the build. The other 50% only after you've seen the finished site and you're happy with it. UPI and bank transfer in India; card or transfer for international clients."],
   ["What if I don't like the finished site?","Tell us what feels off — two rounds of changes are included. If you're still not happy, you don't pay the remaining 50%."],
-  ["What does the care plan cover?","Hosting, SSL, backups, updates, uptime checks and small edits like new prices, photos or timings. It's free for the first 2 months on every project, then ₹1,999/month. It also gives you your own dashboard and a visual editor, so you can change text, photos, prices and whole sections of your website yourself. Cancel anytime with a month's notice."]
+  ["What does the care plan cover?","Hosting, SSL, backups, updates, uptime checks and small edits like new prices, photos or timings. It's free for the first 2 months on every project, then from ₹1,999/month — the exact price depends on how much maintenance your site needs, and we confirm it with you before launch. It also gives you your own dashboard and a visual editor, so you can change text, photos, prices and whole sections of your website yourself. Cancel anytime with a month's notice."]
 ];
 const ISSUES=["isn’t loading well on mobile","is missing","doesn’t have online booking","looks outdated","loads very slowly"];
 const PROSPECT_STATUS=["new","audited","messaged","followed_up","replied","call_booked","proposal","won","lost"];
