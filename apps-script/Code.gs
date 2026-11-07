@@ -1120,7 +1120,7 @@ function clientForm_(b) {
     const sh = t.sh, id = randomKey_(10);
     sh.appendRow([id, new Date()].concat(t.cols.map(col => dbCell_(col, val[col.name.toLowerCase()]))));
     bumpRev_(c);
-    if (isOrder) orderAlertPing_();
+    if (isOrder) { orderAlertPing_(); orderEmail_(c, fields, items, val, sh.getName()); }
     clientLog_(c, { ts: new Date().toISOString(), type: 'lead_submit', label: clip_(table + (items.length ? ' · ' + items.length + ' item(s)' : ''), 60), ref: String(b.ref || 'direct').slice(0, 30), device: String(b.device || '').slice(0, 10), path: String(b.path || '').slice(0, 80), vid: vid });
     return { ok: true, id: id, table: sh.getName(), stock: stockNote || undefined };
   } finally { lock.releaseLock(); }
@@ -1139,6 +1139,44 @@ function orderAlertPing_() {
       method: 'post', contentType: 'application/json', muteHttpExceptions: true,
       headers: { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json' }, payload: JSON.stringify({ event_type: 'order-alert' }) });
   } catch (e) { console.error('order alert ping: ' + e); }
+}
+/** Instant email to the client for every new website order (their Email in Clients; several can be
+ *  separated by commas). Sent from this Google account as "NOWORA orders". Notes with "email off" or
+ *  "alerts off" skip a client. Never blocks the order: any problem is only logged. */
+function orderEmail_(c, fields, items, val, table) {
+  try {
+    const to = String(c.email || '').split(/[,;\s]+/).filter(x => /^\S+@\S+\.\S+$/.test(x)).join(',');
+    if (!to || /(email|alerts?) off/i.test(String(c.notes || ''))) return;
+    const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+    const get = re => { const f = fields.find(x => re.test(x.name)); return f ? f.value : ''; };
+    const name = get(/^(name|customer|full name)$/i), phone = get(/^(phone|mobile|whatsapp|phone \/ whatsapp)$/i), orderId = get(/^order (id|no\.?)$/i);
+    const total = Number(val['total']) || items.reduce((s, i) => s + i.price * i.qty, 0);
+    const inr = n => '₹' + Number(n || 0).toLocaleString('en-IN');
+    const addr = ['address', 'city', 'state', 'pin code', 'pincode', 'pin'].map(k => val[k]).filter(Boolean).join(', ');
+    const shown = /^(order (id|no\.?)|name|customer|full name|phone|mobile|whatsapp|address|city|state|pin ?code|pin|total)$/i;
+    const other = fields.filter(f => f.value && !shown.test(f.name));
+    const dash = (prop_('SITE_URL') || 'https://nowora.vercel.app') + '/client/' + (c.portalKey || '');
+    const subject = '🛍️ New order' + (name ? ' from ' + name : '') + ' — ' + inr(total) + ' · ' + (c.business || 'your website');
+    const row = (k, v) => v ? '<tr><td style="padding:6px 14px 6px 0;color:#6b7a74;white-space:nowrap;vertical-align:top">' + esc(k) + '</td><td style="padding:6px 0;color:#14211D">' + v + '</td></tr>' : '';
+    const html =
+      '<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:560px;margin:0 auto;color:#14211D">' +
+      '<p style="font-size:13px;color:#6b7a74;margin:0 0 4px">' + esc(c.business || '') + ' · ' + esc(table) + '</p>' +
+      '<h2 style="margin:0 0 16px;font-size:24px">New order' + (name ? ' from ' + esc(name) : '') + '</h2>' +
+      '<table style="border-collapse:collapse;font-size:15px;width:100%">' +
+        row('Order', esc(orderId)) + row('Customer', esc(name)) +
+        row('Phone', phone ? '<a href="tel:' + esc(phone.replace(/[^\d+]/g, '')) + '">' + esc(phone) + '</a> · <a href="https://wa.me/' + esc((phone.replace(/\D/g, '').length === 10 ? '91' : '') + phone.replace(/\D/g, '')) + '">WhatsApp</a>' : '') +
+        row('Address', esc(addr)) + other.map(f => row(f.name, esc(f.value))).join('') +
+      '</table>' +
+      (items.length ? '<table style="border-collapse:collapse;font-size:15px;width:100%;margin-top:16px;border-top:1px solid #dfe5e1">' +
+        items.map(i => '<tr><td style="padding:8px 0;border-bottom:1px solid #eef1ef">' + i.qty + ' × ' + esc(i.name) + '<br><span style="color:#6b7a74;font-size:13px">' + esc([i.variant, i.colour, i.size].filter(Boolean).join(' · ')) + '</span></td><td style="padding:8px 0;text-align:right;border-bottom:1px solid #eef1ef;white-space:nowrap">' + inr(i.price * i.qty) + '</td></tr>').join('') +
+        '<tr><td style="padding:10px 0;font-weight:700">Total</td><td style="padding:10px 0;text-align:right;font-weight:700">' + inr(total) + '</td></tr></table>' : row('Total', inr(total))) +
+      '<p style="margin:22px 0"><a href="' + esc(dash) + '" style="background:#1D4A3D;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:600;display:inline-block">Open your dashboard to send it</a></p>' +
+      '<p style="font-size:12px;color:#8a978f">Sent by NOWORA the moment the order was placed on your website.</p></div>';
+    const text = ['New order — ' + (c.business || ''), '', 'Order: ' + orderId, 'Customer: ' + name, 'Phone: ' + phone, 'Address: ' + addr]
+      .concat(other.map(f => f.name + ': ' + f.value), [''], items.map(i => i.qty + ' x ' + i.name + ' ' + [i.variant, i.colour, i.size].filter(Boolean).join(' / ') + ' — ' + inr(i.price * i.qty)),
+        ['Total: ' + inr(total), '', 'Dashboard: ' + dash]).join('\n');
+    MailApp.sendEmail({ to: to, subject: subject, body: text, htmlBody: html, name: 'NOWORA orders' });
+  } catch (e) { console.error('order email: ' + e); }
 }
 /** Orders placed after `since` on every client's website, for the alert workflow. */
 function orderAlerts_(since) {
