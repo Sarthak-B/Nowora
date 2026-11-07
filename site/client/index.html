@@ -108,6 +108,7 @@ svg{display:block}
 .site-link{display:inline-flex;align-items:center;gap:8px;margin-top:18px;color:var(--ink-2);font-size:15px;border-bottom:1px solid var(--line-2);padding-bottom:2px;word-break:break-all;transition:color .2s,border-color .2s}
 .site-link:hover{color:var(--neon);border-color:var(--neon)}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.inv-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
 .today{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:22px;max-width:640px}
 .today .td{display:grid;gap:2px;padding:14px 16px;border-radius:16px;border:1px solid var(--line-2);background:rgba(255,255,255,.035);transition:border-color .25s,transform .3s var(--spring)}
 .today .td:hover{border-color:rgba(var(--neon-rgb),.6);transform:translateY(-2px)}
@@ -446,7 +447,9 @@ textarea:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 4px rgba(v
 "use strict";
 var CFG = {
   endpoint: "https://script.google.com/macros/s/AKfycbwOFH3fuNlDOsOV59HZ4bmSYCZcsHMcNMtwc_qPF8Dn_-cOUN_NJVPoCoXx7WqWwWB7/exec",
-  whatsapp: "916397988191"
+  whatsapp: "916397988191",
+  /* who the invoices come from — edit here if any of this changes (add gstin only if registered for GST) */
+  seller: { name: "NOWORA", line: "Website design, build & care", place: "India", email: "Sarthakmusix@gmail.com", phone: "+91 63979 88191", web: "nowora.vercel.app", gstin: "" }
 };
 var CHECKS = ["Business details, logo and brand colours","Page list and content (text and photos)","Reference sites you like","Domain registered in your name","WhatsApp, booking, forms and payments set up","Agreement signed and 50% advance","Go-live date agreed"];
 var STAGES = [["onboarding","Getting started"],["building","Being built"],["live","Live"]];
@@ -847,8 +850,63 @@ function drawProject(){
       '<div class="care">'+(c.carePlan==="yes"&&left!==null?'<div class="days"><svg viewBox="0 0 96 96"><circle class="bg" cx="48" cy="48" r="42"/><circle class="fg" id="dring" cx="48" cy="48" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9" data-frac="'+Math.min(1,left/30)+'"/></svg><div><b>'+left+'</b><small>days to renewal</small></div></div>':'')+
       '<div><span class="eyebrow" style="color:var(--mint)">Care plan</span>'+
       (c.carePlan==="yes"?'<div class="amt">'+inr(c.careFee)+'<small> / month</small></div><ul><li>Hosting, SSL and backups</li><li>Uptime checks every few minutes</li><li>Small text and photo changes</li><li>Edit your website yourself</li><li>This live dashboard</li></ul>'+(ren?'<p>Renews on <b style="color:var(--ink)">'+fmtDate(c.renewal)+'</b></p>':''):
-        '<div class="amt" style="font-size:22px;margin-top:6px">Not active yet</div><p>Your first 2 months of care are free after launch, then ₹1,999/month for hosting, backups, uptime checks, small changes — and editing your website yourself.</p>')+'</div></div></div>';
+        '<div class="amt" style="font-size:22px;margin-top:6px">Not active yet</div><p>Your first 2 months of care are free after launch, then ₹1,999/month for hosting, backups, uptime checks, small changes — and editing your website yourself.</p>')+'</div></div>'+
+      ((price||(c.carePlan==="yes"&&+c.careFee))?'<div class="inv-btns">'+(price?'<button class="btn ghost sm" data-inv="project">'+I.dl+'Project invoice</button>':'')+(c.carePlan==="yes"&&+c.careFee?'<button class="btn ghost sm" data-inv="care">'+I.dl+'Care plan invoice</button>':'')+'</div>':'')+'</div>';
+  $$("[data-inv]",$("#projectGrid")).forEach(function(b){b.onclick=function(){printInvoice(b.dataset.inv)}});
   S.pct=pct; S.stage=stage;
+}
+/* invoices: built from the plan, price and payments NOWORA records for this client; saved as PDF from the print dialog */
+function inWords(n){
+  n=Math.round(+n||0); if(!n) return "Zero";
+  var a=["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"],t=["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+  var two=function(x){return x<20?a[x]:t[Math.floor(x/10)]+(x%10?" "+a[x%10]:"")}, three=function(x){return (x>=100?a[Math.floor(x/100)]+" Hundred"+(x%100?" ":""):"")+(x%100?two(x%100):"")};
+  var out=[],cr=Math.floor(n/1e7),l=Math.floor(n/1e5)%100,th=Math.floor(n/1e3)%100,r=n%1000;
+  if(cr) out.push(three(cr)+" Crore"); if(l) out.push(two(l)+" Lakh"); if(th) out.push(two(th)+" Thousand"); if(r) out.push(three(r));
+  return out.join(" ");
+}
+function invoiceData(kind){
+  var c=S.data.client, key=String(c.portalKey||c.business||"CLIENT").toUpperCase().replace(/[^A-Z0-9]+/g,"").slice(0,12)||"CLIENT", today=new Date();
+  var d=function(x){var t=x?new Date(x):null;return t&&!isNaN(t)?t:null};
+  if(kind==="care"){
+    var fee=+c.careFee||0, end=d(c.renewal)||new Date(today.getFullYear(),today.getMonth()+1,today.getDate()), start=new Date(end); start.setMonth(start.getMonth()-1);
+    return {no:"NW-"+key+"-C"+start.getFullYear()+String(start.getMonth()+1).padStart(2,"0"), date:start, due:end, lines:[{d:"Care plan — "+fmtDate(start)+" to "+fmtDate(new Date(end-864e5)),s:"Hosting, SSL, backups, uptime checks, small changes and this dashboard",a:fee,paid:false}], status:"due"};
+  }
+  var price=+c.price||0, half=Math.round(price/2), adv=c.advancePaid==="yes", bal=c.balancePaid==="yes";
+  return {no:"NW-"+key+"-P", date:d(c.delivered)||today, due:null, lines:[
+    {d:"Website — "+(c.package?c.package+" plan":"design and build"),s:"First 50% — paid before the build starts",a:half,paid:adv},
+    {d:"Website — "+(c.package?c.package+" plan":"design and build"),s:"Second 50% — on approval of the finished website",a:price-half,paid:bal}], status:adv&&bal?"paid":adv||bal?"part":"due"};
+}
+function invoiceHtml(kind){
+  var c=S.data.client, v=invoiceData(kind), sl=CFG.seller||{name:"NOWORA"}, total=v.lines.reduce(function(t,l){return t+l.a},0), paid=v.lines.reduce(function(t,l){return t+(l.paid?l.a:0)},0), due=total-paid;
+  var money=function(n){return "₹"+(+n||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2})};
+  var stamp=v.status==="paid"?"PAID":v.status==="part"?"PART PAID":"DUE";
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Invoice '+esc(v.no)+' — '+esc(c.business||"")+'</title><style>'+
+    '@page{size:A4;margin:16mm}*{box-sizing:border-box}body{font:13px/1.5 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#14211D;margin:0}'+
+    '.top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #14211D;padding-bottom:16px}.brand{font-size:26px;font-weight:800;letter-spacing:-.02em}.muted{color:#5b6b65}'+
+    'h1{font-size:28px;margin:0;letter-spacing:.04em;text-align:right}.meta{margin-top:6px;text-align:right}.meta b{display:inline-block;min-width:90px;color:#5b6b65;font-weight:600}'+
+    '.parties{display:flex;gap:24px;margin:22px 0}.parties div{flex:1}.lbl{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#5b6b65;margin-bottom:4px}'+
+    'table{width:100%;border-collapse:collapse;margin-top:6px}th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5b6b65;border-bottom:1px solid #c9d2cd;padding:8px 6px}td{border-bottom:1px solid #e3e8e5;padding:10px 6px;vertical-align:top}.r{text-align:right;white-space:nowrap}'+
+    '.tot{margin-left:auto;width:300px;margin-top:12px}.tot div{display:flex;justify-content:space-between;padding:5px 6px}.tot .g{border-top:2px solid #14211D;font-weight:800;font-size:15px;margin-top:4px;padding-top:8px}'+
+    '.stamp{display:inline-block;border:2px solid '+(v.status==="paid"?"#1f8a4c":"#b5651d")+';color:'+(v.status==="paid"?"#1f8a4c":"#b5651d")+';font-weight:800;letter-spacing:.14em;padding:4px 12px;border-radius:6px;margin-top:8px}'+
+    '.words{margin-top:14px}.foot{margin-top:36px;border-top:1px solid #c9d2cd;padding-top:12px;font-size:12px;color:#5b6b65}</style></head><body>'+
+    '<div class="top"><div><div class="brand">'+esc(sl.name)+'</div><div class="muted">'+esc(sl.line||"")+'</div><div class="muted">'+esc([sl.place,sl.web].filter(Boolean).join(" · "))+'</div><div class="muted">'+esc([sl.email,sl.phone].filter(Boolean).join(" · "))+'</div>'+(sl.gstin?'<div><b>GSTIN:</b> '+esc(sl.gstin)+'</div>':'')+'</div>'+
+    '<div><h1>INVOICE</h1><div class="meta"><b>Invoice no.</b> '+esc(v.no)+'</div><div class="meta"><b>Date</b> '+fmtDate(v.date)+'</div>'+(v.due&&due?'<div class="meta"><b>Due by</b> '+fmtDate(v.due)+'</div>':'')+'<div style="text-align:right"><span class="stamp">'+stamp+'</span></div></div></div>'+
+    '<div class="parties"><div><div class="lbl">Billed to</div><b>'+esc(c.business||"")+'</b>'+(c.name?'<div>'+esc(c.name)+'</div>':'')+(c.site?'<div class="muted">'+esc(String(c.site).replace(/^https?:\/\//,"").replace(/\/$/,""))+'</div>':'')+'</div>'+
+    '<div><div class="lbl">For</div>'+(kind==="care"?'Monthly website care plan':'Website design and build')+(c.package?'<div class="muted">'+esc(c.package)+' plan</div>':'')+'</div></div>'+
+    '<table><thead><tr><th style="width:34px">#</th><th>Description</th><th class="r">Amount</th><th class="r">Status</th></tr></thead><tbody>'+
+    v.lines.map(function(l,i){return '<tr><td>'+(i+1)+'</td><td><b>'+esc(l.d)+'</b><div class="muted">'+esc(l.s)+'</div></td><td class="r">'+money(l.a)+'</td><td class="r">'+(l.paid?"Paid":"Due")+'</td></tr>'}).join("")+'</tbody></table>'+
+    '<div class="tot"><div><span>Total</span><span>'+money(total)+'</span></div><div><span>Paid</span><span>'+money(paid)+'</span></div><div class="g"><span>'+(due?"Amount due":"Balance")+'</span><span>'+money(due)+'</span></div></div>'+
+    '<div class="words"><span class="lbl">Total in words</span><div>Indian Rupees '+inWords(total)+' only</div></div>'+
+    '<div class="foot">'+(due?'Please pay by UPI or bank transfer and share the payment screenshot on WhatsApp ('+esc(sl.phone||"")+'). ':'Thank you — this invoice is fully paid. ')+'Questions about this invoice: '+esc([sl.email,sl.phone].filter(Boolean).join(" or "))+'.<br>This is a computer-generated invoice and does not need a signature.</div>'+
+    '</body></html>';
+}
+function printInvoice(kind){
+  var f=document.createElement("iframe"); f.setAttribute("aria-hidden","true"); f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+  document.body.appendChild(f);
+  var doc=f.contentWindow.document; doc.open(); doc.write(invoiceHtml(kind)); doc.close();
+  var t=document.title; document.title=doc.title;
+  setTimeout(function(){try{f.contentWindow.focus();f.contentWindow.print()}catch(e){toast("Couldn't open the invoice")} document.title=t; setTimeout(function(){f.remove()},60000)},300);
+  toast("Choose “Save as PDF” to download your invoice");
 }
 function payRow(a,t,s,p){return '<div class="pay-row"><div class="what"><b>'+t+'</b>'+s+'</div><span class="amt num">'+inr(a)+'</span><span class="tag '+(p?"paid":"due")+'">'+(p?"Paid ✓":"Due")+'</span></div>'}
 
