@@ -390,6 +390,7 @@
 .sh-done-h{display:flex;gap:12px;align-items:center;color:var(--neon)}.sh-done-h div{display:grid}.sh-done-h b{color:var(--ink);font-size:17px}.sh-done-h span{color:var(--ink-2);font-size:13.5px}
 .sh-steps{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;color:var(--ink-2)}
 .sh-acts{display:flex;gap:8px;flex-wrap:wrap}
+.sh-note{margin:2px 0 6px;padding:10px 14px;border-radius:12px;background:rgba(255,181,71,.08);border:1px solid rgba(255,181,71,.25);color:var(--ink-2);font-size:13.5px}
 .sh-how{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
 .sh-how span{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-2)}
 .sh-how i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:800;background:rgba(var(--neon-rgb),.14);color:var(--neon)}
@@ -499,12 +500,14 @@
       if (!S.base) return;
       S.ship.on = true; S.ship.busy = !quiet; if (!quiet) drawShip();
       try { const d = await store("list"); S.ship.orders = d.orders; S.ship.err = ""; S.ship.at = Date.now(); syncDb(d.orders); }
-      catch (e) { if (e.missing) S.ship.on = false; S.ship.err = e.message; }
+      catch (e) { if (e.missing) S.ship.on = false; S.ship.err = e.message || "unavailable";
+        clearTimeout(S.ship.retry); S.ship.retry = setTimeout(() => { if (root.isConnected) loadShip(true); }, 60000); }
       S.ship.busy = false; drawShip(); drawSales();
     }
     function drawShip() {
       const el = $("#shShip"); if (!el) return;
       if (!S.ship.on) { el.innerHTML = ""; return; }
+      if (S.ship.err && !S.ship.orders) return drawShipOffline(el);
       const L = S.ship.orders || [], stageOf = x => x.stage === "returned" ? "cancelled" : x.stage;
       const n = k => L.filter(x => stageOf(x) === k).length;
       const list = L.filter(x => stageOf(x) === S.ship.tab);
@@ -522,7 +525,7 @@
       el.innerHTML = '<div class="card"><h2>' + ic("truck", 18) + "Orders<small style=\"color:var(--ink-3);font-weight:600\">" + (n("new") ? n("new") + " waiting to be sent" : "all sent") + '</small><span class="sp"></span>' +
           '<small style="color:var(--ink-3)">' + (S.ship.busy ? "Loading…" : S.ship.at ? "Updated " + ago(S.ship.at) : "") + '</small><button class="btn ghost sm" id="shShipR">Refresh</button></h2>' +
         '<div class="sh-bar"><div class="sh-cats" id="shShipT">' + SHIP_TABS.map(t => '<button data-t="' + t[0] + '" class="' + (t[0] === S.ship.tab ? "on" : "") + '">' + t[1] + " · " + n(t[0]) + "</button>").join("") + "</div></div>" +
-        (S.ship.err ? '<div class="sh-empty">Couldn\'t load orders: ' + esc(S.ship.err) + "</div>" : !S.ship.orders ? '<div class="sh-empty">Loading your orders…</div>' :
+        (S.ship.err ? '<p class="sh-note">Reconnecting to the courier service — these are your orders from a moment ago. It refreshes by itself.</p>' : "") + (!S.ship.orders ? '<div class="sh-empty">Loading your orders…</div>' :
           list.length ? '<div class="sh-ol">' + list.map(row).join("") + "</div>" : '<div class="sh-empty">' + (S.ship.tab === "new" ? "All caught up. New orders from your website show up here." : "No orders here.") + "</div>") +
         (S.ship.tab === "new" && list.length && !o.readOnly ? '<div class="sh-how"><span><i>1</i>Tap <b>Send order</b></span><span><i>2</i>Print the label and stick it on the parcel</span><span><i>3</i>Give the parcel to the courier when they come</span></div>' : "") + "</div>";
       $("#shShipR").onclick = () => loadShip();
@@ -536,6 +539,21 @@
         try { const d = await store("label", { id: +b.dataset.label }); const box = b.parentNode;
           b.remove(); box.insertAdjacentHTML("afterbegin", (d.labelUrl ? '<a class="btn sm" target="_blank" rel="noopener" href="' + esc(d.labelUrl) + '">' + ic("dl") + "Download label</a>" : "") + (d.invoiceUrl ? '<a class="btn ghost sm" target="_blank" rel="noopener" href="' + esc(d.invoiceUrl) + '">Invoice</a>' : "") + (!d.labelUrl ? '<span class="sh-hint" style="margin:0">' + esc(d.labelError || "Label not ready yet") + "</span>" : "")); }
         catch (e) { toast(e.message); b.disabled = false; b.lastChild.textContent = "Label"; } });
+    }
+    // Shiprocket can't be reached for a moment: still show the new orders from the website, and retry by itself
+    function drawShipOffline(el) {
+      const rows = [];
+      if (S.orders) {
+        const cols = S.orders.table.cols || [], c = re => cols.find(x => re.test(x.name));
+        const cId = c(/order (id|no)/i), cName = c(/^(name|customer|full name)$/i), cItems = c(/^items$/i), cTot = cols.find(x => x.type === "money" && /total|amount/i.test(x.name)), cSt = c(/^status$/i), cCity = c(/^city$/i);
+        S.orders.rows.filter(r => STATUS(cSt ? r[cSt.id] : "New") === "waiting").sort((a, b) => String(b._ts).localeCompare(String(a._ts))).forEach(r => rows.push({
+          name: cName ? r[cName.id] : "", city: cCity ? r[cCity.id] : "", items: cItems ? String(r[cItems.id] || "").split("\n").join(" · ") : "", total: cTot ? r[cTot.id] : 0, ref: cId ? String(r[cId.id] || "") : "", ts: r._ts }));
+      }
+      el.innerHTML = '<div class="card"><h2>' + ic("truck", 18) + "Orders<small style=\"color:var(--ink-3);font-weight:600\">" + (rows.length ? rows.length + " waiting to be sent" : "") + '</small><span class="sp"></span><button class="btn ghost sm" id="shShipR">Try again</button></h2>' +
+        '<p class="sh-note">Connecting to the courier service… Your orders are below. The <b>Send order</b> button comes back on its own in a few minutes — no need to do anything.</p>' +
+        (rows.length ? '<div class="sh-ol">' + rows.map(x => '<div class="sh-o"><div class="sh-o-m"><b>' + esc(x.name || "Customer") + '</b><span class="sh-o-where">' + esc(x.city) + '</span><div class="sh-o-it">' + esc(x.items) + "</div><small>" + (x.ref ? "#" + esc(x.ref.slice(0, 12)) + "… · " : "") + ago(x.ts) + '</small></div><div class="sh-o-a"><b class="num">' + inr(x.total) + "</b></div></div>").join("") + "</div>" : '<div class="sh-empty">No new orders waiting.</div>') + "</div>";
+      $("#shShipR").onclick = () => loadShip();
+      if (S.ship.err) console.warn("[orders]", S.ship.err);
     }
     function shipSheet(x) {
       if (!x) return;
