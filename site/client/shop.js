@@ -4,7 +4,7 @@
    NoworaShop.mount({root, call, toast, owner, business, site, editable, html})
        Sales (from the "Orders" table in the client's database) + the product editor.
    Orders → Ship now: lists Shiprocket orders through the website's /api/store (52 Alive) and books courier,
-       pickup and label; pasted store key is kept in this browser. Read-only clients can look, not ship.
+       pickup and label. No key to paste. Read-only clients can look, not ship.
    NoworaShop.loadSales(call)          → Promise<{table, rows} | null>
    NoworaShop.summarise(orders, days)  → totals, daily series, top products, recent orders
    NoworaShop.detectColour(src)        → Promise<{name, hex, family, lab}>
@@ -433,8 +433,8 @@
     }
 
     /* ---------------- orders → ship (Shiprocket, through the website's own /api/store) ----------------
-       The website holds the Shiprocket login; the dashboard sends the store key (pasted once, kept in this
-       browser). "Ship now" books the courier, schedules the pickup, makes the label and takes stock off. */
+       The website holds the Shiprocket login and lets this dashboard in (it's already behind the client's PIN).
+       "Ship now" books the courier, schedules the pickup, makes the label and takes stock off. */
     const SHIP_TABS = [["new", "To ship"], ["ready", "Waiting for pickup"], ["transit", "On the way"], ["delivered", "Delivered"], ["cancelled", "Cancelled"]];
     const rupees = n => "₹" + (Number(n) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
     const keyName = "nw_store_key:" + S.base;
@@ -493,22 +493,14 @@
     }
     async function loadShip(quiet) {
       if (!S.base) return;
-      if (!getKey()) { S.ship.on = await store("list").then(() => true, e => !e.missing); S.ship.orders = null; return drawShip(); }
       S.ship.on = true; S.ship.busy = !quiet; if (!quiet) drawShip();
       try { const d = await store("list"); S.ship.orders = d.orders; S.ship.err = ""; S.ship.at = Date.now(); syncDb(d.orders); }
-      catch (e) { if (e.missing) S.ship.on = false; S.ship.err = e.badKey ? "" : e.message; }
+      catch (e) { if (e.missing) S.ship.on = false; S.ship.err = e.message; }
       S.ship.busy = false; drawShip();
     }
     function drawShip() {
       const el = $("#shShip"); if (!el) return;
       if (!S.ship.on) { el.innerHTML = ""; return; }
-      if (!getKey()) {
-        el.innerHTML = '<div class="card"><h2>' + ic("truck", 18) + 'Ship your orders</h2><p class="sh-hint" style="margin:0 0 12px">See every website order here and send it with one tap — the courier, pickup, label and stock are handled for you. Paste the store key NOWORA sent you to connect.</p>' +
-          '<form class="sh-keyf" id="shKeyF"><input id="shKey" type="password" autocomplete="off" placeholder="Store key" aria-label="Store key"><button class="btn sm">Connect</button></form><div class="sh-busy" id="shKeyErr"></div></div>';
-        $("#shKeyF").onsubmit = async e => { e.preventDefault(); const v = $("#shKey").value.trim(); if (!v) return; setKey(v); $("#shKeyErr").textContent = "Checking…";
-          try { await store("list"); toast("Shipping connected"); loadShip(); } catch (err) { setKey(""); $("#shKeyErr").textContent = err.badKey ? "That key didn't work — check it and try again." : err.message; } };
-        return;
-      }
       const L = S.ship.orders || [], stageOf = x => x.stage === "returned" ? "cancelled" : x.stage;
       const n = k => L.filter(x => stageOf(x) === k).length;
       const list = L.filter(x => stageOf(x) === S.ship.tab);
@@ -811,7 +803,7 @@
     let lastRev = "";
     const timer = setInterval(async () => {
       if (document.hidden || !root.isConnected) { if (!root.isConnected) clearInterval(timer); return; }
-      if (S.ship.on && getKey() && Date.now() - (S.ship.at || 0) > 120000) loadShip(true);
+      if (S.ship.on && Date.now() - (S.ship.at || 0) > 120000) loadShip(true);
       try { const r = await call("db_rev"); if (r.rev && r.rev !== lastRev) { const first = !lastRev; lastRev = r.rev; if (!first) refreshSales(); } } catch (e) { /* next round */ }
     }, 30000);
     return { setCatalogue(html) { S.data = readCatalogue(html); if (S.data) S.saved = JSON.parse(JSON.stringify(S.data)); drawProducts(); }, refreshSales: refreshSales };
