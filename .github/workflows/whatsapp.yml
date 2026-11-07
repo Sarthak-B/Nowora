@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
+        with: { node-version: 20, cache: npm }
       - name: Restore WhatsApp login
         uses: actions/cache/restore@v4
         with:
@@ -48,13 +48,20 @@ jobs:
           if [ -f wa-session.enc ]; then
             openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:STUDIO_AUTOMATION_KEY -in wa-session.enc | tar -xz && echo "login restored" || echo "::warning::saved login couldn't be opened"
           else echo "no saved login yet"; fi
+      # an order ping goes straight to sending; only the 15-minute safety check looks first (no browser if nothing's new)
       - name: Any new orders?
         id: check
-        if: env.MODE == 'alerts'
+        if: env.MODE == 'alerts' && github.event_name == 'schedule'
         run: node scripts/whatsapp.mjs check
+      - name: Cache browser
+        if: env.MODE != 'alerts' || steps.check.outputs.pending != '0'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install browser
         if: env.MODE != 'alerts' || steps.check.outputs.pending != '0'
-        run: npm ci && npx playwright install --with-deps chromium
+        run: npm ci --no-audit --no-fund && npx playwright install --with-deps --only-shell chromium
       - name: Run (${{ env.MODE }})
         if: env.MODE != 'alerts' || steps.check.outputs.pending != '0'
         env:

@@ -81,7 +81,10 @@ async function sendOne(page, to, text) {
   await useHere(page);
   const box = page.locator('footer div[contenteditable="true"]').last();
   const bad = page.getByText(/phone number shared via url is invalid/i);
-  const which = await Promise.race([box.waitFor({ timeout: 90000 }).then(() => "ok"), bad.waitFor({ timeout: 90000 }).then(() => "bad")]).catch(() => "timeout");
+  const out_ = page.getByText(/scan to log in|link with phone number|enter phone number/i).first();
+  const which = await Promise.race([box.waitFor({ timeout: 90000 }).then(() => "ok"), bad.waitFor({ timeout: 90000 }).then(() => "bad"),
+    out_.waitFor({ timeout: 90000 }).then(() => "out")]).catch(() => "timeout");
+  if (which === "out") throw Object.assign(new Error("WhatsApp is logged out — run the workflow with mode = login"), { loggedOut: true });
   if (which === "bad") throw pre("not on WhatsApp: " + tail(to));
   if (which !== "ok") throw pre("chat didn't open");
   await page.waitForFunction(() => { const b = [...document.querySelectorAll('footer div[contenteditable="true"]')].pop(); return b && b.innerText.trim().length > 0; }, null, { timeout: 20000 })
@@ -135,27 +138,26 @@ async function login() {
 }
 
 async function alerts() {
-  const { st, todo } = await pending();
-  if (!todo.length) { log("no new orders"); st.since = new Date().toISOString(); return writeState(st); }
-  const { ctx, page } = await browser();
+  const started = Date.now();
+  const [{ st, todo }, { ctx, page }] = await Promise.all([pending(), browser()]);   // in parallel: saves a few seconds
+  if (!todo.length) { await ctx.close(); log("no new orders"); st.since = new Date().toISOString(); return writeState(st); }
   let sent = 0, skipped = 0;
   try {
-    await openWhatsApp(page);
     for (const o of todo) {
       const key = o.client + ":" + o.id, to = intl(o.to);
       if (to.length < 11) { log("skipped an order for " + o.business + ": no WhatsApp number in Clients"); st.sent.push(key); skipped++; continue; }
       try { await sendOne(page, to, message(o)); st.sent.push(key); sent++; log("sent " + o.business + " order to " + tail(to)); }
       catch (e) {
+        if (e.loggedOut) throw e;
         if (!e.beforeSend) { st.sent.push(key); sent++; log("sent " + o.business + " order to " + tail(to) + " (" + e.message + ")"); }
         else { st.tries[key] = (st.tries[key] || 0) + 1; log("couldn't send " + o.business + " order (" + e.message + "), try " + st.tries[key]);
           if (st.tries[key] >= 3) { st.sent.push(key); delete st.tries[key]; } }
       }
       writeState(st);
     }
-    await page.waitForTimeout(4000);
   } finally { await ctx.close(); }
   st.since = new Date().toISOString(); writeState(st);
-  log(sent + " sent" + (skipped ? ", " + skipped + " skipped" : ""));
+  log(sent + " sent" + (skipped ? ", " + skipped + " skipped" : "") + " in " + Math.round((Date.now() - started) / 1000) + "s");
   if (sent + skipped < todo.length) process.exitCode = 1;
 }
 
@@ -172,7 +174,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] || "").href) try {
   else if (MODE === "alerts") await alerts();
   else if (MODE === "login") await login();
   else if (MODE === "test") { const to = intl(process.env.WA_PHONE); if (to.length < 11) throw new Error("Give the number to send the test to");
-    const { ctx, page } = await browser(); try { await openWhatsApp(page); await sendOne(page, to, "✅ NOWORA order alerts are working — new website orders will arrive here."); log("test sent to " + tail(to)); } finally { await ctx.close(); } }
+    const { ctx, page } = await browser(); try { await sendOne(page, to, "✅ NOWORA order alerts are working — new website orders will arrive here."); log("test sent to " + tail(to)); } finally { await ctx.close(); } }
   else if (MODE === "keepalive") { const { ctx, page } = await browser(); try { await openWhatsApp(page); await page.waitForTimeout(30000); log("still logged in"); } finally { await ctx.close(); } }
   else throw new Error("Unknown mode " + MODE);
 } catch (e) { fail(e.message); }
