@@ -466,7 +466,7 @@
       const row = S.orders.rows.find(r => String(r[cId.id] || "").trim().toLowerCase() === orderId.toLowerCase());
       return row ? { row: row, phone: cPh ? String(row[cPh.id] || "").replace(/\D/g, "").slice(-10) : "" } : null;
     }
-    const trackUrl = o => S.base + "?track=" + encodeURIComponent(o.orderId);
+    const trackUrl = o => S.base + "track/?id=" + encodeURIComponent(o.orderId);
     function waLink(x, extra) {
       const d = dbOrder(x.orderId); if (!d || !/^[6-9]\d{9}$/.test(d.phone)) return "";
       const first = (x.name || "").split(" ")[0];
