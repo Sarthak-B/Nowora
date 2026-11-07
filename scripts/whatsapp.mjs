@@ -25,7 +25,8 @@ const intl = n => { n = String(n || "").replace(/\D/g, ""); return n.length === 
 function readState() { try { return JSON.parse(fs.readFileSync(STATE, "utf8")); } catch { return null; } }
 function writeState(s) { fs.mkdirSync(PROFILE, { recursive: true }); s.sent = s.sent.slice(-3000); fs.writeFileSync(STATE, JSON.stringify(s)); }
 async function pending() {
-  const st = readState() || { since: new Date(Date.now() - 30 * 60000).toISOString(), sent: [], tries: {} };   // first run: only the last 30 minutes
+  const st = readState() || { v: 2, since: new Date(Date.now() - 30 * 60000).toISOString(), sent: [], tries: {} };   // first run: only the last 30 minutes
+  if (st.v !== 2) { Object.keys(st.tries || {}).forEach(k => { if (!st.sent.includes(k)) st.sent.push(k); }); st.tries = {}; st.v = 2; }   // the old check retried messages that had gone out
   const from = new Date(new Date(st.since).getTime() - 6 * 3600e3).toISOString();                    // overlap, so a slow sheet never loses one
   const { orders } = await api({ action: "order_alerts", since: from });
   const todo = (orders || []).filter(o => !st.sent.includes(o.client + ":" + o.id));
@@ -72,19 +73,27 @@ async function openWhatsApp(page) {
   await page.goto("https://web.whatsapp.com/", { waitUntil: "domcontentloaded" });
   if (!(await loggedIn(page, 90000))) throw new Error("WhatsApp is logged out — run the workflow with mode = login");
 }
+/* Sends one message. Anything that goes wrong BEFORE the send button is pressed throws (safe to retry);
+   once it's pressed the message counts as sent — never retried, so nobody gets duplicates. */
 async function sendOne(page, to, text) {
+  const pre = m => Object.assign(new Error(m), { beforeSend: true });
   await page.goto("https://web.whatsapp.com/send?phone=" + to + "&text=" + encodeURIComponent(text), { waitUntil: "domcontentloaded" });
   await useHere(page);
   const box = page.locator('footer div[contenteditable="true"]').last();
   const bad = page.getByText(/phone number shared via url is invalid/i);
-  const which = await Promise.race([box.waitFor({ timeout: 90000 }).then(() => "ok"), bad.waitFor({ timeout: 90000 }).then(() => "bad")]);
-  if (which === "bad") throw new Error("not on WhatsApp: " + tail(to));
-  await page.waitForTimeout(1500);
-  const before = await page.locator("div.message-out").count();
+  const which = await Promise.race([box.waitFor({ timeout: 90000 }).then(() => "ok"), bad.waitFor({ timeout: 90000 }).then(() => "bad")]).catch(() => "timeout");
+  if (which === "bad") throw pre("not on WhatsApp: " + tail(to));
+  if (which !== "ok") throw pre("chat didn't open");
+  await page.waitForFunction(() => { const b = [...document.querySelectorAll('footer div[contenteditable="true"]')].pop(); return b && b.innerText.trim().length > 0; }, null, { timeout: 20000 })
+    .catch(() => { throw pre("message text didn't load into the chat"); });
+  await page.waitForTimeout(1200);
   const btn = page.locator('button[aria-label="Send"], span[data-icon="send"], span[data-icon="wds-ic-send-filled"]').first();
   if (await btn.isVisible().catch(() => false)) await btn.click(); else await box.press("Enter");
-  await page.waitForFunction(b => document.querySelectorAll("div.message-out").length > b, before, { timeout: 30000 });
-  for (let i = 0; i < 40 && await page.locator('div.message-out:last-of-type span[data-icon="msg-time"], span[data-icon="msg-time"]').count(); i++) await page.waitForTimeout(1000);
+  /* sent: the typing box empties. Then give WhatsApp a few seconds to deliver it before the browser closes. */
+  const cleared = await page.waitForFunction(() => { const b = [...document.querySelectorAll('footer div[contenteditable="true"]')].pop(); return !b || b.innerText.trim() === ""; }, null, { timeout: 15000 }).then(() => true, () => false);
+  if (!cleared) { await box.press("Enter").catch(() => {}); await page.waitForTimeout(3000); }
+  for (let i = 0; i < 20 && await page.locator('span[data-icon="msg-time"]').count(); i++) await page.waitForTimeout(1000);
+  await page.waitForTimeout(2500);
 }
 
 async function login() {
@@ -136,8 +145,11 @@ async function alerts() {
       const key = o.client + ":" + o.id, to = intl(o.to);
       if (to.length < 11) { log("skipped an order for " + o.business + ": no WhatsApp number in Clients"); st.sent.push(key); skipped++; continue; }
       try { await sendOne(page, to, message(o)); st.sent.push(key); sent++; log("sent " + o.business + " order to " + tail(to)); }
-      catch (e) { st.tries[key] = (st.tries[key] || 0) + 1; log("couldn't send " + o.business + " order (" + e.message + "), try " + st.tries[key]);
-        if (st.tries[key] >= 3) { st.sent.push(key); delete st.tries[key]; } }
+      catch (e) {
+        if (!e.beforeSend) { st.sent.push(key); sent++; log("sent " + o.business + " order to " + tail(to) + " (" + e.message + ")"); }
+        else { st.tries[key] = (st.tries[key] || 0) + 1; log("couldn't send " + o.business + " order (" + e.message + "), try " + st.tries[key]);
+          if (st.tries[key] >= 3) { st.sent.push(key); delete st.tries[key]; } }
+      }
       writeState(st);
     }
     await page.waitForTimeout(4000);
