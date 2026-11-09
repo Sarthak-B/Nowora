@@ -1,4 +1,4 @@
-/* NOWORA client database — tables the client manages from their dashboard.
+/* make4yu client database — tables the client manages from their dashboard.
    Loaded on demand by /client/index.html:  NoworaDB.mount({root, call, toast, demo, owner, business})
    Storage: the client's own Google Sheet (one tab per table), through the Apps Script backend. */
 (function () {
@@ -287,7 +287,7 @@
       root.innerHTML = '<div class="db-shell">' +
         '<div class="db-tabs" role="tablist">' + S.tables.map(x => '<button class="db-tab' + (x.id === S.tableId ? " on" : "") + '" data-t="' + esc(x.id) + '" role="tab">' + esc(x.name) + " <small>" + (x.id === S.tableId ? S.rows.length : x.count) + "</small>" + (S.unseen[x.id] ? '<span class="dot" title="New rows"></span>' : "") + "</button>").join("") +
           (RO ? "" : '<button class="db-tab new" data-newtable>' + svg("plus", 15) + "New table</button>") + "</div>" +
-        (RO ? '<div class="db-intro">' + svg("db", 18) + "<span><b>View-only.</b> You can search, sort and download everything here. Changes are switched off — message NOWORA if something needs updating.</span></div>" : "") + summary(t) +
+        (RO ? '<div class="db-intro">' + svg("db", 18) + "<span><b>View-only.</b> You can search, sort and download everything here. Changes are switched off — message make4yu if something needs updating.</span></div>" : "") + summary(t) +
         (S.sel.size ? '<div class="db-sel">' + S.sel.size + " selected<span class=\"sp\"></span><button class=\"btn ghost sm db-danger\" data-delsel>" + svg("trash", 15) + "Delete</button><button class=\"btn ghost sm\" data-clearsel>Cancel</button></div>" :
         '<div class="db-bar"><label class="db-search">' + svg("search") + '<input type="search" id="dbq" placeholder="Search ' + esc(t.name.toLowerCase()) + '…" value="' + esc(S.q) + '" aria-label="Search"></label>' +
           (RO ? "" : '<button class="btn sm" data-addrow>' + svg("plus", 15) + "Add " + esc(singular(t.name)) + "</button>" +

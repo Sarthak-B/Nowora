@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Client dashboard · NOWORA</title>
+<title>Client dashboard · make4yu</title>
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#070B0A">
@@ -449,7 +449,7 @@ var CFG = {
   endpoint: "https://script.google.com/macros/s/AKfycbwOFH3fuNlDOsOV59HZ4bmSYCZcsHMcNMtwc_qPF8Dn_-cOUN_NJVPoCoXx7WqWwWB7/exec",
   whatsapp: "916397988191",
   /* who the invoices come from — edit here if any of this changes (add gstin only if registered for GST) */
-  seller: { name: "NOWORA", line: "Website design, build & care", place: "India", email: "noworasites@gmail.com", phone: "+91 63979 88191", web: "nowora.vercel.app", gstin: "" }
+  seller: { name: "make4yu", line: "Website design, build & care", place: "India", email: "noworasites@gmail.com", phone: "+91 63979 88191", web: "nowora.vercel.app", gstin: "" }
 };
 var CHECKS = ["Business details, logo and brand colours","Page list and content (text and photos)","Reference sites you like","Domain registered in your name","WhatsApp, booking, forms and payments set up","Agreement signed and 50% advance","Go-live date agreed"];
 var STAGES = [["onboarding","Getting started"],["building","Being built"],["live","Live"]];
@@ -483,7 +483,7 @@ var I = {
   pen:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   print:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg>'
 };
-var MARK = '<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#C6FF3D"/><path d="M10 22V10l12 12V10" fill="none" stroke="#0A0F0D" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="25" r="2.6" fill="#0A0F0D"/></svg>';
+var MARK = '<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#C6FF3D"/><path d="M7.5 21.5V10.5l7 7.5 7-7.5v11" fill="none" stroke="#0A0F0D" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="25" r="2.6" fill="#0A0F0D"/></svg>';
 
 var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
 var esc=function(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})};
@@ -508,7 +508,7 @@ function remember(pin,keep){try{(keep?localStorage:sessionStorage).setItem("nw_p
 function forget(){try{localStorage.removeItem("nw_portal_"+KEY);sessionStorage.removeItem("nw_portal_"+KEY)}catch(e){}}
 function prettyKey(k){return k.replace(/-/g," ").replace(/\b\w/g,function(m){return m.toUpperCase()})}
 
-/* owner view: opened from the NOWORA owner dashboard, uses the admin key instead of a PIN */
+/* owner view: opened from the make4yu owner dashboard, uses the admin key instead of a PIN */
 var OWNER_KEY=(function(){if(!/^owner/.test(hash))return "";try{return sessionStorage.getItem("studio_admin_key")||(window.opener&&window.opener.sessionStorage.getItem("studio_admin_key"))||""}catch(e){return ""}})();
 var AUTO_EDIT=/^owner-edit/.test(hash);
 async function call(action,extra){
@@ -559,18 +559,18 @@ function tally(rows,key,onlyPv){var o={};rows.forEach(function(e){if(onlyPv&&e.t
 function login(err){
   clearInterval(S.poll);
   if(!KEY){
-    $("#app").innerHTML='<div class="login"><div class="login-card"><span class="brand">'+MARK+'NOWORA<small>Client dashboard</small></span><h1>This link is <em>incomplete.</em></h1><p>Open the full link NOWORA sent you on WhatsApp, or ask for a new one.</p><a class="btn" style="margin-top:24px;width:100%" href="'+waLink("Hi NOWORA, I need my dashboard link again.")+'" target="_blank" rel="noopener">'+I.wa+'Ask on WhatsApp</a></div></div>';
+    $("#app").innerHTML='<div class="login"><div class="login-card"><span class="brand">'+MARK+'make4yu<small>Client dashboard</small></span><h1>This link is <em>incomplete.</em></h1><p>Open the full link make4yu sent you on WhatsApp, or ask for a new one.</p><a class="btn" style="margin-top:24px;width:100%" href="'+waLink("Hi make4yu, I need my dashboard link again.")+'" target="_blank" rel="noopener">'+I.wa+'Ask on WhatsApp</a></div></div>';
     return;
   }
   var who=DEMO?"Brew &amp; Bloom Café":esc(prettyKey(KEY));
   $("#app").innerHTML='<div class="login"><form class="login-card" id="lf" autocomplete="off">'+
-    '<span class="brand">'+MARK+'NOWORA<small>Client dashboard</small></span>'+
+    '<span class="brand">'+MARK+'make4yu<small>Client dashboard</small></span>'+
     '<span class="for"><i class="dot up"></i>'+who+'</span>'+
-    '<h1>Your website, <em>live.</em></h1><p>Enter the 6-digit PIN NOWORA sent you with this link.</p>'+
+    '<h1>Your website, <em>live.</em></h1><p>Enter the 6-digit PIN make4yu sent you with this link.</p>'+
     '<div class="pin" id="pin">'+[0,1,2,3,4,5].map(function(i){return '<input inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="PIN digit '+(i+1)+'">'}).join("")+'</div>'+
     '<label class="remember"><input type="checkbox" id="keep" checked>Keep me signed in on this device</label>'+
     '<button class="btn" type="submit" id="go">Open my dashboard</button><div class="msg" id="msg" role="alert">'+esc(err||"")+'</div>'+
-    '<p class="fine">Lost your PIN? <a href="'+waLink("Hi NOWORA, I've lost my dashboard PIN. Could you reset it? My dashboard: "+location.origin+"/client/"+KEY)+'" target="_blank" rel="noopener">Ask on WhatsApp</a>'+(DEMO?' · Demo PIN: 123456':'')+'</p></form></div>';
+    '<p class="fine">Lost your PIN? <a href="'+waLink("Hi make4yu, I've lost my dashboard PIN. Could you reset it? My dashboard: "+location.origin+"/client/"+KEY)+'" target="_blank" rel="noopener">Ask on WhatsApp</a>'+(DEMO?' · Demo PIN: 123456':'')+'</p></form></div>';
   var boxes=$$("#pin input");
   boxes.forEach(function(b,i){
     b.addEventListener("input",function(){b.value=b.value.replace(/\D/g,"").slice(-1);b.classList.toggle("filled",!!b.value);if(b.value&&i<5)boxes[i+1].focus();if(boxes.every(function(x){return x.value}))$("#lf").requestSubmit()});
@@ -587,7 +587,7 @@ function login(err){
   };
 }
 function loading(){
-  $("#app").innerHTML='<div class="login"><div class="login-card"><span class="brand">'+MARK+'NOWORA<small>Client dashboard</small></span><h1>Loading your <em>numbers…</em></h1><div class="loader"><div class="sk"></div><div class="sk" style="width:70%"></div><div class="sk" style="width:85%"></div></div></div></div>';
+  $("#app").innerHTML='<div class="login"><div class="login-card"><span class="brand">'+MARK+'make4yu<small>Client dashboard</small></span><h1>Loading your <em>numbers…</em></h1><div class="loader"><div class="sk"></div><div class="sk" style="width:70%"></div><div class="sk" style="width:85%"></div></div></div></div>';
 }
 
 /* ---------- dashboard ---------- */
@@ -612,7 +612,7 @@ function render(){
   var up=c.uptime==="up",down=c.uptime==="down";
 
   $("#app").innerHTML=(c.owner?'<div class="ownerbar">Owner view — this is exactly what '+esc(c.business)+' sees. You can edit their website from here.</div>':'')+(DEMO?'<div class="demo">Demo dashboard with sample numbers — your clients see their own website here.</div>':'')+
-  '<header class="top"><div class="wrap"><span class="brand">'+MARK+'NOWORA<small>'+esc(c.business)+'</small></span>'+
+  '<header class="top"><div class="wrap"><span class="brand">'+MARK+'make4yu<small>'+esc(c.business)+'</small></span>'+
     '<nav class="tabs" id="tabs"><span class="ind"></span><a href="#overview">Home</a><a href="#shop" hidden>Orders</a><a href="#traffic">Visitors</a><a href="#website">Website</a><a href="#database">Records</a><a href="#project">My plan</a><a href="#requests">Ask us</a></nav>'+
     '<span class="sp"></span><span class="live"><i class="dot up"></i><span>Live</span></span>'+(ro?'<span class="chip" title="'+(planOff()?'Your care plan isn\'t active, so changes are switched off. You can still see and download everything.':'You can see and download everything. Changes are switched off.')+'">'+I.eye+(planOff()?'Care plan off':'View-only')+'</span>':'')+
     (ro?'':'<button class="icon-btn" data-edit title="Edit my website">'+I.pen+'</button>')+
@@ -646,14 +646,14 @@ function render(){
   '<section id="project" class="sec"><div class="sec-title in"><h3>Your project, <em>step by step.</em></h3><p>Where things stand, what\'s been paid and what your care plan covers.</p></div><div class="grid two" id="projectGrid"></div></section>'+
 
   '<section id="requests" class="sec"><div class="sec-title in"><h3>Need a change? <em>Just ask.</em></h3><p>Send it here with a photo if you like. You\'ll see our reply and progress right below.</p></div>'+
-    '<div class="grid req-grid">'+(ro?'<div class="card req-form in"><h2>New request</h2><p style="color:var(--ink-2)">'+(planOff()?'Change requests come with the NOWORA care plan, and it isn\'t active right now.':'Your dashboard is view-only right now, so new requests are switched off.')+' Message NOWORA on WhatsApp below if you need anything — your earlier requests and our replies are still here.</p></div>':'<form class="card req-form in" id="rf"><h2>New request</h2><div class="types" id="types">'+TYPES.map(function(x){return '<button type="button" class="'+(x===S.type?"on":"")+'">'+esc(x)+'</button>'}).join("")+'</div>'+
+    '<div class="grid req-grid">'+(ro?'<div class="card req-form in"><h2>New request</h2><p style="color:var(--ink-2)">'+(planOff()?'Change requests come with the make4yu care plan, and it isn\'t active right now.':'Your dashboard is view-only right now, so new requests are switched off.')+' Message make4yu on WhatsApp below if you need anything — your earlier requests and our replies are still here.</p></div>':'<form class="card req-form in" id="rf"><h2>New request</h2><div class="types" id="types">'+TYPES.map(function(x){return '<button type="button" class="'+(x===S.type?"on":"")+'">'+esc(x)+'</button>'}).join("")+'</div>'+
       '<textarea id="rm" maxlength="2000" placeholder="For example: please change the Sunday timings to 10 am – 6 pm and use the new menu photo."></textarea>'+
       '<label class="attach" id="attach"><input type="file" accept="image/*" id="file"><span class="th" id="th">'+I.img+'</span><span id="attTxt">Add a photo (optional)</span><button type="button" class="x" id="rmphoto" aria-label="Remove photo">×</button></label>'+
       '<button class="btn" type="submit" id="send">'+I.send+'Send request</button></form>')+
     '<div class="card in"><h2>Your requests<span class="sp"></span><small id="reqCount"></small></h2><div id="reqs"></div></div></div></section>'+
 
-  '<div class="help in"><div><h3>Prefer to <em style="font-style:normal;color:var(--neon)">talk?</em></h3><p>Message NOWORA directly — we usually reply within a few hours.</p></div><div class="acts"><a class="btn" target="_blank" rel="noopener" href="'+waLink("Hi NOWORA, it's "+(first||"")+" from "+c.business+". ")+'">'+I.wa+'WhatsApp NOWORA</a></div></div>'+
-  '<div class="foot"><span>© '+new Date().getFullYear()+' NOWORA · Make it happen</span><span id="updated"></span></div></main>';
+  '<div class="help in"><div><h3>Prefer to <em style="font-style:normal;color:var(--neon)">talk?</em></h3><p>Message make4yu directly — we usually reply within a few hours.</p></div><div class="acts"><a class="btn" target="_blank" rel="noopener" href="'+waLink("Hi make4yu, it's "+(first||"")+" from "+c.business+". ")+'">'+I.wa+'WhatsApp make4yu</a></div></div>'+
+  '<div class="foot"><span>© '+new Date().getFullYear()+' make4yu · Make it happen</span><span id="updated"></span></div></main>';
 
   wire(); drawAll(true); drawProject(); drawRequests(); drawHealth(); initPreview(); initQR(); motion(); initDB(); initShop();
 }
@@ -858,7 +858,7 @@ function drawProject(){
   $$("[data-inv]",$("#projectGrid")).forEach(function(b){b.onclick=function(){printInvoice(b.dataset.inv)}});
   S.pct=pct; S.stage=stage;
 }
-/* invoices: built from the plan, price and payments NOWORA records for this client; saved as PDF from the print dialog */
+/* invoices: built from the plan, price and payments make4yu records for this client; saved as PDF from the print dialog */
 function inWords(n){
   n=Math.round(+n||0); if(!n) return "Zero";
   var a=["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"],t=["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
@@ -880,7 +880,7 @@ function invoiceData(kind){
     {d:"Website — "+(c.package?c.package+" plan":"design and build"),s:"Second 50% — on approval of the finished website",a:price-half,paid:bal}], status:adv&&bal?"paid":adv||bal?"part":"due"};
 }
 function invoiceHtml(kind){
-  var c=S.data.client, v=invoiceData(kind), sl=CFG.seller||{name:"NOWORA"}, total=v.lines.reduce(function(t,l){return t+l.a},0), paid=v.lines.reduce(function(t,l){return t+(l.paid?l.a:0)},0), due=total-paid;
+  var c=S.data.client, v=invoiceData(kind), sl=CFG.seller||{name:"make4yu"}, total=v.lines.reduce(function(t,l){return t+l.a},0), paid=v.lines.reduce(function(t,l){return t+(l.paid?l.a:0)},0), due=total-paid;
   var money=function(n){return "₹"+(+n||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2})};
   var stamp=v.status==="paid"?"PAID":v.status==="part"?"PART PAID":"DUE";
   return '<!doctype html><html><head><meta charset="utf-8"><title>Invoice '+esc(v.no)+' — '+esc(c.business||"")+'</title><style>'+
@@ -922,7 +922,7 @@ function drawRequests(){
   el.innerHTML='<div class="req-list">'+R.map(function(r){var s=st[r.status]||st.new;var unread=r.reply&&!S.seenReplies[r.id+":"+r.reply.length];
     return '<article class="req'+(unread?" unread":"")+'" data-id="'+esc(r.id)+'"><header><b>'+esc(r.type)+'</b><span>'+ago(r.ts)+'</span>'+(unread?'<span class="newbadge">NEW REPLY</span>':'')+'<span class="tag '+s[0]+'">'+s[1]+'</span></header><p>'+esc(r.message)+'</p>'+
       (r.attachment?'<a class="ph" href="'+esc(r.attachment)+'" target="_blank" rel="noopener" style="background-image:url(\''+esc(r.attachment)+'\')" aria-label="Open attached photo"></a>':'')+
-      (r.reply?'<div class="reply"><small>NOWORA</small>'+esc(r.reply)+'</div>':'')+'<div class="progressline"><i style="width:'+s[2]+'%"></i></div></article>'}).join("")+'</div>';
+      (r.reply?'<div class="reply"><small>make4yu</small>'+esc(r.reply)+'</div>':'')+'<div class="progressline"><i style="width:'+s[2]+'%"></i></div></article>'}).join("")+'</div>';
   // mark replies as seen once they've been on screen
   var io=new IntersectionObserver(function(es){es.forEach(function(en){if(!en.isIntersecting)return;var r=R.find(function(x){return x.id===en.target.dataset.id});if(r&&r.reply){S.seenReplies[r.id+":"+r.reply.length]=1;try{localStorage.setItem("nw_seen_"+KEY,JSON.stringify(S.seenReplies))}catch(e){}}io.unobserve(en.target)})},{threshold:.6});
   setTimeout(function(){$$(".req",el).forEach(function(x){io.observe(x)})},2500);
@@ -1048,7 +1048,7 @@ function startPolling(){
       var oldReq=JSON.stringify(S.data.requests);S.data.requests=j.data.requests;
       S.quiet=true;drawAll(false);S.quiet=false;drawNow();
       if(n){drawFeed(n);var last=S.rows[S.rows.length-1];toast(n===1?feedLabel(last):n+" new things happened on your site")}
-      if(oldReq!==JSON.stringify(S.data.requests)&&!($("#rm")&&$("#rm").value)){drawRequests();if(S.data.requests.some(function(r){return r.reply&&!S.seenReplies[r.id+":"+r.reply.length]}))toast("NOWORA replied to your request")}
+      if(oldReq!==JSON.stringify(S.data.requests)&&!($("#rm")&&$("#rm").value)){drawRequests();if(S.data.requests.some(function(r){return r.reply&&!S.seenReplies[r.id+":"+r.reply.length]}))toast("make4yu replied to your request")}
     }catch(x){if(/PIN|not valid/i.test(x.message)){forget();login(x.message)}}
   },30000);
 }
@@ -1075,7 +1075,7 @@ function demoCall(action,extra){
         requests:[{id:"r1",ts:new Date(Date.now()-3*864e5).toISOString(),type:"Text or photo change",message:"Please add our new Sunday brunch menu and change timings to 9 am – 4 pm.",status:"done",reply:"Done! The brunch menu is live on the Menu page and the timings are updated everywhere."},{id:"r2",ts:new Date(Date.now()-5*36e5).toISOString(),type:"New section or page",message:"Can we add a small gallery of the new terrace seating?",status:"progress",reply:"Love it — we'll use the photos you sent. Live by tomorrow evening."}]};
     }
     if(action==="site_source"){fetch("/client/demo-site.html").then(function(r){return r.text()}).then(function(html){res({ok:true,site:{repo:"demo/brew-and-bloom",path:"index.html",sha:demoCall.sha||"demo1",html:demoCall.html||html,url:location.origin+"/client/",niche:"Bakery & café",name:"Brew & Bloom Café"}})}).catch(rej);return}
-    if(action==="site_publish"){demoCall.html=extra.html;demoCall.sha="demo"+Date.now();(demoCall.vers=demoCall.vers||[]).unshift({sha:demoCall.sha,date:new Date().toISOString(),message:(extra.message||"Website edited")+" (NOWORA editor)"});return res({ok:true,sha:demoCall.sha})}
+    if(action==="site_publish"){demoCall.html=extra.html;demoCall.sha="demo"+Date.now();(demoCall.vers=demoCall.vers||[]).unshift({sha:demoCall.sha,date:new Date().toISOString(),message:(extra.message||"Website edited")+" (make4yu editor)"});return res({ok:true,sha:demoCall.sha})}
     if(action==="site_versions"){return res({ok:true,versions:(demoCall.vers||[]).concat([{sha:"a1b2c3d",date:new Date(Date.now()-3*864e5).toISOString(),message:"Launch: Brew & Bloom website"}])})}
     if(action==="site_restore"){demoCall.html=null;demoCall.sha="demo"+Date.now();return res({ok:true})}
     if(action==="portal_request"){demoCall.d.requests.unshift({id:"r"+Date.now(),ts:new Date().toISOString(),type:extra.request.type,message:extra.request.message,status:"new",reply:"",attachment:extra.request.photo||""});return res({ok:true})}
@@ -1089,9 +1089,9 @@ function demoCall(action,extra){
 
 function lockedEditor(why){
   var first=(S.data.client.name||"").split(" ")[0], biz=S.data.client.business;
-  var copy=why==="no-plan"?{t:'Edit your website <em>yourself.</em>',p:'Website editing comes with the NOWORA care plan — <b>₹1,999/month</b>. Change text, photos, prices and whole sections whenever you like, and publish in a minute.',l:['Edit text, photos, buttons and animations','Add new sections made for your business','Hosting, SSL, backups and uptime checks','Small changes done by us on WhatsApp','This live dashboard'],cta:'Get the care plan',msg:"Hi NOWORA, it's "+first+" from "+biz+". I'd like the care plan with website editing."}
-    :why==="off"?{t:'Editing is <em>paused.</em>',p:'Website editing is turned off for your site right now. Message NOWORA and we\'ll help with any change you need.',l:[],cta:'Message NOWORA',msg:"Hi NOWORA, it's "+first+" from "+biz+". I'd like to make a change to my website."}
-    :{t:'Almost <em>ready.</em>',p:'We\'re still connecting your website to the editor. Message NOWORA and we\'ll switch it on.',l:[],cta:'Message NOWORA',msg:"Hi NOWORA, it's "+first+" from "+biz+". Can you switch on website editing for me?"};
+  var copy=why==="no-plan"?{t:'Edit your website <em>yourself.</em>',p:'Website editing comes with the make4yu care plan — <b>₹1,999/month</b>. Change text, photos, prices and whole sections whenever you like, and publish in a minute.',l:['Edit text, photos, buttons and animations','Add new sections made for your business','Hosting, SSL, backups and uptime checks','Small changes done by us on WhatsApp','This live dashboard'],cta:'Get the care plan',msg:"Hi make4yu, it's "+first+" from "+biz+". I'd like the care plan with website editing."}
+    :why==="off"?{t:'Editing is <em>paused.</em>',p:'Website editing is turned off for your site right now. Message make4yu and we\'ll help with any change you need.',l:[],cta:'Message make4yu',msg:"Hi make4yu, it's "+first+" from "+biz+". I'd like to make a change to my website."}
+    :{t:'Almost <em>ready.</em>',p:'We\'re still connecting your website to the editor. Message make4yu and we\'ll switch it on.',l:[],cta:'Message make4yu',msg:"Hi make4yu, it's "+first+" from "+biz+". Can you switch on website editing for me?"};
   var m=document.createElement("div");m.className="upsell";
   m.innerHTML='<div class="up-card"><button class="up-x" aria-label="Close">×</button><span class="eyebrow">'+(why==="no-plan"?"Care plan":"Website editor")+'</span><h3>'+copy.t+'</h3><p>'+copy.p+'</p>'+(copy.l.length?'<ul>'+copy.l.map(function(x){return '<li>'+x+'</li>'}).join("")+'</ul>':'')+'<a class="btn" target="_blank" rel="noopener" href="'+waLink(copy.msg)+'">'+I.wa+copy.cta+'</a></div>';
   document.body.appendChild(m);requestAnimationFrame(function(){m.classList.add("on")});

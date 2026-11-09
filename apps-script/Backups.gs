@@ -10,7 +10,7 @@ function backupNowora() {
   try {
     const props = PropertiesService.getScriptProperties();
     const studio = SpreadsheetApp.getActiveSpreadsheet();
-    if (!studio) throw new Error('Run this from the bound NOWORA project.');
+    if (!studio) throw new Error('Run this from the bound make4yu project.');
     const sources = [{ id: studio.getId(), label: 'Studio' }];
     const logs = props.getProperty('CLIENT_DB_ID');
     if (logs) sources.push({ id: logs, label: 'Client logs' });
@@ -22,7 +22,7 @@ function backupNowora() {
     const folderId = props.getProperty('BACKUP_FOLDER_ID');
     if (folderId) folder = DriveApp.getFolderById(folderId);
     else {
-      folder = DriveApp.createFolder('NOWORA private backups');
+      folder = DriveApp.createFolder('make4yu private backups');
       props.setProperty('BACKUP_FOLDER_ID', folder.getId());
     }
     const stamp = Utilities.formatDate(new Date(), 'Asia/Kolkata', 'yyyy-MM-dd HH-mm-ss');

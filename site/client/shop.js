@@ -1,4 +1,4 @@
-/* NOWORA shop — the store part of a client dashboard.
+/* make4yu shop — the store part of a client dashboard.
    Loaded on demand by /client/index.html (and the owner dashboard, for sales only).
 
    NoworaShop.mount({root, call, toast, owner, business, site, editable, html})
@@ -164,7 +164,7 @@
   }
   function writeCatalogue(html, data) {
     const json = JSON.stringify(data, null, 1).replace(/<\//g, "<\\/");
-    if (!BLOCK_RE.test(html)) throw new Error("Your website isn't set up for the product editor yet — ask NOWORA to switch it on.");
+    if (!BLOCK_RE.test(html)) throw new Error("Your website isn't set up for the product editor yet — ask make4yu to switch it on.");
     return html.replace(BLOCK_RE, () => '<script type="application/json" id="nowora-products">\n' + json + "\n</script>");
   }
 
@@ -704,7 +704,7 @@
       const el = $("#shProducts"); if (!el) return;
       if (o.readOnly) { el.innerHTML = ""; return; }
       if (!S.data) {
-        el.innerHTML = o.editable === false ? "" : '<div class="card"><h2>' + ic("bag", 18) + 'Your products</h2><div class="sh-empty">' + (o.html === undefined ? "Loading your products…" : "Your website isn't connected to the product editor yet. Message NOWORA and we'll switch it on.") + "</div></div>";
+        el.innerHTML = o.editable === false ? "" : '<div class="card"><h2>' + ic("bag", 18) + 'Your products</h2><div class="sh-empty">' + (o.html === undefined ? "Loading your products…" : "Your website isn't connected to the product editor yet. Message make4yu and we'll switch it on.") + "</div></div>";
         return;
       }
       const P = S.data.products, used = cats().filter(c => P.some(p => p.category === c.id));
@@ -879,9 +879,9 @@
       try {
         const src = await call("site_source");
         const site = src.site;
-        if (!readCatalogue(site.html)) throw new Error("Your website isn't set up for the product editor yet — ask NOWORA to switch it on.");
+        if (!readCatalogue(site.html)) throw new Error("Your website isn't set up for the product editor yet — ask make4yu to switch it on.");
         const images = [], stamp = Date.now().toString(36);
-        const data = { v: 1, note: S.data.note || "Managed from the NOWORA client dashboard (Shop → Products).", categories: [], products: [] };
+        const data = { v: 1, note: S.data.note || "Managed from the make4yu client dashboard (Shop → Products).", categories: [], products: [] };
         /* Stock can change on the live site while this page is open (dispatched orders take items off).
            Where the client didn't touch a colour's stock here, keep the live numbers; where they did, theirs win. */
         const live = readCatalogue(site.html) || { products: [] }, pick = (d, pid, cn) => { const pp = (d.products || []).find(x => x.id === pid); const cc = pp && (pp.colours || []).find(x => x.name === cn); return cc ? cc.stock : undefined; };
