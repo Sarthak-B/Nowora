@@ -29,7 +29,7 @@ async function pending() {
   if (st.v !== 2) { Object.keys(st.tries || {}).forEach(k => { if (!st.sent.includes(k)) st.sent.push(k); }); st.tries = {}; st.v = 2; }   // the old check retried messages that had gone out
   const from = new Date(new Date(st.since).getTime() - 6 * 3600e3).toISOString();                    // overlap, so a slow sheet never loses one
   const { orders } = await api({ action: "order_alerts", since: from });
-  const todo = (orders || []).filter(o => !st.sent.includes(o.client + ":" + o.id));
+  const todo = (orders || []).filter(o => !st.sent.includes(o.client + ":" + o.id) || (customerMessage(o) && !st.sent.includes("cust:" + o.client + ":" + o.id)));
   return { st, todo };
 }
 export function message(o) {
@@ -46,6 +46,23 @@ export function message(o) {
   rest.forEach(([k, v]) => lines.push("*" + k + ":* " + v));
   if (o.dashboard) lines.push("", "Send it from your dashboard: " + o.dashboard);
   return lines.join("\n");
+}
+
+/* The customer's own copy: their order ID and tracking link, sent right after the shop's alert.
+   Only for orders that carry both the customer's number and a tracking link (e.g. 52 Alive's "Tracking link"),
+   so enquiry forms and other clients' forms never message their customers. */
+export function customerMessage(o) {
+  const f = re => (o.fields.find(([k]) => re.test(k)) || [])[1] || "";
+  const phone = intl(f(/^(phone|mobile|whatsapp|phone number|mobile number|whatsapp number)$/i));
+  const link = String(f(/track/i)).trim();
+  if (!/^[6-9]\d{9}$/.test(phone.slice(-10)) || phone.length !== 12 || !/^https:\/\/\S+$/.test(link)) return null;
+  if (o.ts && Date.now() - new Date(o.ts).getTime() > 24 * 3600e3) return null;          // only fresh orders: never a surprise days later
+  const first = String(f(/^(name|customer|full name)$/i)).trim().split(/\s+/)[0] || "";
+  const id = f(/^order (id|no\.?)$/i), shop = intl(o.to);
+  const text = ["Hi" + (first ? " " + first : "") + "! 👋", "", "Thanks for your order from *" + o.business + "* — we've got it.", "",
+    ...(id ? ["🧾 *Order ID:* " + id] : []), "🚚 *Track it any time:* " + link, "Your courier and tracking number (AWB) show up there as soon as it ships.",
+    ...(shop.length >= 11 ? ["", "Questions? Message " + o.business + ": https://wa.me/" + shop] : []), "", "_Sent by NOWORA for " + o.business + "_"].join("\n");
+  return { to: phone, text };
 }
 
 /* ---------- WhatsApp Web ---------- */
@@ -137,6 +154,18 @@ async function login() {
   await ctx.close(); log("Saved. Order alerts will now be sent from this number.");
 }
 
+/* the customer's tracking link — its own sent-key, so a retry never re-sends the shop alert or vice versa */
+async function toCustomer(page, st, o) {
+  const c = customerMessage(o), key = "cust:" + o.client + ":" + o.id;
+  if (!c || st.sent.includes(key) || !st.sent.includes(o.client + ":" + o.id)) return;
+  try { await sendOne(page, c.to, c.text); st.sent.push(key); log("sent tracking link to the " + o.business + " customer " + tail(c.to)); }
+  catch (e) {
+    if (e.loggedOut) throw e;
+    if (!e.beforeSend) st.sent.push(key);
+    else { st.tries[key] = (st.tries[key] || 0) + 1; log("couldn't send the customer's tracking link (" + e.message + "), try " + st.tries[key]); if (st.tries[key] >= 3) { st.sent.push(key); delete st.tries[key]; } }
+  }
+  writeState(st);
+}
 async function alerts() {
   const started = Date.now();
   const [{ st, todo }, { ctx, page }] = await Promise.all([pending(), browser()]);   // in parallel: saves a few seconds
@@ -145,7 +174,8 @@ async function alerts() {
   try {
     for (const o of todo) {
       const key = o.client + ":" + o.id, to = intl(o.to);
-      if (to.length < 11) { log("skipped an order for " + o.business + ": no WhatsApp number in Clients"); st.sent.push(key); skipped++; continue; }
+      if (st.sent.includes(key)) { await toCustomer(page, st, o); skipped++; continue; }
+      if (to.length < 11) { log("skipped an order for " + o.business + ": no WhatsApp number in Clients"); st.sent.push(key); skipped++; await toCustomer(page, st, o); continue; }
       try { await sendOne(page, to, message(o)); st.sent.push(key); sent++; log("sent " + o.business + " order to " + tail(to)); }
       catch (e) {
         if (e.loggedOut) throw e;
@@ -154,6 +184,7 @@ async function alerts() {
           if (st.tries[key] >= 3) { st.sent.push(key); delete st.tries[key]; } }
       }
       writeState(st);
+      await toCustomer(page, st, o);
     }
   } finally { await ctx.close(); }
   st.since = new Date().toISOString(); writeState(st);

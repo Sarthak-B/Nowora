@@ -14,3 +14,16 @@ test('works for any client form, whatever its fields', () => {
   const m = message({business: 'Brew & Bloom', fields: [['Customer', 'Sana'], ['WhatsApp', '+91 90000 00000'], ['Items', '2 × Cold coffee — ₹360'], ['Total', '₹360'], ['Table', '4']]});
   assert.ok(m.includes('*Customer:* Sana') && m.includes('*Table:* 4') && m.includes('• 2 × Cold coffee'));
 });
+
+import {customerMessage} from '../scripts/whatsapp.mjs';
+test('customer gets their order ID and tracking link, only when both number and link are there', () => {
+  const o = {business: '52 Alive', to: '9368986368', ts: new Date().toISOString(), fields: [['Order ID', '52A-3ac6011a'], ['Name', 'Riya Sharma'], ['Phone', '+91 98765 43210'],
+    ['Tracking link', 'https://52-alive.pages.dev/track/?id=52A-3ac6011a'], ['Total', '₹3,297']]};
+  const c = customerMessage(o);
+  assert.equal(c.to, '919876543210');
+  for (const s of ['Hi Riya!', '*52 Alive*', '52A-3ac6011a', 'https://52-alive.pages.dev/track/?id=52A-3ac6011a', 'https://wa.me/919368986368', 'AWB']) assert.ok(c.text.includes(s), s);
+  assert.equal(customerMessage({...o, fields: o.fields.filter(([k]) => k !== 'Tracking link')}), null);
+  assert.equal(customerMessage({...o, fields: o.fields.filter(([k]) => k !== 'Phone')}), null);
+  assert.equal(customerMessage({...o, fields: o.fields.map(([k, v]) => k === 'Phone' ? [k, '12345'] : [k, v])}), null);
+  assert.equal(customerMessage({...o, ts: new Date(Date.now() - 2 * 864e5).toISOString()}), null);
+});
