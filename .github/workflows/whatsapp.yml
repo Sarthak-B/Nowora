@@ -1,8 +1,8 @@
-# WhatsApp order alerts for every client, sent from the NOWORA number via WhatsApp Web (Playwright).
+# WhatsApp order alerts for every client, sent from the make4yu number via WhatsApp Web (Playwright).
 #  - Apps Script pings this workflow on every new website order (script property GITHUB_ALERT_TOKEN),
 #    and it also checks every 15 minutes, so nothing is missed.
 #  - First time (and if WhatsApp ever logs out): Actions → WhatsApp order alerts → Run workflow → mode "login",
-#    open the run and enter the 8-character code on the NOWORA phone.
+#    open the run and enter the 8-character code on the make4yu phone.
 #  - Uses the existing STUDIO_ENDPOINT and STUDIO_AUTOMATION_KEY secrets (the saved login is encrypted with the key).
 name: WhatsApp order alerts
 on:
@@ -11,12 +11,12 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "login = link the NOWORA number · test = send a test message · alerts = send waiting orders now"
+        description: "login = link the make4yu number · test = send a test message · alerts = send waiting orders now"
         type: choice
         options: [login, test, alerts, keepalive]
         default: login
       phone:
-        description: "login: number that SENDS (NOWORA) · test: number to send the test to — with 91"
+        description: "login: number that SENDS (make4yu) · test: number to send the test to — with 91"
         default: "916397988191"
   schedule:
     - cron: "*/15 * * * *"    # safety net: any order the instant ping missed

@@ -1,10 +1,10 @@
-# NOWORA — Make it happen.
+# make4yu — Make it happen.
 
-NOWORA is my web studio. I design and build websites, landing pages and sales funnels for students, creators and small businesses. Every client starts with two free samples, and the site goes live in about a week.
+make4yu is my web studio. I design and build websites, landing pages and sales funnels for students, creators and small businesses. Every client starts with two free samples, and the site goes live in about a week.
 
 This repo is the whole studio system I built for it: the public website, a private owner dashboard, a Google Sheets backend, and Playwright automations that run on GitHub Actions.
 
-![NOWORA website hero](docs/hero.jpg)
+![make4yu website hero](docs/hero.jpg)
 
 ## What's inside
 
@@ -60,7 +60,7 @@ After editing Code.gs later, use **Deploy → Manage deployments → Edit → Ne
 
 **How the data is laid out**
 - **Your studio sheet** holds only your own data, one readable tab each: Read me, Enquiries, Clients, Change requests, Outreach, Outreach messages, Showcase, Website visits, Automation log. Times show in India time; events are written in words ("Tapped WhatsApp").
-- **"NOWORA — Client sites"** is a separate spreadsheet (made automatically, saved next to your studio sheet). It has an **All clients** summary tab with live 30-day numbers, and one tab per client with their full log: visits, taps, enquiries, change requests, website edits, and downtime. A removed client's tab is kept and renamed "… (removed)".
+- **"make4yu — Client sites"** is a separate spreadsheet (made automatically, saved next to your studio sheet). It has an **All clients** summary tab with live 30-day numbers, and one tab per client with their full log: visits, taps, enquiries, change requests, website edits, and downtime. A removed client's tab is kept and renamed "… (removed)".
 - Upgrading an existing sheet: paste the new Code.gs, redeploy, then select **tidyUp** in the Apps Script toolbar and press **Run** once. It is safe to run again any time.
 
 ### 2. WhatsApp alerts (CallMeBot)
@@ -94,4 +94,4 @@ Open `yoursite/#admin` and sign in with `ADMIN_KEY`. Without a backend, it runs 
 
 ---
 
-© 2026 NOWORA. All rights reserved. This code is shared to show my work; it is not licensed for reuse.
+© 2026 make4yu. All rights reserved. This code is shared to show my work; it is not licensed for reuse.

@@ -1,6 +1,6 @@
 // Client-site discovery.
 // Looks through your GitHub repos for a `nowora.json` file at the root. Every repo that has one
-// is a client website: it's added to the NOWORA showcase and gets a client dashboard
+// is a client website: it's added to the make4yu showcase and gets a client dashboard
 // (link + PIN emailed to you) the first time it's seen. Nothing to add by hand.
 //
 // nowora.json (only "name" is needed; everything else is optional):

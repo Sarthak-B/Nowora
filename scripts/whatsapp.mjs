@@ -1,9 +1,9 @@
-/* WhatsApp order alerts for every NOWORA client — run by .github/workflows/whatsapp.yml.
- * Sends each new website order to the client's WhatsApp (their number in Clients) FROM the NOWORA number,
+/* WhatsApp order alerts for every make4yu client — run by .github/workflows/whatsapp.yml.
+ * Sends each new website order to the client's WhatsApp (their number in Clients) FROM the make4yu number,
  * through WhatsApp Web driven by Playwright.
  *   node scripts/whatsapp.mjs check      → how many orders are waiting (no browser) → GITHUB_OUTPUT pending=N
  *   node scripts/whatsapp.mjs alerts     → sends them
- *   node scripts/whatsapp.mjs login      → prints an 8-character code to enter on the NOWORA phone
+ *   node scripts/whatsapp.mjs login      → prints an 8-character code to enter on the make4yu phone
  *   node scripts/whatsapp.mjs test       → sends a test message to WA_PHONE
  *   node scripts/whatsapp.mjs keepalive  → opens WhatsApp so the saved login stays fresh
  * The logged-in browser profile and the list of orders already sent live in ./wa-profile; the workflow encrypts
@@ -61,7 +61,7 @@ export function customerMessage(o) {
   const id = f(/^order (id|no\.?)$/i), shop = intl(o.to);
   const text = ["Hi" + (first ? " " + first : "") + "! 👋", "", "Thanks for your order from *" + o.business + "* — we've got it.", "",
     ...(id ? ["🧾 *Order ID:* " + id] : []), "🚚 *Track it any time:* " + link, "Your courier and tracking number (AWB) show up there as soon as it ships.",
-    ...(shop.length >= 11 ? ["", "Questions? Message " + o.business + ": https://wa.me/" + shop] : []), "", "_Sent by NOWORA for " + o.business + "_"].join("\n");
+    ...(shop.length >= 11 ? ["", "Questions? Message " + o.business + ": https://wa.me/" + shop] : []), "", "_Sent by make4yu for " + o.business + "_"].join("\n");
   return { to: phone, text };
 }
 
@@ -205,7 +205,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] || "").href) try {
   else if (MODE === "alerts") await alerts();
   else if (MODE === "login") await login();
   else if (MODE === "test") { const to = intl(process.env.WA_PHONE); if (to.length < 11) throw new Error("Give the number to send the test to");
-    const { ctx, page } = await browser(); try { await sendOne(page, to, "✅ NOWORA order alerts are working — new website orders will arrive here."); log("test sent to " + tail(to)); } finally { await ctx.close(); } }
+    const { ctx, page } = await browser(); try { await sendOne(page, to, "✅ make4yu order alerts are working — new website orders will arrive here."); log("test sent to " + tail(to)); } finally { await ctx.close(); } }
   else if (MODE === "keepalive") { const { ctx, page } = await browser(); try { await openWhatsApp(page); await page.waitForTimeout(30000); log("still logged in"); } finally { await ctx.close(); } }
   else throw new Error("Unknown mode " + MODE);
 } catch (e) { fail(e.message); }

@@ -31,7 +31,7 @@ const SHEETS = {
   Automation: ['ts','workflow','status','summary','details'],
   Requests:   ['id','ts','clientId','business','type','message','status','reply','updated','attachment']
 };
-// Each client's log lives in its own tab of a separate spreadsheet ("NOWORA — Client sites").
+// Each client's log lives in its own tab of a separate spreadsheet ("make4yu — Client sites").
 const CLIENT_LOG = ['ts','type','label','ref','device','path','vid','sid'];
 const LEGACY_CLIENT_EVENTS = ['ts','cid','vid','sid','type','label','ref','device','path'];   // old single tab, moved by tidyUp()
 
@@ -276,7 +276,7 @@ function uploadsFolder_() {
   if (id) {
     try { const f = DriveApp.getFolderById(id); if (!f.isTrashed()) return f; } catch (e) { /* missing or no access: make a new one */ }
   }
-  const folder = DriveApp.createFolder('NOWORA uploads');
+  const folder = DriveApp.createFolder('make4yu uploads');
   p.setProperty('DRIVE_FOLDER_ID', folder.getId());
   return folder;
 }
@@ -359,10 +359,10 @@ function portalClient_(body) {
   if (!/^[\w-]{3,40}$/.test(key)) throw new Error('This portal link is not valid');
   const cache = CacheService.getScriptCache(), fk = 'pfail_' + key.toLowerCase(), dk = 'pday_' + key.toLowerCase();
   const fails = +(cache.get(fk) || 0), daily = +(cache.get(dk) || 0);
-  if (daily >= 20) throw new Error('Too many wrong PINs today. Ask NOWORA for help on WhatsApp.');
+  if (daily >= 20) throw new Error('Too many wrong PINs today. Ask make4yu for help on WhatsApp.');
   if (fails >= 6) throw new Error('Too many wrong PINs. Try again in 15 minutes.');
   const c = readAll_('Clients').find(x => x.portalKey && x.portalKey.toLowerCase() === key.toLowerCase());
-  if (!c) throw new Error('This portal link is not valid any more — ask NOWORA for a new one');
+  if (!c) throw new Error('This portal link is not valid any more — ask make4yu for a new one');
   if (!c.pin || pin !== String(c.pin)) { cache.put(fk, String(fails + 1), 900); cache.put(dk, String(daily + 1), 21600); throw new Error('Wrong PIN'); }
   cache.remove(fk);
   return c;
@@ -434,7 +434,7 @@ function portalRequest_(c, r) {
   }
   const row = { id: randomKey_(12), ts: new Date().toISOString(), clientId: c.id, business: c.business, type: clip_(r.type || 'Change', 40), message: clip_(r.message, 2000), status: 'new', reply: '', updated: '', attachment: attachment };
   append_('Requests', row);
-  clientLog_(c, { ts: row.ts, type: 'request', label: clip_(row.type + ': ' + row.message, 200), ref: c._owner ? 'NOWORA' : 'client dashboard' });
+  clientLog_(c, { ts: row.ts, type: 'request', label: clip_(row.type + ': ' + row.message, 200), ref: c._owner ? 'make4yu' : 'client dashboard' });
   notify_('Request from ' + c.business, '📝 New request from ' + c.business + ' (' + row.type + ')\n\n' + row.message + (attachment ? '\n\nPhoto: ' + attachment : '') + '\n\nOpen your dashboard → Requests to reply.');
   return { ok: true, request: row };
 }
@@ -468,7 +468,7 @@ function clientTrack_(ev) {
 
 function gh_(method, path, payload) {
   const token = prop_('GITHUB_TOKEN');
-  if (!token) throw new Error("Website editing isn't switched on yet — ask NOWORA to connect it.");
+  if (!token) throw new Error("Website editing isn't switched on yet — ask make4yu to connect it.");
   const res = UrlFetchApp.fetch('https://api.github.com' + path, {
     method: method, muteHttpExceptions: true, contentType: 'application/json',
     payload: payload ? JSON.stringify(payload) : undefined,
@@ -515,16 +515,16 @@ function canEdit_(c) { return !editReason_(c); }
  */
 function readOnly_(c) { return !c._owner && (String(c.editAccess || '').trim().toLowerCase() === 'off' || planOff_(c)); }
 function writable_(c) {
-  if (planOff_(c)) throw new Error('Your NOWORA care plan isn\'t active, so changes are switched off. You can still see and download everything — message NOWORA to switch it back on.');
-  if (readOnly_(c)) throw new Error('Your dashboard is view-only right now. You can see and download everything, but changes are switched off — message NOWORA if you need something changed.');
+  if (planOff_(c)) throw new Error('Your make4yu care plan isn\'t active, so changes are switched off. You can still see and download everything — message make4yu to switch it back on.');
+  if (readOnly_(c)) throw new Error('Your dashboard is view-only right now. You can see and download everything, but changes are switched off — message make4yu if you need something changed.');
   return c;
 }
 
 function siteRepo_(c) {
   const why = editReason_(c);
-  if (why === 'no-plan') throw new Error('Website editing comes with the NOWORA care plan (₹1,999/month). Message NOWORA to switch it on.');
-  if (why === 'off') throw new Error('Website editing is turned off for this website. Message NOWORA if you need it.');
-  if (!c.repo) throw new Error("This website isn't connected for editing yet — ask NOWORA to connect it.");
+  if (why === 'no-plan') throw new Error('Website editing comes with the make4yu care plan (₹1,999/month). Message make4yu to switch it on.');
+  if (why === 'off') throw new Error('Website editing is turned off for this website. Message make4yu if you need it.');
+  if (!c.repo) throw new Error("This website isn't connected for editing yet — ask make4yu to connect it.");
   if (!/^[\w.-]+\/[\w.-]+$/.test(c.repo)) throw new Error('The linked repository name looks wrong');
   return c.repo;
 }
@@ -561,15 +561,15 @@ function sitePublish_(c, body) {
   const path = String(body.path || '');
   if (!/^[\w./-]+\.html$/.test(path) || path.indexOf('..') >= 0) return { ok: false, error: 'Unexpected file path' };
   const dir = path.indexOf('/') >= 0 ? path.slice(0, path.lastIndexOf('/') + 1) : '';
-  const who = c._owner ? 'NOWORA' : (c.name || c.business || 'Client');
+  const who = c._owner ? 'make4yu' : (c.name || c.business || 'Client');
   (body.images || []).slice(0, 30).forEach(img => {
     const m = /^data:image\/(jpeg|png|webp|gif);base64,(.+)$/.exec(img.data || '');
     const name = String(img.name || '').replace(/[^\w.-]/g, '');
     if (!m || !/^[\w-]+\.(jpg|jpeg|png|webp|gif)$/.test(name)) throw new Error('One of the photos could not be uploaded');
-    gh_('put', '/repos/' + repo + '/contents/' + dir + 'images/uploads/' + name, { message: 'Photo added by ' + who + ' (NOWORA editor)', content: m[2] });
+    gh_('put', '/repos/' + repo + '/contents/' + dir + 'images/uploads/' + name, { message: 'Photo added by ' + who + ' (make4yu editor)', content: m[2] });
   });
   const res = gh_('put', '/repos/' + repo + '/contents/' + path.split('/').map(encodeURIComponent).join('/'),
-    { message: clip_(body.message || ('Website edited by ' + who), 120) + ' (NOWORA editor)', content: textToB64_(html), sha: body.sha });
+    { message: clip_(body.message || ('Website edited by ' + who), 120) + ' (make4yu editor)', content: textToB64_(html), sha: body.sha });
   append_('Automation', { ts: new Date().toISOString(), workflow: 'editor', status: 'success', summary: c.business + ' published website changes', details: clip_(body.message, 300) });
   clientLog_(c, { ts: new Date().toISOString(), type: 'publish', label: clip_(body.message || 'Website edited', 200), ref: who, path: path });
   if (!c._owner) notify_('Website published: ' + c.business, '✏️ ' + c.business + ' published changes from their dashboard editor.\n\n' + (body.message || '') + '\n\nCommit: ' + res.commit.html_url + '\nLive site: ' + (c.site || ''));
@@ -588,8 +588,8 @@ function siteRestore_(c, sha) {
   const old = readFile_(s.repo, s.file.path, sha);
   if (!old) return { ok: false, error: "That version couldn't be found" };
   const res = gh_('put', '/repos/' + s.repo + '/contents/' + s.file.path.split('/').map(encodeURIComponent).join('/'),
-    { message: 'Restored an earlier version (' + String(sha).slice(0, 7) + ') by ' + (c.name || c.business) + ' (NOWORA editor)', content: textToB64_(old.text), sha: s.file.sha });
-  clientLog_(c, { ts: new Date().toISOString(), type: 'restore', label: 'Version ' + String(sha).slice(0, 7), ref: c._owner ? 'NOWORA' : (c.name || c.business) });
+    { message: 'Restored an earlier version (' + String(sha).slice(0, 7) + ') by ' + (c.name || c.business) + ' (make4yu editor)', content: textToB64_(old.text), sha: s.file.sha });
+  clientLog_(c, { ts: new Date().toISOString(), type: 'restore', label: 'Version ' + String(sha).slice(0, 7), ref: c._owner ? 'make4yu' : (c.name || c.business) });
   notify_('Website restored: ' + c.business, '↩️ ' + c.business + ' restored an earlier version of their website.\nCommit: ' + res.commit.html_url);
   return { ok: true, sha: res.content.sha };
 }
@@ -645,7 +645,7 @@ function registerSite_(site) {
         uptime: '', responseMs: '', lastCheck: '', checklist: live ? '[0,1,2,3,4,5,6]' : '[]', notes: 'Added automatically from GitHub: ' + site.repo,
         portalKey: slug, pin: pin, trackId: site.trackId || slug, advancePaid: '', balancePaid: '', repo: site.repo });
       const link = (prop_('SITE_URL') || 'https://nowora.vercel.app') + '/client/' + slug;
-      notify_('New client site: ' + name, '🚀 ' + name + ' is now in NOWORA\n\nLive site: ' + url + '\nClient dashboard: ' + link + '\nPIN: ' + pin +
+      notify_('New client site: ' + name, '🚀 ' + name + ' is now in make4yu\n\nLive site: ' + url + '\nClient dashboard: ' + link + '\nPIN: ' + pin +
         '\n\nIt is on your website showcase, and a scrolling preview is being captured.' + (site.tracking ? '' : '\nTip: add the visitor-stats snippet so their dashboard shows visits (Clients → chart icon).'));
       out.client = 'created'; out.slug = slug;
     } else {
@@ -856,7 +856,7 @@ function clientData_(c, create) {
   if (c._data) return c._data;
   if (c.dataSheet) {
     try { return (c._data = SpreadsheetApp.openById(c.dataSheet)); }
-    catch (e) { throw new Error('Your existing database is unavailable. Contact NOWORA to restore access; no replacement database has been created.'); }
+    catch (e) { throw new Error('Your existing database is unavailable. Contact make4yu to restore access; no replacement database has been created.'); }
   }
   if (!create) return null;
   const ss = SpreadsheetApp.create(String(c.business || 'Client').slice(0, 80) + ' — Database');
@@ -1137,9 +1137,9 @@ function clientForm_(b) {
 
 /* ============================== WhatsApp order alerts ==============================
  * Every new order on any client's website is sent to that client's WhatsApp (their number in Clients)
- * from the NOWORA number, by the GitHub workflow .github/workflows/whatsapp.yml (Playwright + WhatsApp Web).
+ * from the make4yu number, by the GitHub workflow .github/workflows/whatsapp.yml (Playwright + WhatsApp Web).
  * A new order pings the workflow straight away when the script property GITHUB_ALERT_TOKEN is set
- * (fine-grained GitHub token, Contents: read & write on the NOWORA repo); the workflow also checks every
+ * (fine-grained GitHub token, Contents: read & write on the make4yu repo); the workflow also checks every
  * 15 minutes, so nothing is missed. Set a client's Notes to include "alerts off" to skip them. */
 function orderAlertPing_() {
   const tok = prop_('GITHUB_ALERT_TOKEN'); if (!tok) return;
@@ -1150,7 +1150,7 @@ function orderAlertPing_() {
   } catch (e) { console.error('order alert ping: ' + e); }
 }
 /** Instant email to the client for every new website order (their Email in Clients; several can be
- *  separated by commas). Sent from this Google account as "NOWORA orders". Notes with "email off" or
+ *  separated by commas). Sent from this Google account as "make4yu orders". Notes with "email off" or
  *  "alerts off" skip a client. Never blocks the order: any problem is only logged. */
 function orderEmail_(c, fields, items, val, table) {
   try {
@@ -1180,24 +1180,24 @@ function orderEmail_(c, fields, items, val, table) {
         items.map(i => '<tr><td style="padding:8px 0;border-bottom:1px solid #eef1ef">' + i.qty + ' × ' + esc(i.name) + '<br><span style="color:#6b7a74;font-size:13px">' + esc([i.variant, i.colour, i.size].filter(Boolean).join(' · ')) + '</span></td><td style="padding:8px 0;text-align:right;border-bottom:1px solid #eef1ef;white-space:nowrap">' + inr(i.price * i.qty) + '</td></tr>').join('') +
         '<tr><td style="padding:10px 0;font-weight:700">Total</td><td style="padding:10px 0;text-align:right;font-weight:700">' + inr(total) + '</td></tr></table>' : row('Total', inr(total))) +
       '<p style="margin:22px 0"><a href="' + esc(dash) + '" style="background:#1D4A3D;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:600;display:inline-block">Open your dashboard to send it</a></p>' +
-      '<p style="font-size:12px;color:#8a978f">Sent by NOWORA the moment the order was placed on your website.</p></div>';
+      '<p style="font-size:12px;color:#8a978f">Sent by make4yu the moment the order was placed on your website.</p></div>';
     const text = ['New order — ' + (c.business || ''), '', 'Order: ' + orderId, 'Customer: ' + name, 'Phone: ' + phone, 'Address: ' + addr]
       .concat(other.map(f => f.name + ': ' + f.value), [''], items.map(i => i.qty + ' x ' + i.name + ' ' + [i.variant, i.colour, i.size].filter(Boolean).join(' / ') + ' — ' + inr(i.price * i.qty)),
         ['Total: ' + inr(total), '', 'Dashboard: ' + dash]).join('\n');
-    sendMail_({ to: to, subject: subject, body: text, htmlBody: html, name: 'NOWORA orders' });
+    sendMail_({ to: to, subject: subject, body: text, htmlBody: html, name: 'make4yu orders' });
   } catch (e) { console.error('order email: ' + e); }
 }
-/* ============================== sending email as NOWORA ==============================
+/* ============================== sending email as make4yu ==============================
  * Emails go out FROM noworasites@gmail.com (script property MAIL_FROM to change it) when that address is a
  * "Send mail as" alias of the Gmail account that owns this script (Gmail → Settings → Accounts and Import →
  * Send mail as → Add another email address). Until the alias is added, they go from this account with
- * Reply-To set to noworasites@gmail.com, so replies still land in the NOWORA inbox. */
+ * Reply-To set to noworasites@gmail.com, so replies still land in the make4yu inbox. */
 function mailFrom_() { return prop_('MAIL_FROM') || 'noworasites@gmail.com'; }
 function sendMail_(o) {
   const from = mailFrom_();
   try {
     if (Session.getEffectiveUser().getEmail().toLowerCase() === from.toLowerCase() || GmailApp.getAliases().map(a => a.toLowerCase()).indexOf(from.toLowerCase()) > -1) {
-      const opt = { name: o.name || 'NOWORA', replyTo: from };
+      const opt = { name: o.name || 'make4yu', replyTo: from };
       if (o.htmlBody) opt.htmlBody = o.htmlBody;
       if (Session.getEffectiveUser().getEmail().toLowerCase() !== from.toLowerCase()) opt.from = from;
       GmailApp.sendEmail(o.to, o.subject, o.body || '', opt);
@@ -1209,7 +1209,7 @@ function sendMail_(o) {
 }
 /** Run this once from the editor (select it, press Run): grants email permission and sends you a test. */
 function testOrderEmail() {
-  const how = sendMail_({ to: mailFrom_(), subject: 'NOWORA order email test', body: 'If this arrived, order emails work.', htmlBody: '<p>If this arrived, order emails work. ✅</p>', name: 'NOWORA orders' });
+  const how = sendMail_({ to: mailFrom_(), subject: 'make4yu order email test', body: 'If this arrived, order emails work.', htmlBody: '<p>If this arrived, order emails work. ✅</p>', name: 'make4yu orders' });
   Logger.log('Test email sent ' + how);
 }
 
@@ -1341,7 +1341,7 @@ function weeklyReport() {
 function notify_(subject, text) {
   const p = PropertiesService.getScriptProperties().getProperties();
   if (p.NOTIFY_EMAIL) {
-    try { sendMail_({ to: p.NOTIFY_EMAIL, subject: subject, body: text, name: 'NOWORA' }); } catch (e) { console.error('Email failed: ' + e); }
+    try { sendMail_({ to: p.NOTIFY_EMAIL, subject: subject, body: text, name: 'make4yu' }); } catch (e) { console.error('Email failed: ' + e); }
   }
   if (p.CALLMEBOT_PHONE && p.CALLMEBOT_APIKEY) {
     const url = 'https://api.callmebot.com/whatsapp.php?phone=' + encodeURIComponent(p.CALLMEBOT_PHONE) +
@@ -1438,7 +1438,7 @@ function clientDb_(create) {
   const p = PropertiesService.getScriptProperties(), id = p.getProperty('CLIENT_DB_ID');
   if (id) { try { return (clientDb_.ss = SpreadsheetApp.openById(id)); } catch (e) { if (!create) throw e; } }
   if (!create) return null;
-  const ss = SpreadsheetApp.create('NOWORA — Client sites');
+  const ss = SpreadsheetApp.create('make4yu — Client sites');
   ss.setSpreadsheetTimeZone(TZ);
   p.setProperty('CLIENT_DB_ID', ss.getId());
   const idx = ss.getSheets()[0]; idx.setName('All clients');
@@ -1546,7 +1546,7 @@ function refreshClientIndex_() {
  * RUN THIS ONCE after pasting the new code (select tidyUp ▸ Run). Safe to run again.
  *  - gives every tab a readable name and plain-English headings, colours, widths and drop-downs
  *  - shows times as "2 Nov 2026, 5:47 am" (India time) and events in words
- *  - makes the "NOWORA — Client sites" spreadsheet with one tab per client, and moves their logs there
+ *  - makes the "make4yu — Client sites" spreadsheet with one tab per client, and moves their logs there
  *  - adds a "Read me" tab explaining each tab
  */
 function tidyUp() {
@@ -1595,9 +1595,9 @@ function tidyUp() {
   ss.setActiveSheet(me); ss.moveActiveSheet(1);
   me.clear(); me.getBandings().forEach(b => b.remove());
   const dbUrl = 'https://docs.google.com/spreadsheets/d/' + db.getId();
-  const lines = [['NOWORA — your studio data', ''], ['', ''], ['Tab', 'What is in it']]
+  const lines = [['make4yu — your studio data', ''], ['', ''], ['Tab', 'What is in it']]
     .concat(TAB_ORDER.map(n => [TAB_TITLE[n], TAB_ABOUT[n]]))
-    .concat([['', ''], ['Client logs', 'Each client has their own tab in the "NOWORA — Client sites" spreadsheet: ' + dbUrl],
+    .concat([['', ''], ['Client logs', 'Each client has their own tab in the "make4yu — Client sites" spreadsheet: ' + dbUrl],
       ['', ''], ['Good to know', 'The website and dashboards write to these tabs. You can edit cells, but keep the columns in this order and don\'t rename tabs. Grey columns are IDs the system uses.']]);
   me.getRange(1, 1, lines.length, 2).setValues(lines).setVerticalAlignment('top').setWrap(true);
   me.getRange(1, 1).setFontSize(18).setFontWeight('bold').setFontColor('#1D4A3D');

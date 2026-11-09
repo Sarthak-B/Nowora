@@ -1,4 +1,4 @@
-/* NOWORA visitor stats for client websites.
+/* make4yu visitor stats for client websites.
    Add before </body> on the client's site:
      <script src="https://nowora.vercel.app/t.js" data-site="TRACKING_ID" defer></script>
    Counts page views, WhatsApp / call / email taps and form submissions. No cookies, no personal data. */
@@ -8,7 +8,7 @@
   var END = (me && me.getAttribute('data-endpoint')) || 'https://script.google.com/macros/s/AKfycbwOFH3fuNlDOsOV59HZ4bmSYCZcsHMcNMtwc_qPF8Dn_-cOUN_NJVPoCoXx7WqWwWB7/exec';
   if (!cid || window.__noworaT) return; window.__noworaT = 1;
   if (/^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname) && !me.hasAttribute('data-test')) return;
-  // Not a real visitor: automated browsers (uptime checks, preview captures), bots, the NOWORA editor's
+  // Not a real visitor: automated browsers (uptime checks, preview captures), bots, the make4yu editor's
   // preview (srcdoc) and copies of the site shown inside frames (showcase cards, dashboards, live viewer).
   var uaRaw = navigator.userAgent || '';
   if (navigator.webdriver || /bot|crawl|spider|headless|lighthouse|preview|screenshot|playwright|puppeteer|facebookexternalhit|whatsapp\//i.test(uaRaw)) return;
@@ -56,7 +56,7 @@
     else if (/^tel:/i.test(h)) send('cta_call', t);
     else if (/^mailto:/i.test(h)) send('cta_email', t);
   }, true);
-  /* ---------- forms → the client's NOWORA database, in real time ----------
+  /* ---------- forms → the client's make4yu database, in real time ----------
      Every form a visitor sends is saved as a row (one table per kind of form).
      <form data-nowora-table="Bookings">   choose the table
      <form data-nowora="off">              don't save this form

@@ -1,5 +1,5 @@
-/* NOWORA visual website editor — opened from the client dashboard.
-   Loads the client's real page (from their GitHub repo through the NOWORA backend), lets them edit text,
+/* make4yu visual website editor — opened from the client dashboard.
+   Loads the client's real page (from their GitHub repo through the make4yu backend), lets them edit text,
    links, photos, animations, cards and sections, the theme colours and fonts, add ready-made sections for
    their niche, and publish. Publishing commits to the repo, which redeploys the site. */
 (function () {
@@ -512,7 +512,7 @@ function inspector() {
 function wireX(box) { $$("[data-x]", box).forEach(function (b) { b.onclick = function () { $("#nweRight").classList.remove("open"); $("#nweLeft").classList.remove("open"); setMob(""); }; }); }
 function absUrl(src) { try { return new URL(src, E.site.url || location.href).href; } catch (e) { return src; } }
 
-/* animations: the site's own engine when it has one (data-reveal), otherwise NOWORA's tiny runtime */
+/* animations: the site's own engine when it has one (data-reveal), otherwise make4yu's tiny runtime */
 var ENGINE_ANIMS = [["none", "None"], ["", "Fade up"], ["fade", "Fade in"], ["scale", "Zoom in"], ["left", "From left"], ["right", "From right"], ["clip", "Wipe up"]];
 var RUN_ANIMS = [["none", "None"], ["up", "Fade up"], ["fade", "Fade in"], ["zoom", "Zoom in"], ["left", "From left"], ["right", "From right"], ["blur", "Blur in"]];
 function animOptions(m) {
