@@ -394,6 +394,50 @@
 .sh-how{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
 .sh-how span{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-2)}
 .sh-how i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:800;background:rgba(var(--neon-rgb),.14);color:var(--neon)}
+/* boot loader — shown until orders (and the courier list) have actually arrived, so nothing ever says "No orders yet" early */
+.sh-boot{position:relative;overflow:hidden;display:grid;gap:18px;transition:opacity .32s var(--ease),transform .32s var(--ease),filter .32s var(--ease)}
+.sh-boot.out{opacity:0;transform:translateY(-6px) scale(.985);filter:blur(4px)}
+.sh-boot::before{content:"";position:absolute;inset:-40% -10% auto;height:220px;background:radial-gradient(closest-side,rgba(var(--neon-rgb),.12),transparent);animation:shglow 4s ease-in-out infinite alternate;pointer-events:none}
+@keyframes shglow{from{transform:translateX(-25%)}to{transform:translateX(25%)}}
+.sh-boot-h{position:relative;display:flex;align-items:center;gap:14px}
+.sh-boot-h .sp{flex:1}
+.sh-boot-t{display:grid;gap:3px;min-width:0}
+.sh-boot-t b{font-size:16px;letter-spacing:-.01em}
+.sh-boot-msg{font-size:13.5px;color:var(--ink-2);display:block;height:18px;overflow:hidden}
+.sh-boot-msg span{display:block;animation:shmsg .45s var(--ease) both}
+@keyframes shmsg{from{opacity:0;transform:translateY(10px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+.sh-orb{position:relative;width:42px;height:42px;flex:none}
+.sh-orb i{position:absolute;inset:0;border-radius:50%;border:2.5px solid transparent;border-top-color:var(--neon);animation:shspin 1.1s cubic-bezier(.5,.15,.5,.85) infinite}
+.sh-orb i:nth-child(2){inset:6px;border-top-color:transparent;border-right-color:rgba(var(--neon-rgb),.7);animation-duration:1.6s;animation-direction:reverse}
+.sh-orb i:nth-child(3){inset:13px;border:0;background:var(--neon);box-shadow:0 0 18px rgba(var(--neon-rgb),.8);animation:shpulse 1.1s ease-in-out infinite}
+@keyframes shpulse{0%,100%{transform:scale(.55);opacity:.6}50%{transform:scale(1);opacity:1}}
+.sh-live{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.sh-live i{width:7px;height:7px;border-radius:50%;background:var(--neon);animation:shpulse 1.1s ease-in-out infinite}
+.sh-prog{position:relative;height:3px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden}
+.sh-prog i{position:absolute;inset:0 auto 0 0;width:0;border-radius:3px;background:linear-gradient(90deg,rgba(var(--neon-rgb),.4),var(--neon));box-shadow:0 0 12px rgba(var(--neon-rgb),.6);transition:width .6s var(--ease)}
+.sh-prog::after{content:"";position:absolute;inset:0;width:35%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:shsweep 1.3s ease-in-out infinite}
+@keyframes shsweep{from{transform:translateX(-100%)}to{transform:translateX(300%)}}
+.sk{position:relative;overflow:hidden;background:rgba(255,255,255,.05);border-radius:8px}
+.sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);animation:shshimmer 1.5s ease-in-out infinite}
+@keyframes shshimmer{to{transform:translateX(100%)}}
+.sh-skk{display:grid;gap:10px;padding:18px}
+.sh-skk .sk:nth-child(1){height:11px;width:45%}.sh-skk .sk:nth-child(2){height:30px;width:70%}.sh-skk .sk:nth-child(3){height:10px;width:55%}
+.sh-skchart{display:flex;align-items:flex-end;gap:5px;height:110px;padding:0 2px}
+.sh-skchart i{flex:1;height:var(--h);border-radius:5px 5px 0 0;background:linear-gradient(to top,rgba(var(--neon-rgb),.22),rgba(var(--neon-rgb),.04));transform-origin:bottom;animation:sheq 1.4s ease-in-out infinite;animation-delay:calc(var(--i) * -70ms)}
+@keyframes sheq{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+.sh-skrows{display:grid;gap:12px;padding:6px 0}
+.sh-skrow{display:grid;grid-template-columns:1fr 90px;gap:16px;align-items:center}
+.sh-skrow div{display:grid;gap:7px}.sh-skrow .sk{height:11px}.sh-skrow div .sk:first-child{height:13px;width:40%}.sh-skrow div .sk:last-child{width:75%}.sh-skrow>.sk{height:22px}
+/* reveal */
+.sh-in>*,.sh-in .sh-kpis>*{animation:shrise .7s var(--ease) both}
+.sh-in>.sh-kpis{animation:none}
+.sh-in .sh-kpis>*:nth-child(2){animation-delay:.07s}.sh-in .sh-kpis>*:nth-child(3){animation-delay:.14s}.sh-in .sh-kpis>*:nth-child(4){animation-delay:.21s}
+.sh-in .sh-row{animation-delay:.25s}.sh-in>.card:last-child{animation-delay:.32s}
+.sh-in .sh-bars .b{animation:shbar .8s var(--ease) both;animation-delay:calc(.3s + var(--i,0) * 18ms)}
+.sh-in .sh-o,.sh-in .sh-li{animation:shrise .55s var(--ease) both;animation-delay:calc(.15s + var(--i,0) * 50ms)}
+@keyframes shrise{from{opacity:0;transform:translateY(16px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes shbar{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
+@media (prefers-reduced-motion:reduce){.sh-boot *,.sh-boot::before,.sh-in *,.sh-in>*{animation:none!important}}
 @media (max-width:900px){.sh-kpis{grid-template-columns:1fr 1fr}.sh-row,.sh-body{grid-template-columns:1fr}}
 `;
 
@@ -401,16 +445,64 @@
     if (!document.getElementById("nw-shop-css")) { const st = document.createElement("style"); st.id = "nw-shop-css"; st.textContent = CSS; document.head.appendChild(st); }
     const root = o.root, call = o.call, toast = o.toast || (m => console.log(m));
     const S = { range: 30, orders: null, cat: "all", data: o.html ? readCatalogue(o.html) : null, dirty: 0, rev: "", base: siteBase(o.site) };
-    root.innerHTML = '<div class="sh"><div id="shShip"></div><div id="shSales"></div><div id="shProducts"></div></div>';
+    root.innerHTML = '<div class="sh"><div id="shBoot"></div><div id="shShip"></div><div id="shSales"></div><div id="shProducts"></div></div>';
+    S.booting = true;
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const reduced = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } };
+    function anim(el) { if (!el) return; el.classList.toggle("sh-in", !!S.anim); }
+    function drawBoot() {
+      const el = $("#shBoot"); if (!el) return;
+      const bars = Array.from({ length: 28 }, (_, i) => '<i style="--i:' + i + ";--h:" + Math.round(35 + 55 * Math.abs(Math.sin(i * 0.55 + 0.6))) + '%"></i>').join("");
+      el.innerHTML = '<div class="card sh-boot" role="status" aria-live="polite">' +
+        '<div class="sh-boot-h"><span class="sh-orb"><i></i><i></i><i></i></span><div class="sh-boot-t"><b>Getting your orders ready</b><span class="sh-boot-msg" id="shBootMsg"><span>Connecting to your store…</span></span></div><span class="sp"></span><span class="sh-live"><i></i>Syncing</span></div>' +
+        '<div class="sh-prog"><i id="shProg"></i></div>' +
+        '<div class="sh-kpis">' + '<div class="card sh-skk"><span class="sk"></span><span class="sk"></span><span class="sk"></span></div>'.repeat(4) + "</div>" +
+        '<div class="sh-skchart" aria-hidden="true">' + bars + "</div></div>";
+      const msgs = ["Connecting to your store…", "Fetching your orders…", "Adding up your sales…", "Checking with the courier…", "Almost there…"];
+      let k = 0;
+      S.bootMsg = setInterval(() => { const m = $("#shBootMsg"); if (!m) return; k = Math.min(k + 1, msgs.length - 1); m.innerHTML = "<span>" + msgs[k] + "</span>"; if (k === msgs.length - 1) clearInterval(S.bootMsg); }, 1300);
+      progress(12);
+    }
+    function progress(p) { const b = $("#shProg"); if (b) b.style.width = p + "%"; }
+    function countUp(scope) {
+      if (reduced()) return;
+      scope.querySelectorAll("[data-n]").forEach(v => {
+        const to = +v.dataset.n || 0, money = v.dataset.f === "inr", t0 = performance.now(), dur = 1100;
+        if (!to) return;
+        const step = t => { if (!v.isConnected) return; const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 4), x = to * e;
+          v.textContent = money ? inr(k < 1 ? Math.round(x) : to) : String(k < 1 ? Math.round(x) : to); if (k < 1) requestAnimationFrame(step); };
+        v.textContent = money ? inr(0) : "0"; requestAnimationFrame(step);
+      });
+    }
+    async function boot() {
+      drawBoot();
+      const t0 = Date.now();
+      await refreshSales();
+      progress(S.base ? 60 : 92);
+      if (S.base) await Promise.race([loadShip(true), sleep(9000)]);
+      progress(100);
+      await sleep(Math.max(0, 650 - (Date.now() - t0)) + 260);
+      clearInterval(S.bootMsg);
+      const b = $("#shBoot .sh-boot"); if (b) b.classList.add("out");
+      await sleep(reduced() ? 0 : 320);
+      const el = $("#shBoot"); if (el) el.remove();
+      S.booting = false; S.anim = !reduced();
+      drawShip(); drawSales();
+      countUp(root);
+      S.anim = false;
+      setTimeout(() => { root.querySelectorAll(".sh-in").forEach(x => x.classList.remove("sh-in")); }, 1800);
+    }
     const $ = s => root.querySelector(s);
 
     /* ---------------- sales ---------------- */
     async function refreshSales() {
-      try { S.orders = await loadSales(call); } catch (e) { S.orders = S.orders || null; if (!S.orders) return drawSales(e.message); }
-      drawSales();
+      try { S.orders = await loadSales(call); S.salesErr = ""; } catch (e) { S.orders = S.orders || null; if (!S.orders) { S.salesErr = e.message; if (!S.booting) drawSales(e.message); return; } }
+      if (!S.booting) drawSales();
     }
     function drawSales(err) {
-      const el = $("#shSales"); if (!el) return;
+      const el = $("#shSales"); if (!el || S.booting) return;
+      err = err || (!S.orders && S.salesErr);
+      anim(el);
       if (err && !S.orders) { el.innerHTML = '<div class="card"><div class="sh-empty">Couldn\'t load your orders: ' + esc(err) + "</div></div>"; return; }
       if (!S.orders) {
         el.innerHTML = '<div class="card"><h2>' + ic("bag", 18) + 'Sales</h2><div class="sh-empty">No orders yet. When someone orders on your website, it shows up here.</div></div>';
@@ -421,18 +513,18 @@
       el.innerHTML =
         '<div class="sh-bar"><div class="sh-cats" id="shRange">' + R.map(r => '<button data-r="' + r[0] + '" class="' + (r[0] === S.range ? "on" : "") + '">' + r[1] + "</button>").join("") + '</div><span class="sp"></span><small style="color:var(--ink-3)">' + (s.last ? "Last order " + ago(s.last) : "") + "</small></div>" +
         '<div class="sh-kpis">' +
-          '<div class="card sh-kpi hero"><div class="l">Sold</div><div class="v num">' + inr(s.confirmed) + '</div><div class="s">' + s.nConfirmed + " order" + (s.nConfirmed === 1 ? "" : "s") + " sent to customers</div></div>" +
-          '<div class="card sh-kpi"><div class="l">New orders</div><div class="v num">' + inr(s.waiting) + '</div><div class="s">' + s.nWaiting + " not sent yet</div></div>" +
-          '<div class="card sh-kpi"><div class="l">Total orders</div><div class="v num">' + s.orders + '</div><div class="s">' + (s.nCancelled ? s.nCancelled + " cancelled, not counted" : "none cancelled") + "</div></div>" +
-          '<div class="card sh-kpi"><div class="l">Average order</div><div class="v num">' + inr(s.avg) + '</div><div class="s">per customer</div></div>' +
+          '<div class="card sh-kpi hero"><div class="l">Sold</div><div class="v num" data-n="' + s.confirmed + '" data-f="inr">' + inr(s.confirmed) + '</div><div class="s">' + s.nConfirmed + " order" + (s.nConfirmed === 1 ? "" : "s") + " sent to customers</div></div>" +
+          '<div class="card sh-kpi"><div class="l">New orders</div><div class="v num" data-n="' + s.waiting + '" data-f="inr">' + inr(s.waiting) + '</div><div class="s">' + s.nWaiting + " not sent yet</div></div>" +
+          '<div class="card sh-kpi"><div class="l">Total orders</div><div class="v num" data-n="' + s.orders + '">' + s.orders + '</div><div class="s">' + (s.nCancelled ? s.nCancelled + " cancelled, not counted" : "none cancelled") + "</div></div>" +
+          '<div class="card sh-kpi"><div class="l">Average order</div><div class="v num" data-n="' + s.avg + '" data-f="inr">' + inr(s.avg) + '</div><div class="s">per customer</div></div>' +
         "</div>" +
         '<div class="sh-row" style="margin-top:16px"><div class="card"><h2>Sales over time<span class="sp"></span><span class="sh-leg"><span><i style="background:var(--neon)"></i>Sold</span><span><i style="background:rgba(var(--neon-rgb),.35)"></i>Not sent yet</span></span></h2>' +
-          (s.series.length ? '<div class="sh-bars">' + s.series.map(b => '<div class="b" data-t="' + esc(b.label + " · " + inr(b.c + b.w)) + '"><i class="c" style="height:' + (b.c / max * 100) + '%"></i><i class="w" style="height:' + (b.w / max * 100) + '%"></i></div>').join("") + "</div>" +
+          (s.series.length ? '<div class="sh-bars">' + s.series.map((b, i) => '<div class="b" style="--i:' + i + '" data-t="' + esc(b.label + " · " + inr(b.c + b.w)) + '"><i class="c" style="height:' + (b.c / max * 100) + '%"></i><i class="w" style="height:' + (b.w / max * 100) + '%"></i></div>').join("") + "</div>" +
             '<div class="sh-axis"><span>' + esc(s.series[0].label) + "</span><span>" + esc(s.series[s.series.length - 1].label) + "</span></div>" : '<div class="sh-empty">No orders in this period.</div>') +
           '<p class="sh-hint">An order counts as <b>sold</b> once you send it. Cancelled orders aren\'t counted.</p></div>' +
           '<div class="card"><h2>Best sellers</h2>' + (s.top.length ? '<div class="sh-list">' + s.top.map(t => '<div class="sh-li"><span>' + esc(t.name) + "<small>" + t.qty + " sold</small></span><b class=\"num\">" + (t.revenue ? inr(t.revenue) : "") + "</b></div>").join("") + "</div>" : '<div class="sh-empty">Nothing sold in this period yet.</div>') + "</div></div>" +
         (S.ship.on ? "" : '<div class="card" style="margin-top:16px"><h2>Latest orders<span class="sp"></span><small style="color:var(--ink-3)">' + s.count + " in total</small></h2>" +
-          (s.recent.length ? '<div class="sh-list">' + s.recent.map(r => '<div class="sh-li"><span>' + esc(r.name || "Customer") + " · " + inr(r.total) + "<small>" + esc(r.items.split("\n").join(" · ") || r.ref) + " · " + ago(r.ts) + '</small></span><span class="sh-st ' + STATUS(r.status) + '">' + esc(r.status) + "</span></div>").join("") + "</div>" : '<div class="sh-empty">No orders yet.</div>') + "</div>");
+          (s.recent.length ? '<div class="sh-list">' + s.recent.map((r, i) => '<div class="sh-li" style="--i:' + i + '"><span>' + esc(r.name || "Customer") + " · " + inr(r.total) + "<small>" + esc(r.items.split("\n").join(" · ") || r.ref) + " · " + ago(r.ts) + '</small></span><span class="sh-st ' + STATUS(r.status) + '">' + esc(r.status) + "</span></div>").join("") + "</div>" : '<div class="sh-empty">No orders yet.</div>') + "</div>");
       announce();
       $("#shRange").onclick = e => { const b = e.target.closest("button"); if (!b) return; S.range = +b.dataset.r; drawSales(); };
     }
@@ -505,8 +597,9 @@
       S.ship.busy = false; drawShip(); drawSales();
     }
     function drawShip() {
-      const el = $("#shShip"); if (!el) return;
+      const el = $("#shShip"); if (!el || S.booting) return;
       if (!S.ship.on) { el.innerHTML = ""; return; }
+      anim(el);
       if (S.ship.err && !S.ship.orders) return drawShipOffline(el);
       const L = S.ship.orders || [], stageOf = x => x.stage === "returned" ? "cancelled" : x.stage;
       const n = k => L.filter(x => stageOf(x) === k).length;
@@ -523,10 +616,10 @@
           '<div class="sh-o-a"><b class="num">' + inr(x.total) + '</b><span class="sh-st ' + (x.payment === "COD" ? "waiting" : "confirmed") + '">' + (x.payment === "COD" ? "Cash on delivery" : "Paid") + '</span></div><div class="sh-o-b" data-for="' + x.id + '">' + act + "</div></div>";
       };
       el.innerHTML = '<div class="card"><h2>' + ic("truck", 18) + "Orders<small style=\"color:var(--ink-3);font-weight:600\">" + (n("new") ? n("new") + " waiting to be sent" : "all sent") + '</small><span class="sp"></span>' +
-          '<small style="color:var(--ink-3)">' + (S.ship.busy ? "Loading…" : S.ship.at ? "Updated " + ago(S.ship.at) : "") + '</small><button class="btn ghost sm" id="shShipR">Refresh</button></h2>' +
+          '<small style="color:var(--ink-3)">' + (S.ship.busy ? '<span class="sh-live"><i></i>Syncing</span>' : S.ship.at ? "Updated " + ago(S.ship.at) : "") + '</small><button class="btn ghost sm" id="shShipR">Refresh</button></h2>' +
         '<div class="sh-bar"><div class="sh-cats" id="shShipT">' + SHIP_TABS.map(t => '<button data-t="' + t[0] + '" class="' + (t[0] === S.ship.tab ? "on" : "") + '">' + t[1] + " · " + n(t[0]) + "</button>").join("") + "</div></div>" +
-        (S.ship.err ? '<p class="sh-note">Reconnecting to the courier service — these are your orders from a moment ago. It refreshes by itself.</p>' : "") + (!S.ship.orders ? '<div class="sh-empty">Loading your orders…</div>' :
-          list.length ? '<div class="sh-ol">' + list.map(row).join("") + "</div>" : '<div class="sh-empty">' + (S.ship.tab === "new" ? "All caught up. New orders from your website show up here." : "No orders here.") + "</div>") +
+        (S.ship.err ? '<p class="sh-note">Reconnecting to the courier service — these are your orders from a moment ago. It refreshes by itself.</p>' : "") + (!S.ship.orders ? '<div class="sh-skrows" role="status" aria-label="Loading your orders">' + '<div class="sh-skrow"><div><span class="sk"></span><span class="sk"></span></div><span class="sk"></span></div>'.repeat(3) + "</div>" :
+          list.length ? '<div class="sh-ol">' + list.map((x, i) => row(x).replace('<div class="sh-o">', '<div class="sh-o" style="--i:' + i + '">')).join("") + "</div>" : '<div class="sh-empty">' + (S.ship.tab === "new" ? "All caught up. New orders from your website show up here." : "No orders here.") + "</div>") +
         (S.ship.tab === "new" && list.length && !o.readOnly ? '<div class="sh-how"><span><i>1</i>Tap <b>Send order</b></span><span><i>2</i>Print the label and stick it on the parcel</span><span><i>3</i>Give the parcel to the courier when they come</span></div>' : "") + "</div>";
       $("#shShipR").onclick = () => loadShip();
       $("#shShipT").onclick = e => { const b = e.target.closest("button"); if (!b) return; S.ship.tab = b.dataset.t; drawShip(); };
@@ -827,7 +920,7 @@
 
     /* ---------------- start ---------------- */
     if (S.data) S.saved = JSON.parse(JSON.stringify(S.data));
-    drawSales(); drawProducts(); refreshSales().then(() => loadShip());
+    drawProducts(); boot();
     addEventListener("beforeunload", e => { if (S.dirty) { e.preventDefault(); e.returnValue = ""; } });
     let lastRev = "";
     const timer = setInterval(async () => {
