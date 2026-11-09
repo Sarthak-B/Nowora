@@ -485,14 +485,22 @@ const b64ToText_ = b64 => Utilities.newBlob(Utilities.base64Decode(String(b64).r
 const textToB64_ = t => Utilities.base64Encode(t, Utilities.Charset.UTF_8);
 
 /**
- * Who can use the website editor. Per client, the Clients tab "editAccess" column decides:
- *   on   → always allowed        off → never allowed
+ * Who can use the website editor. Once a site is live, the care plan comes first: with carePlan "no"
+ * (or status "paused") everything the plan includes is off — see planOff_. Otherwise the Clients tab
+ * "editAccess" column decides:
+ *   on   → allowed (also before launch)        off → never allowed
  *   (empty / auto) → allowed while the care plan is active
  * A repo must be linked either way. You (the owner) can always edit.
  */
+function planOff_(c) {
+  if (c._owner) return false;
+  const st = String(c.status || '').toLowerCase();
+  return st === 'paused' || (st === 'live' && String(c.carePlan || '').toLowerCase() !== 'yes');
+}
 function editReason_(c) {
   if (!c.repo) return 'not-connected';
   if (c._owner) return '';
+  if (planOff_(c)) return 'no-plan';
   const a = String(c.editAccess || 'auto').toLowerCase();
   if (a === 'off') return 'off';
   if (a === 'on') return '';
@@ -505,8 +513,9 @@ function canEdit_(c) { return !editReason_(c); }
  * dashboard, see everything and download their data, but every change is refused here — website
  * edits, product edits, database rows and tables, and change requests. You (the owner) are never blocked.
  */
-function readOnly_(c) { return !c._owner && String(c.editAccess || '').trim().toLowerCase() === 'off'; }
+function readOnly_(c) { return !c._owner && (String(c.editAccess || '').trim().toLowerCase() === 'off' || planOff_(c)); }
 function writable_(c) {
+  if (planOff_(c)) throw new Error('Your NOWORA care plan isn\'t active, so changes are switched off. You can still see and download everything — message NOWORA to switch it back on.');
   if (readOnly_(c)) throw new Error('Your dashboard is view-only right now. You can see and download everything, but changes are switched off — message NOWORA if you need something changed.');
   return c;
 }

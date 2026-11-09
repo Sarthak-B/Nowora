@@ -18,7 +18,7 @@ test('accessible databases continue using the existing spreadsheet',()=>{
 });
 
 test('view-only clients cannot change anything; the owner always can', () => {
-  const src = source.slice(source.indexOf('function readOnly_'), source.indexOf('function siteRepo_'));
+  const src = source.slice(source.indexOf('function planOff_'), source.indexOf('function siteRepo_'));
   const c = {}; vm.createContext(c); vm.runInContext(src, c);
   assert.throws(() => c.writable_({editAccess: 'off'}), /view-only/);
   assert.throws(() => c.writable_({editAccess: ' OFF '}), /view-only/);
@@ -28,4 +28,18 @@ test('view-only clients cannot change anything; the owner always can', () => {
     assert.match(source, new RegExp(`case '${action}':[^\\n]*writable_\\(portalClient_\\(body\\)\\)`), action);
   for (const action of ['portal', 'db_get', 'db_rev', 'site_source'])
     assert.doesNotMatch(source, new RegExp(`case '${action}':[^\\n]*writable_`), action);
+});
+
+test('turning the care plan off on a live site locks everything the plan includes', () => {
+  const src = source.slice(source.indexOf('function planOff_'), source.indexOf('function siteRepo_'));
+  const c = {}; vm.createContext(c); vm.runInContext(src, c);
+  for (const cl of [{status: 'live', carePlan: 'no', editAccess: 'on'}, {status: 'live', carePlan: '', editAccess: 'auto'}, {status: 'paused', carePlan: 'yes'}]) {
+    assert.throws(() => c.writable_(cl), /care plan/, JSON.stringify(cl));
+    assert.equal(c.readOnly_(cl), true);
+    assert.equal(c.editReason_(Object.assign({repo: 'a/b'}, cl)), 'no-plan');
+  }
+  assert.doesNotThrow(() => c.writable_({status: 'live', carePlan: 'yes'}));
+  assert.equal(c.editReason_({repo: 'a/b', status: 'live', carePlan: 'yes'}), '');
+  assert.doesNotThrow(() => c.writable_({status: 'building', carePlan: 'no'}));
+  assert.doesNotThrow(() => c.writable_({status: 'live', carePlan: 'no', _owner: true}));
 });

@@ -597,7 +597,10 @@ function boot(data){
   render(); startPolling();
 }
 /* view-only: you switched their editing access off — they can look and download, nothing else */
-function isRO(){var c=S.data&&S.data.client;return !!(c&&!c.owner&&!DEMO&&(c.readOnly||c.editReason==="off"))}
+/* care plan off (or paused) on a live site: everything the plan includes switches off by itself —
+   website + product editing, database changes, new requests, sending orders. They can still look and download. */
+function planOff(){var c=S.data&&S.data.client;if(!c||c.owner||DEMO) return false;var st=String(c.status||"").toLowerCase();return st==="paused"||(st==="live"&&String(c.carePlan||"").toLowerCase()!=="yes")}
+function isRO(){var c=S.data&&S.data.client;return !!(c&&!c.owner&&!DEMO&&(c.readOnly||c.editReason==="off"||planOff()))}
 function render(){
   var ro=S.ro=isRO();
   var d=S.data,c=d.client,first=(c.name||"").trim().split(/\s+/)[0];
@@ -611,7 +614,7 @@ function render(){
   $("#app").innerHTML=(c.owner?'<div class="ownerbar">Owner view — this is exactly what '+esc(c.business)+' sees. You can edit their website from here.</div>':'')+(DEMO?'<div class="demo">Demo dashboard with sample numbers — your clients see their own website here.</div>':'')+
   '<header class="top"><div class="wrap"><span class="brand">'+MARK+'NOWORA<small>'+esc(c.business)+'</small></span>'+
     '<nav class="tabs" id="tabs"><span class="ind"></span><a href="#overview">Home</a><a href="#shop" hidden>Orders</a><a href="#traffic">Visitors</a><a href="#website">Website</a><a href="#database">Records</a><a href="#project">My plan</a><a href="#requests">Ask us</a></nav>'+
-    '<span class="sp"></span><span class="live"><i class="dot up"></i><span>Live</span></span>'+(ro?'<span class="chip" title="You can see and download everything. Changes are switched off.">'+I.eye+'View-only</span>':'')+
+    '<span class="sp"></span><span class="live"><i class="dot up"></i><span>Live</span></span>'+(ro?'<span class="chip" title="'+(planOff()?'Your care plan isn\'t active, so changes are switched off. You can still see and download everything.':'You can see and download everything. Changes are switched off.')+'">'+I.eye+(planOff()?'Care plan off':'View-only')+'</span>':'')+
     (ro?'':'<button class="icon-btn" data-edit title="Edit my website">'+I.pen+'</button>')+
     '<button class="icon-btn" id="print" title="Download report (PDF)">'+I.print+'</button><button class="icon-btn" id="out" title="Sign out">'+I.out+'</button></div></header>'+
   '<nav class="botnav" id="botnav"><a href="#overview">'+I.grid+'Home</a><a href="#shop" hidden>'+I.bag+'Orders</a><a href="#traffic">'+I.chart+'Visitors</a><a href="#website">'+I.globe+'Website</a><a href="#database">'+I.db+'Records</a><a href="#project">'+I.flag+'My plan</a><a href="#requests">'+I.chat+'Ask us</a></nav>'+
@@ -643,7 +646,7 @@ function render(){
   '<section id="project" class="sec"><div class="sec-title in"><h3>Your project, <em>step by step.</em></h3><p>Where things stand, what\'s been paid and what your care plan covers.</p></div><div class="grid two" id="projectGrid"></div></section>'+
 
   '<section id="requests" class="sec"><div class="sec-title in"><h3>Need a change? <em>Just ask.</em></h3><p>Send it here with a photo if you like. You\'ll see our reply and progress right below.</p></div>'+
-    '<div class="grid req-grid">'+(ro?'<div class="card req-form in"><h2>New request</h2><p style="color:var(--ink-2)">Your dashboard is view-only right now, so new requests are switched off. Message NOWORA on WhatsApp below if you need anything — your earlier requests and our replies are still here.</p></div>':'<form class="card req-form in" id="rf"><h2>New request</h2><div class="types" id="types">'+TYPES.map(function(x){return '<button type="button" class="'+(x===S.type?"on":"")+'">'+esc(x)+'</button>'}).join("")+'</div>'+
+    '<div class="grid req-grid">'+(ro?'<div class="card req-form in"><h2>New request</h2><p style="color:var(--ink-2)">'+(planOff()?'Change requests come with the NOWORA care plan, and it isn\'t active right now.':'Your dashboard is view-only right now, so new requests are switched off.')+' Message NOWORA on WhatsApp below if you need anything — your earlier requests and our replies are still here.</p></div>':'<form class="card req-form in" id="rf"><h2>New request</h2><div class="types" id="types">'+TYPES.map(function(x){return '<button type="button" class="'+(x===S.type?"on":"")+'">'+esc(x)+'</button>'}).join("")+'</div>'+
       '<textarea id="rm" maxlength="2000" placeholder="For example: please change the Sunday timings to 10 am – 6 pm and use the new menu photo."></textarea>'+
       '<label class="attach" id="attach"><input type="file" accept="image/*" id="file"><span class="th" id="th">'+I.img+'</span><span id="attTxt">Add a photo (optional)</span><button type="button" class="x" id="rmphoto" aria-label="Remove photo">×</button></label>'+
       '<button class="btn" type="submit" id="send">'+I.send+'Send request</button></form>')+
@@ -987,6 +990,7 @@ function motion(){
 /* ---------- website editor ---------- */
 function openEditor(){
   var c=S.data.client;
+  if(planOff()) return lockedEditor("no-plan");
   if(isRO()) return lockedEditor("off");
   if(!DEMO&&!c.editable){return lockedEditor(c.editReason)}
   var go=function(){window.NoworaEditor.open({call:call,toast:toast,key:KEY,onClose:function(){}})};
@@ -1040,7 +1044,7 @@ function startPolling(){
   S.poll=setInterval(async function(){
     if(document.hidden) return;
     try{var j=await call("portal",{since:S.lastSec});var n=ingest(j.data.events,true);S.data.client=j.data.client;
-      if(isRO()!==S.ro){toast(isRO()?"Your dashboard is now view-only":"Editing is back on");setTimeout(function(){location.reload()},1500);return}
+      if(isRO()!==S.ro){toast(isRO()?(planOff()?"Your care plan is off — your dashboard is now view-only":"Your dashboard is now view-only"):"Editing is back on");setTimeout(function(){location.reload()},1500);return}
       var oldReq=JSON.stringify(S.data.requests);S.data.requests=j.data.requests;
       S.quiet=true;drawAll(false);S.quiet=false;drawNow();
       if(n){drawFeed(n);var last=S.rows[S.rows.length-1];toast(n===1?feedLabel(last):n+" new things happened on your site")}
