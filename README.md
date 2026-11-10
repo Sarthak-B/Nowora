@@ -90,7 +90,7 @@ TEST_SITES=https://example.com node scripts/portfolio.mjs --dry-run
 
 ### 4. Dashboard
 
-Open your private owner link (`yoursite/#<owner-code>` — only a SHA-256 fingerprint of the code is stored, in `OWNER_LINK_SHA` in `site/index.html`) and sign in with `ADMIN_KEY`. Nothing on the site links to it. Without a backend, it runs in demo mode with sample data stored in the browser.
+Open your private owner link (`yoursite/#<owner-code>` — only a SHA-256 fingerprint of the code is stored, in `OWNER_LINK_SHA` in `site/index.html`) and sign in with `ADMIN_KEY`. Nothing on the site links to it. Easier ways in, invisible to visitors: type `admin` anywhere on the site, tap the footer wordmark 5 times, or open `/#admin` on a device that has signed in before. Without a backend, it runs in demo mode with sample data stored in the browser.
 
 ---
 

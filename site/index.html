@@ -2555,8 +2555,30 @@ async function isOwnerLink(){
   try{ const d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(code));
     return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join("")===OWNER_LINK_SHA; }catch(e){ return false; }
 }
-addEventListener("hashchange",async()=>{ if(!document.body.classList.contains("is-admin")&&await isOwnerLink()) initAdmin(); });
-(async()=>{ if(location.hash.length>16&&await isOwnerLink()) initAdmin(); else initSite(); })();
+/* Easy ways in for the owner — none of them are visible to visitors:
+   1. type the word "admin" anywhere on the site (not inside a form field)
+   2. on a phone: tap the make4yu name in the footer 5 times quickly
+   3. a device that has signed in before (nw_owner) can simply open /#admin
+   The private owner link keeps working too. Signing in always needs the admin key. */
+const ownerDevice=()=>{ try{ return localStorage.getItem("nw_owner")==="1"; }catch(e){ return false; } };
+function openOwner(){ if(document.body.classList.contains("is-admin")) return; history.replaceState(null,"","#admin"); scrollTo(0,0); initAdmin(); }
+async function ownerRoute(){ return (location.hash.startsWith("#admin")&&ownerDevice()) || (location.hash.length>16&&await isOwnerLink()); }
+addEventListener("hashchange",async()=>{ if(!document.body.classList.contains("is-admin")&&await ownerRoute()) initAdmin(); });
+(async()=>{ if(await ownerRoute()) initAdmin(); else initSite(); })();
+(function(){
+  let typed="";
+  addEventListener("keydown",e=>{
+    if(e.metaKey||e.ctrlKey||e.altKey||e.key.length!==1) return;
+    const t=e.target; if(t&&(/INPUT|TEXTAREA|SELECT/.test(t.tagName)||t.isContentEditable)) return;
+    typed=(typed+e.key.toLowerCase()).slice(-5); if(typed==="admin"){ typed=""; openOwner(); }
+  });
+  let taps=0,timer=0;
+  document.addEventListener("click",e=>{
+    if(!e.target.closest||!e.target.closest(".foot-row .wordmark")) return;
+    taps++; clearTimeout(timer); timer=setTimeout(()=>taps=0,2500);
+    if(taps>=5){ taps=0; openOwner(); }
+  });
+})();
 })();
 </script>
 
