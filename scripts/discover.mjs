@@ -20,7 +20,7 @@
 //   node scripts/discover.mjs --dry-run   prints what it would register
 import { api, ENDPOINT, KEY, DRY_RUN } from './lib.mjs';
 
-const SELF = (process.env.GITHUB_REPOSITORY || 'Sarthak-B/Nowora').toLowerCase();
+const SELF = (process.env.GITHUB_REPOSITORY || 'Sarthak-B/make4yu').toLowerCase();
 const OWNER = process.env.DISCOVER_OWNER || process.env.GITHUB_REPOSITORY_OWNER || 'Sarthak-B';
 const PRIVATE_TOKEN = process.env.DISCOVER_TOKEN || '';          // optional: also scans private repos
 const TOKEN = PRIVATE_TOKEN || process.env.GITHUB_TOKEN || '';
