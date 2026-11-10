@@ -437,6 +437,7 @@ textarea:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 4px rgba(v
   .sec{padding-top:24px}
 }
 </style>
+<script src="/backstack.js"></script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -1020,7 +1021,7 @@ addEventListener("nowora:shop",function(e){
   el.innerHTML='<a class="td'+(send?' hot':'')+'" href="#shop" data-go="orders"><small>Orders to send</small><b>'+(send==null?'…':send)+'</b><span>'+(send?(d.canSend?'Tap to send them →':'New orders waiting'):'All caught up ✓')+'</span></a>'+
     '<a class="td" href="#shop" data-go="sales"><small>Sold this month</small><b>'+inr(d.sold||0)+'</b><span>'+(d.waiting?inr(d.waiting)+' more in new orders':(d.onTheWay?d.onTheWay+' on the way to customers':'from your website'))+'</span></a>'+
     '<a class="td'+(out?' warn':'')+'" href="#shop" data-go="products" title="'+esc((d.out||[]).concat(d.low||[]).join("\n"))+'"><small>Stock</small><b>'+(out?out+' sold out':low?low+' running low':'All good')+'</b><span>'+(out||low?'Tap to update stock →':'Nothing running out')+'</span></a>';
-  $$("a[data-go]",el).forEach(function(a){a.onclick=function(ev){ev.preventDefault();var t={orders:"#shShip",sales:"#shSales",products:"#shProducts"}[a.dataset.go];var x=$(t);if(x){var y=x.getBoundingClientRect().top+scrollY-90;scrollTo({top:y,behavior:"smooth"})}}});
+  $$("a[data-go]",el).forEach(function(a){a.onclick=function(ev){ev.preventDefault();if(location.hash!=="#shop")history.pushState(history.state,"","#shop");var t={orders:"#shShip",sales:"#shSales",products:"#shProducts"}[a.dataset.go];var x=$(t);if(x){var y=x.getBoundingClientRect().top+scrollY-90;scrollTo({top:y,behavior:"smooth"})}}});
 });
 
 /* ---------- shop (store clients: a product catalogue on their site, or website orders) ---------- */
