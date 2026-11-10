@@ -1144,7 +1144,7 @@ function clientForm_(b) {
 function orderAlertPing_() {
   const tok = prop_('GITHUB_ALERT_TOKEN'); if (!tok) return;
   try {
-    UrlFetchApp.fetch('https://api.github.com/repos/' + (prop_('GITHUB_ALERT_REPO') || 'Sarthak-B/Nowora') + '/dispatches', {
+    UrlFetchApp.fetch('https://api.github.com/repos/' + (prop_('GITHUB_ALERT_REPO') || 'Sarthak-B/make4yu') + '/dispatches', {
       method: 'post', contentType: 'application/json', muteHttpExceptions: true,
       headers: { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json' }, payload: JSON.stringify({ event_type: 'order-alert' }) });
   } catch (e) { console.error('order alert ping: ' + e); }

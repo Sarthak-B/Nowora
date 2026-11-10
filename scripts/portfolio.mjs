@@ -83,7 +83,7 @@ if (done.length) {
   for (let i = 0; i < 3; i++) { try { git('git pull --rebase -q origin main'); git('git push -q origin HEAD:main'); break; } catch (e) { if (i === 2) throw e; } }
   sha = git('git rev-parse HEAD');
 }
-const repo = process.env.GITHUB_REPOSITORY || 'Sarthak-B/Nowora';
+const repo = process.env.GITHUB_REPOSITORY || 'Sarthak-B/make4yu';
 const portfolio = results.map(r => r.file
   ? { id: r.id, image: `https://cdn.jsdelivr.net/gh/${repo}@${sha}/${r.file}`, title: r.title, description: r.description }
   : { id: r.id, error: r.error });

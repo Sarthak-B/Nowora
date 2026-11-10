@@ -78,7 +78,7 @@ Under **Settings → Secrets and variables → Actions**, add:
 
 Run each workflow once from the **Actions** tab to confirm.
 
-**Portfolio previews** check for new links every 10 minutes (a few seconds when there's nothing to do). To start them the moment you add a link instead, create a fine-grained GitHub token with **Actions: Read and write** on this repo and add Apps Script properties `GITHUB_TOKEN` (the token) and `GITHUB_REPO` (`Sarthak-B/Nowora`).
+**Portfolio previews** check for new links every 10 minutes (a few seconds when there's nothing to do). To start them the moment you add a link instead, create a fine-grained GitHub token with **Actions: Read and write** on this repo and add Apps Script properties `GITHUB_TOKEN` (the token) and `GITHUB_REPO` (`Sarthak-B/make4yu`).
 
 Local test, which leaves the Sheet untouched:
 
