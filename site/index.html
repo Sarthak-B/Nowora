@@ -1095,6 +1095,7 @@ window.fitFrames=function(root){
   };
 })();
 </script>
+<script src="/backstack.js"></script>
 </head>
 <body>
 
@@ -1594,6 +1595,7 @@ function initSite(){
   /* buttons marked data-form: scroll to the enquiry form, preselect the plan, put the cursor in the first field */
   document.addEventListener("click",e=>{const b=e.target.closest("[data-form]"); if(!b) return; e.preventDefault();
     const f=$("#leadForm"); if(!f) return; const sel=$("#f-pkg"); if(sel) sel.value=b.dataset.form; if(b.dataset.channel){const r=f.querySelector('input[name=channel][value="'+b.dataset.channel+'"]'); if(r) r.checked=true;}
+    if(location.hash!=="#contact") history.pushState(history.state,"","#contact");
     $("#contact").scrollIntoView({behavior:reduced?"auto":"smooth",block:"start"});
     setTimeout(()=>{const n=$("#f-name"); if(n) n.focus({preventScroll:true}); f.classList.remove("nudge"); void f.offsetWidth; f.classList.add("nudge")},reduced?0:700);});
   document.addEventListener("click",e=>{const t=e.target.closest("[data-track]"); if(!t) return; const [type,label]=t.dataset.track.split(":"); track(type,label);});
@@ -1863,6 +1865,23 @@ function shell(){
   setInterval(updateSyncLabel,5000);
 }
 function updateSyncLabel(){const l=$("#syncLbl"); if(l) l.textContent=API.live?"Live · updated "+ago(A.lastSync):"Live in this browser";}
+/* ---------- Back button: each dashboard view is a step in the browser history ---------- */
+let admNavKey=null, admRestoring=false;
+function admKey(){ return [A.tab||"overview",A.clientView||"",A.clientView?(A.cwTab||"overview"):""].join("|"); }
+function admUrl(){ return "#admin/"+(A.tab||"overview")+(A.clientView?"/"+encodeURIComponent(A.clientView)+"/"+(A.cwTab||"overview"):""); }
+function admSync(){
+  if(!document.body.classList.contains("is-admin")||!$(".app")) return;
+  const k=admKey(); if(k===admNavKey) return;
+  const st={adm:k}; if(admNavKey===null||admRestoring) history.replaceState(st,"",admUrl()); else history.pushState(st,"",admUrl());
+  admNavKey=k;
+}
+addEventListener("popstate",e=>{
+  if(!document.body.classList.contains("is-admin")) return;
+  const st=e.state;
+  if(st&&st.adm){ const [t,cv,cw]=st.adm.split("|"); A.tab=t||"overview"; A.clientView=cv||null; A.cwTab=cw||"overview"; admNavKey=st.adm;
+    if($(".app")){ admRestoring=true; try{ closeModal(); render(); }finally{ admRestoring=false; } } return; }
+  if(!location.hash.startsWith("#admin")&&location.hash.length<=16) location.reload();   // stepped back out to the website
+});
 function render(soft){
   $$("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===A.tab));
   $("#tabTitle").textContent=TABS.find(t=>t[0]===A.tab)[1];
@@ -1873,6 +1892,7 @@ function render(soft){
   if(soft&&A.tab!=="overview"&&$(".modal-bg.open")) return; // don't redraw under an open form
   if(soft&&(A.tab==="outreach"||A.tab==="portfolio")&&document.activeElement&&/TEXTAREA|INPUT|SELECT/.test(document.activeElement.tagName)) return;
   ({overview:vOverview,leads:vLeads,outreach:vOutreach,clients:vClients,portfolio:vPortfolio,automations:vAuto,requests:vRequests,settings:vSettings})[A.tab](soft);
+  admSync();
 }
 
 /* ---------- analytics helpers ---------- */
@@ -2102,7 +2122,7 @@ function vClients(soft){
     if(e.target.closest("[data-edit]")) return clientForm(c);
     if(e.target.closest("[data-remove]")) return removeClient(c);
     if(e.target.closest("a")) return;
-    A.clientView=c.id; A.cwTab="overview"; vClients();});
+    A.clientView=c.id; A.cwTab="overview"; vClients(); admSync();});
   wireStoreSales(); storeSales();
 }
 
@@ -2142,7 +2162,7 @@ function storeSalesHtml(){
 }
 function wireStoreSales(){
   const r=$("#ssRefresh"); if(r) r.onclick=()=>{storeSales(true);r.textContent="Refreshing…"};
-  $$("[data-sales]").forEach(el=>el.onclick=()=>{A.clientView=el.dataset.sales;A.cwTab="overview";vClients();});
+  $$("[data-sales]").forEach(el=>el.onclick=()=>{A.clientView=el.dataset.sales;A.cwTab="overview";vClients();admSync();});
 }
 function hostOf(u){return String(u||"").replace(/^https?:\/\//,"").replace(/\/$/,"")}
 function planOff(c){ const st=String(c.status||"").toLowerCase(); return st==="paused"||(st==="live"&&c.carePlan!=="yes"); }
@@ -2185,8 +2205,8 @@ function vClientWorkspace(id,soft){
       ${c.phone?`<a class="ib wa" target="_blank" rel="noopener" title="WhatsApp ${esc(c.name||c.business)}" href="${waLink(c.phone,`Hi ${(c.name||"").split(" ")[0]||"there"}, `)}">${ICON.wa}</a>`:""}</div>
     <div class="cw-tabs">${tabs.map(([k,l])=>`<button data-t="${k}" class="${tab===k?"on":""}">${l}</button>`).join("")}</div>
     <div id="cwBody"></div></div>`;
-  $("#cwBack").onclick=()=>{A.clientView=null;vClients()};
-  $$(".cw-tabs button").forEach(b=>b.onclick=()=>{A.cwTab=b.dataset.t;vClientWorkspace(id)});
+  $("#cwBack").onclick=()=>{A.clientView=null;vClients();admSync()};
+  $$(".cw-tabs button").forEach(b=>b.onclick=()=>{A.cwTab=b.dataset.t;vClientWorkspace(id);admSync()});
   const v=$("#cwView"); if(v) v.onclick=()=>ownerOpen(c,false);
   const rp=$("#cwResetPin"); if(rp) rp.onclick=()=>resetPin(c);
   const ed=$("#cwEdit"); if(ed) ed.onclick=()=>ownerOpen(c,true);
@@ -2561,7 +2581,7 @@ async function isOwnerLink(){
    3. a device that has signed in before (nw_owner) can simply open /#admin
    The private owner link keeps working too. Signing in always needs the admin key. */
 const ownerDevice=()=>{ try{ return localStorage.getItem("nw_owner")==="1"; }catch(e){ return false; } };
-function openOwner(){ if(document.body.classList.contains("is-admin")) return; history.replaceState(null,"","#admin"); scrollTo(0,0); initAdmin(); }
+function openOwner(){ if(document.body.classList.contains("is-admin")) return; history.pushState(null,"","#admin"); scrollTo(0,0); initAdmin(); }
 async function ownerRoute(){ return (location.hash.startsWith("#admin")&&ownerDevice()) || (location.hash.length>16&&await isOwnerLink()); }
 addEventListener("hashchange",async()=>{ if(!document.body.classList.contains("is-admin")&&await ownerRoute()) initAdmin(); });
 (async()=>{ if(await ownerRoute()) initAdmin(); else initSite(); })();
