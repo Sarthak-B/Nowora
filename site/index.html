@@ -282,6 +282,8 @@ form.lead.nudge{animation:formNudge 1.2s var(--ease) 2;border-radius:18px}
 .sigline b{font-weight:800;letter-spacing:.08em;color:var(--ink)}
 .sigline i{width:7px;height:7px;border-radius:50%;background:var(--marigold)}
 .logo .mark{width:32px;height:32px;flex:none}
+.b4{color:#E8932A;font-weight:inherit}
+.side .b4{color:#F2A33A}
 .open-link{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-size:15px;font-weight:600;color:var(--pine);border-bottom:1.5px solid var(--marigold);padding-bottom:2px;transition:gap .3s var(--ease)}
 .show:hover .open-link{gap:10px}
 
@@ -940,7 +942,7 @@ window.fitFrames=function(root){
   <div class="progress" id="progress" aria-hidden="true"></div>
   <header class="nav" id="nav">
     <div class="wrap">
-      <a href="#top" class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1D4A3D"/><path d="M7.5 21.5V10.5l7 7.5 7-7.5v11" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="25" r="2.6" fill="#F2A33A"/></svg><span class="wordmark" data-brand></span></a>
+      <a href="#top" class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="m4g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#245A4A"/><stop offset="1" stop-color="#163B31"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#m4g)"/><path d="M8 24V9l8 9" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 18l8-9v15M16 18h10.5" fill="none" stroke="#F2A33A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark" data-brand></span></a>
       <nav class="nav-links">
         <a href="#work">Work</a>
         <a href="#services">Services</a>
@@ -964,7 +966,7 @@ window.fitFrames=function(root){
       <div class="hero-grid">
         <div>
           <h1 class="headline"><span class="ln"><span>Your <span class="rot" id="rot"><span class="w">portfolio</span></span></span></span><span class="ln"><span>website, live</span></span><span class="ln"><span>in a week.</span></span></h1>
-          <p class="sigline"><b>make4yu</b><i></i>Make it happen.</p>
+          <p class="sigline"><b>make<span class="b4">4</span>yu</b><i></i>Make it happen.</p>
           <p class="lede">Websites, landing pages and sales funnels for students, creators and small businesses. Two free samples first. Then 50% to start — and the other 50% only if you love the finished site.</p>
           <div class="ctas">
             <a class="btn btn-wa magnet" href="#contact" data-form="2 free samples" data-track="package_click:Free samples">
@@ -1366,7 +1368,8 @@ function cover(p,i){
    PUBLIC SITE
    ================================================================ */
 function initSite(){
-  $$("[data-brand]").forEach(e=>e.textContent=CFG.brand);
+function brand4(b){ return esc(b).replace("4",'<b class="b4">4</b>'); }
+  $$("[data-brand]").forEach(e=>e.innerHTML=brand4(CFG.brand));
   $$("[data-city]").forEach(e=>e.textContent=CFG.city);
   $$("[data-availability]").forEach(e=>e.textContent=CFG.availability);
   $$("[data-response]").forEach(e=>e.textContent=CFG.responseNote);
@@ -1604,7 +1607,7 @@ function initAdmin(){
 }
 function renderLogin(){
   $("#admin").innerHTML=`<div class="login"><form class="login-card" id="loginForm">
-    <span class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1D4A3D"/><path d="M7.5 21.5V10.5l7 7.5 7-7.5v11" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="25" r="2.6" fill="#F2A33A"/></svg>${esc(CFG.brand)}</span>
+    <span class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="m4g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#245A4A"/><stop offset="1" stop-color="#163B31"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#m4g)"/><path d="M8 24V9l8 9" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 18l8-9v15M16 18h10.5" fill="none" stroke="#F2A33A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>${brand4(CFG.brand)}</span>
     <h1>Studio dashboard</h1>
     <p>${API.live?"Enter the admin key you set in your Apps Script.":"No backend is connected yet, so this opens with sample data stored in this browser."}</p>
     ${API.live?`<div class="field"><label for="ak">Admin key</label><input id="ak" type="password" required autocomplete="current-password"></div>`:""}
@@ -1661,7 +1664,7 @@ function shell(){
   const counts={leads:A.data.Leads.filter(l=>l.status==="new").length};
   $("#admin").innerHTML=`<div class="app">
     <aside class="side">
-      <span class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#1D4A3D"/><path d="M7.5 21.5V10.5l7 7.5 7-7.5v11" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="25" r="2.6" fill="#F2A33A"/></svg>${esc(CFG.brand)}</span>
+      <span class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="m4g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#245A4A"/><stop offset="1" stop-color="#163B31"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#m4g)"/><path d="M8 24V9l8 9" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 18l8-9v15M16 18h10.5" fill="none" stroke="#F2A33A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>${brand4(CFG.brand)}</span>
       <nav id="tabs">${TABS.map(([k,l,ic])=>`<button data-tab="${k}">${ic}${l}${k==="leads"?`<span class="count" id="leadCount" ${counts.leads?"":"hidden"}>${counts.leads}</span>`:""}${k==="requests"?`<span class="count" id="reqCount" hidden></span>`:""}</button>`).join("")}</nav>
       <div class="side-foot"><a href="#" id="viewSite">View website</a><a href="#" id="logout">Lock dashboard</a></div>
     </aside>

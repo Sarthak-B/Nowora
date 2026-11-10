@@ -30,6 +30,7 @@ svg{display:block}
 ::selection{background:var(--neon);color:#0A0F0D}
 .wrap{width:min(1240px,100% - 40px);margin:0 auto}
 .mark{width:30px;height:30px;flex:none}
+.b4{color:var(--neon);font-weight:inherit}
 .num{font-variant-numeric:tabular-nums}
 
 /* ---------- ambient background ---------- */
@@ -483,7 +484,7 @@ var I = {
   pen:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   print:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg>'
 };
-var MARK = '<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#C6FF3D"/><path d="M7.5 21.5V10.5l7 7.5 7-7.5v11" fill="none" stroke="#0A0F0D" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="25" r="2.6" fill="#0A0F0D"/></svg>';
+var MARK = '<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="m4d" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1C2723"/><stop offset="1" stop-color="#0A0F0D"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#m4d)"/><rect x=".5" y=".5" width="31" height="31" rx="8.5" fill="none" stroke="#fff" stroke-opacity=".14"/><path d="M8 24V9l8 9" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 18l8-9v15M16 18h10.5" fill="none" stroke="#C6FF3D" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
 var esc=function(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})};
@@ -559,12 +560,12 @@ function tally(rows,key,onlyPv){var o={};rows.forEach(function(e){if(onlyPv&&e.t
 function login(err){
   clearInterval(S.poll);
   if(!KEY){
-    $("#app").innerHTML='<div class="login"><div class="login-card"><span class="brand">'+MARK+'make4yu<small>Client dashboard</small></span><h1>This link is <em>incomplete.</em></h1><p>Open the full link make4yu sent you on WhatsApp, or ask for a new one.</p><a class="btn" style="margin-top:24px;width:100%" href="'+waLink("Hi make4yu, I need my dashboard link again.")+'" target="_blank" rel="noopener">'+I.wa+'Ask on WhatsApp</a></div></div>';
+    $("#app").innerHTML='<div class="login"><div class="login-card"><span class="brand">'+MARK+'<span>make<b class="b4">4</b>yu</span><small>Client dashboard</small></span><h1>This link is <em>incomplete.</em></h1><p>Open the full link make4yu sent you on WhatsApp, or ask for a new one.</p><a class="btn" style="margin-top:24px;width:100%" href="'+waLink("Hi make4yu, I need my dashboard link again.")+'" target="_blank" rel="noopener">'+I.wa+'Ask on WhatsApp</a></div></div>';
     return;
   }
   var who=DEMO?"Brew &amp; Bloom Café":esc(prettyKey(KEY));
   $("#app").innerHTML='<div class="login"><form class="login-card" id="lf" autocomplete="off">'+
-    '<span class="brand">'+MARK+'make4yu<small>Client dashboard</small></span>'+
+    '<span class="brand">'+MARK+'<span>make<b class="b4">4</b>yu</span><small>Client dashboard</small></span>'+
     '<span class="for"><i class="dot up"></i>'+who+'</span>'+
     '<h1>Your website, <em>live.</em></h1><p>Enter the 6-digit PIN make4yu sent you with this link.</p>'+
     '<div class="pin" id="pin">'+[0,1,2,3,4,5].map(function(i){return '<input inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="PIN digit '+(i+1)+'">'}).join("")+'</div>'+
@@ -587,7 +588,7 @@ function login(err){
   };
 }
 function loading(){
-  $("#app").innerHTML='<div class="login"><div class="login-card"><span class="brand">'+MARK+'make4yu<small>Client dashboard</small></span><h1>Loading your <em>numbers…</em></h1><div class="loader"><div class="sk"></div><div class="sk" style="width:70%"></div><div class="sk" style="width:85%"></div></div></div></div>';
+  $("#app").innerHTML='<div class="login"><div class="login-card"><span class="brand">'+MARK+'<span>make<b class="b4">4</b>yu</span><small>Client dashboard</small></span><h1>Loading your <em>numbers…</em></h1><div class="loader"><div class="sk"></div><div class="sk" style="width:70%"></div><div class="sk" style="width:85%"></div></div></div></div>';
 }
 
 /* ---------- dashboard ---------- */
@@ -612,7 +613,7 @@ function render(){
   var up=c.uptime==="up",down=c.uptime==="down";
 
   $("#app").innerHTML=(c.owner?'<div class="ownerbar">Owner view — this is exactly what '+esc(c.business)+' sees. You can edit their website from here.</div>':'')+(DEMO?'<div class="demo">Demo dashboard with sample numbers — your clients see their own website here.</div>':'')+
-  '<header class="top"><div class="wrap"><span class="brand">'+MARK+'make4yu<small>'+esc(c.business)+'</small></span>'+
+  '<header class="top"><div class="wrap"><span class="brand">'+MARK+'<span>make<b class="b4">4</b>yu</span><small>'+esc(c.business)+'</small></span>'+
     '<nav class="tabs" id="tabs"><span class="ind"></span><a href="#overview">Home</a><a href="#shop" hidden>Orders</a><a href="#traffic">Visitors</a><a href="#website">Website</a><a href="#database">Records</a><a href="#project">My plan</a><a href="#requests">Ask us</a></nav>'+
     '<span class="sp"></span><span class="live"><i class="dot up"></i><span>Live</span></span>'+(ro?'<span class="chip" title="'+(planOff()?'Your care plan isn\'t active, so changes are switched off. You can still see and download everything.':'You can see and download everything. Changes are switched off.')+'">'+I.eye+(planOff()?'Care plan off':'View-only')+'</span>':'')+
     (ro?'':'<button class="icon-btn" data-edit title="Edit my website">'+I.pen+'</button>')+
