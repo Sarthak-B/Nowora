@@ -975,6 +975,30 @@ body:not(.is-admin){background:#0C2218}
 #site .rv{opacity:0;transform:translateY(26px) scale(.985);filter:blur(8px);
   transition:opacity 1.1s var(--soft),transform 1.2s var(--soft),filter 1.1s var(--soft)!important;transition-delay:calc(var(--d,0) * 70ms)!important}
 #site .rv.in{opacity:1;transform:none;filter:none}
+/* ---- product tour video ---- */
+#site .tour{padding-bottom:40px}
+#site .tour-frame{position:relative;border-radius:28px;padding:1px;background:linear-gradient(140deg,rgba(230,218,193,.22),rgba(var(--violet-rgb),.65) 45%,rgba(230,218,193,.12));
+  box-shadow:0 50px 120px -50px rgba(var(--violet-rgb),.7),0 30px 60px -40px rgba(0,0,0,.8)}
+#site .tour-frame>*{background:#081A11}
+#site .tour-bar{display:flex;align-items:center;gap:8px;height:46px;padding:0 18px;border-radius:27px 27px 0 0;border-bottom:1px solid var(--line);font-size:13px;color:var(--sand-mute)}
+#site .tour-bar>i{width:11px;height:11px;border-radius:50%;background:rgba(230,218,193,.18)}
+#site .tour-bar>i:nth-child(1){background:#E58E80}#site .tour-bar>i:nth-child(2){background:#EBC26B}#site .tour-bar>i:nth-child(3){background:#86C29A}
+#site .tour-bar span{margin-left:12px;font-weight:600;color:var(--sand)}
+#site .tour-live{margin-left:auto;font-style:normal;display:inline-flex;align-items:center;gap:7px;color:var(--sand-mute)}
+#site .tour-live i{width:7px;height:7px;border-radius:50%;background:var(--violet);box-shadow:0 0 0 0 rgba(var(--violet-rgb),.6);animation:tourPulse 2.4s var(--soft) infinite}
+@keyframes tourPulse{0%{box-shadow:0 0 0 0 rgba(var(--violet-rgb),.55)}100%{box-shadow:0 0 0 10px rgba(var(--violet-rgb),0)}}
+#site .tour-video{position:relative;padding-top:56.25%;border-radius:0 0 27px 27px;overflow:hidden}
+#site .tour-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+#site .tour-sound{position:absolute;left:24px;bottom:24px;z-index:2;display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 20px;border-radius:999px;
+  background:linear-gradient(135deg,#9A6BFF,var(--violet-2));color:#fff;font-weight:600;font-size:15px;box-shadow:0 14px 34px -12px rgba(var(--violet-rgb),.9);
+  transition:transform .6s var(--soft),opacity .5s var(--soft),box-shadow .6s var(--soft)}
+#site .tour-sound svg{width:20px;height:20px}
+#site .tour-sound:hover{transform:translateY(-2px);box-shadow:0 20px 44px -12px rgba(var(--violet-rgb),1)}
+#site .tour-sound.gone{opacity:0;transform:translateY(8px);pointer-events:none}
+#site .tour-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:26px}
+#site .tour-chips span{padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:var(--glass);color:var(--sand-mute);font-size:14px;font-weight:500}
+#site .tour-chips span::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--violet);margin-right:9px;vertical-align:middle}
+@media (prefers-reduced-motion:reduce){#site .tour-live i{animation:none}}
 @keyframes formNudge{0%{box-shadow:0 0 0 0 rgba(139,92,246,.55)}100%{box-shadow:0 0 0 22px rgba(139,92,246,0)}}
 @media (prefers-reduced-motion:reduce){#site::before,#site .care::after,#site .hero::before,#site .rot .w{animation:none}#site .rv{filter:none!important}}
 </style>
@@ -1081,6 +1105,7 @@ window.fitFrames=function(root){
     <div class="wrap">
       <a href="#top" class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="m4g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2EAD9"/><stop offset="1" stop-color="#D9CBAE"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#m4g1)"/><path d="M8 24V9l8 9" fill="none" stroke="#0E261B" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 18l8-9v15M16 18h10.5" fill="none" stroke="#7C3AED" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark" data-brand></span></a>
       <nav class="nav-links">
+        <a href="#tour">Tour</a>
         <a href="#work">Work</a>
         <a href="#services">Services</a>
         <a href="#packages">Plans</a>
@@ -1142,6 +1167,26 @@ window.fitFrames=function(root){
       <span>Students</span><span>Freelancers</span><span>Home bakers</span><span>Tuition teachers</span><span>Instagram shops</span><span>Cafés</span><span>Salons</span><span>Creators</span><span>Local shops</span><span>Clinics</span>
     </div>
   </div>
+
+  <section class="block tour" id="tour" data-section="tour">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 class="reveal"><span class="mask"><span>See everything you get.</span></span><span class="mask"><span>In about two minutes.</span></span></h2>
+        <p>Free samples, your private live dashboard, editing your own website and the care plan — explained in one short tour.</p>
+      </div>
+      <div class="tour-frame">
+        <div class="tour-bar"><i></i><i></i><i></i><span>make<b class="b4">4</b>yu · product tour</span><em class="tour-live"><i></i>2 min</em></div>
+        <div class="tour-video" id="tourVideo">
+          <iframe id="tourFrame" title="make4yu product tour" data-src="https://player.vimeo.com/video/1245332857?badge=0&amp;autopause=0&amp;app_id=58479&amp;muted=1&amp;loop=1&amp;title=0&amp;byline=0&amp;portrait=0&amp;dnt=1&amp;playsinline=1" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe>
+          <button type="button" class="tour-sound" id="tourSound" data-track="tour_sound">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+            Play with sound
+          </button>
+        </div>
+      </div>
+      <div class="tour-chips"><span>Free samples</span><span>Live dashboard</span><span>Edit it yourself</span><span>Care plan</span></div>
+    </div>
+  </section>
 
   <section class="block" id="work" data-section="work">
     <div class="wrap">
@@ -2503,6 +2548,26 @@ async function delRow(sheet,id){try{await API.remove(sheet,id); A.data[sheet]=A.
 function route(){ if(location.hash.replace("#","").split("/")[0]==="admin") initAdmin(); }
 addEventListener("hashchange",()=>{ if(location.hash.startsWith("#admin")&&!document.body.classList.contains("is-admin")) initAdmin(); });
 if(location.hash.startsWith("#admin")) route(); else initSite();
+})();
+</script>
+
+<script>
+/* product tour: load the Vimeo player only when it's near the screen, play muted while visible, pause when not */
+(function(){
+  var box=document.getElementById("tourVideo"), fr=document.getElementById("tourFrame"), btn=document.getElementById("tourSound");
+  if(!box||!fr) return;
+  var reduced=matchMedia("(prefers-reduced-motion: reduce)").matches, player=null, visible=false, sound=false;
+  function api(cb){ if(window.Vimeo&&Vimeo.Player) return cb();
+    var s=document.createElement("script"); s.src="https://player.vimeo.com/api/player.js"; s.onload=cb; document.head.appendChild(s); }
+  function load(){ if(fr.src) return; fr.src=fr.getAttribute("data-src")+(reduced?"":"&autoplay=1");
+    api(function(){ try{ player=new Vimeo.Player(fr); player.on("play",function(){}); if(!visible&&!sound) player.pause().catch(function(){}); }catch(e){} }); }
+  if(!("IntersectionObserver" in window)){ load(); return; }
+  new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting) load(); }); },{rootMargin:"600px 0px"}).observe(box);
+  new IntersectionObserver(function(es){ es.forEach(function(e){ visible=e.isIntersecting; if(!player) return;
+    if(visible&&!reduced) player.play().catch(function(){}); else if(!visible) player.pause().catch(function(){}); }); },{threshold:.35}).observe(box);
+  if(btn) btn.onclick=function(){ load(); sound=true; btn.classList.add("gone");
+    var go=function(){ if(!player){ return setTimeout(go,200); } player.setCurrentTime(0).catch(function(){}); player.setMuted(false).catch(function(){}); player.setVolume(1).catch(function(){}); player.play().catch(function(){}); };
+    go(); };
 })();
 </script>
 </body>
