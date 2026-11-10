@@ -47,7 +47,7 @@ const TAB_ABOUT = {
   Prospects: 'Businesses you are reaching out to, with follow-up dates and website check results.',
   Pitches: 'Each outreach message you sent from the dashboard.',
   Portfolio: 'The websites shown in the showcase on your website.',
-  Events: 'Visits and taps on your own website (nowora.vercel.app), newest at the bottom.',
+  Events: 'Visits and taps on your own website (make4yu.vercel.app), newest at the bottom.',
   Automation: 'Every automatic job: uptime checks, website checks, preview captures, weekly review, client edits.'
 };
 // [heading, width in pixels] in the same order as SHEETS[name]
@@ -644,7 +644,7 @@ function registerSite_(site) {
         carePlan: cl.carePlan ? 'yes' : '', careFee: cl.carePlan ? String(cl.careFee || 1999) : '', renewal: '', status: live ? 'live' : 'building',
         uptime: '', responseMs: '', lastCheck: '', checklist: live ? '[0,1,2,3,4,5,6]' : '[]', notes: 'Added automatically from GitHub: ' + site.repo,
         portalKey: slug, pin: pin, trackId: site.trackId || slug, advancePaid: '', balancePaid: '', repo: site.repo });
-      const link = (prop_('SITE_URL') || 'https://nowora.vercel.app') + '/client/' + slug;
+      const link = (prop_('SITE_URL') || 'https://make4yu.vercel.app') + '/client/' + slug;
       notify_('New client site: ' + name, '🚀 ' + name + ' is now in make4yu\n\nLive site: ' + url + '\nClient dashboard: ' + link + '\nPIN: ' + pin +
         '\n\nIt is on your website showcase, and a scrolling preview is being captured.' + (site.tracking ? '' : '\nTip: add the visitor-stats snippet so their dashboard shows visits (Clients → chart icon).'));
       out.client = 'created'; out.slug = slug;
@@ -747,7 +747,7 @@ function parseMeta_(html, url, headers) {
 
   const xfo = (h['x-frame-options'] || '').toLowerCase();
   const fa = /frame-ancestors([^;]*)/i.exec(h['content-security-policy'] || '');
-  const embed = !/deny|sameorigin/.test(xfo) && !(fa && !/\*/.test(fa[1]) && !/nowora/i.test(fa[1]));
+  const embed = !/deny|sameorigin/.test(xfo) && !(fa && !/\*/.test(fa[1]) && !/nowora|make4yu/i.test(fa[1]));
 
   return {
     url: url, title: title, description: description, niche: niche, tag: tag, h1: h1.slice(0, 120),
@@ -862,7 +862,7 @@ function clientData_(c, create) {
   const ss = SpreadsheetApp.create(String(c.business || 'Client').slice(0, 80) + ' — Database');
   ss.setSpreadsheetTimeZone(TZ);
   const me = ss.getSheets()[0]; me.setName('Read me');
-  me.getRange(1, 1, 3, 1).setValues([[(c.business || 'Client') + ' — database'], ['Managed from the client dashboard: ' + (prop_('SITE_URL') || 'https://nowora.vercel.app') + '/client/' + (c.portalKey || '')],
+  me.getRange(1, 1, 3, 1).setValues([[(c.business || 'Client') + ' — database'], ['Managed from the client dashboard: ' + (prop_('SITE_URL') || 'https://make4yu.vercel.app') + '/client/' + (c.portalKey || '')],
     ['Each tab is one table. You can read or copy it here, but add, edit and delete rows from the dashboard so column settings stay in step.']]);
   me.getRange(1, 1).setFontSize(16).setFontWeight('bold'); me.setColumnWidth(1, 720);
   try { const db = clientDb_(false), from = db ? db.getId() : SpreadsheetApp.getActive().getId(), par = DriveApp.getFileById(from).getParents(); if (par.hasNext()) DriveApp.getFileById(ss.getId()).moveTo(par.next()); } catch (e) { /* stays in My Drive */ }
@@ -1164,7 +1164,7 @@ function orderEmail_(c, fields, items, val, table) {
     const addr = ['address', 'city', 'state', 'pin code', 'pincode', 'pin'].map(k => val[k]).filter(Boolean).join(', ');
     const shown = /^(order (id|no\.?)|name|customer|full name|phone|mobile|whatsapp|address|city|state|pin ?code|pin|total)$/i;
     const other = fields.filter(f => f.value && !shown.test(f.name));
-    const dash = (prop_('SITE_URL') || 'https://nowora.vercel.app') + '/client/' + (c.portalKey || '');
+    const dash = (prop_('SITE_URL') || 'https://make4yu.vercel.app') + '/client/' + (c.portalKey || '');
     const subject = '🛍️ New order' + (name ? ' from ' + name : '') + ' — ' + inr(total) + ' · ' + (c.business || 'your website');
     const row = (k, v) => v ? '<tr><td style="padding:6px 14px 6px 0;color:#6b7a74;white-space:nowrap;vertical-align:top">' + esc(k) + '</td><td style="padding:6px 0;color:#14211D">' + v + '</td></tr>' : '';
     const html =
@@ -1217,7 +1217,7 @@ function testOrderEmail() {
 function orderAlerts_(since) {
   let from = new Date(since || Date.now() - 36e5); if (isNaN(from)) from = new Date(Date.now() - 36e5);
   from = new Date(Math.max(from.getTime(), Date.now() - 2 * 864e5));
-  const site = prop_('SITE_URL') || 'https://nowora.vercel.app', out = [];
+  const site = prop_('SITE_URL') || 'https://make4yu.vercel.app', out = [];
   readAll_('Clients').forEach(c => {
     if (!c.dataSheet || c.status === 'paused' || /alerts? off/i.test(String(c.notes || ''))) return;
     let ss; try { ss = clientData_(c, false); } catch (e) { return; } if (!ss) return;
@@ -1514,7 +1514,7 @@ function refreshClientIndex_() {
   const ss = clientDb_(false); if (!ss) return;
   let idx = ss.getSheetByName('All clients'); if (!idx) idx = ss.insertSheet('All clients', 0);
   ss.setActiveSheet(idx); ss.moveActiveSheet(1);
-  const clients = readAll_('Clients'), site = prop_('SITE_URL') || 'https://nowora.vercel.app';
+  const clients = readAll_('Clients'), site = prop_('SITE_URL') || 'https://make4yu.vercel.app';
   const head = [['Client',170],['Website',210],['Status',90],['Care plan',90],['Visitors · 30 days',130],['WhatsApp & calls · 30 days',170],['Enquiries · 30 days',140],['Last activity',150],['Client dashboard',230],['Open their log',140],['Their database',150]];
   const q = n => "'" + String(n).replace(/'/g, "''") + "'";
   const rows = clients.map(c => {

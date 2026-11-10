@@ -95,7 +95,7 @@ for (const repo of repos) {
     status: cfg.status || 'live',
     showcase: cfg.showcase !== false,
     dashboard: cfg.dashboard !== false,
-    tracking: /nowora\.vercel\.app\/t\.js|\/t\.js["'][^>]*data-site/.test(html),
+    tracking: /(nowora|make4yu)\.vercel\.app\/t\.js|\/t\.js["'][^>]*data-site/.test(html),
     client: cfg.client || {}
   });
 }
