@@ -282,8 +282,8 @@ form.lead.nudge{animation:formNudge 1.2s var(--ease) 2;border-radius:18px}
 .sigline b{font-weight:800;letter-spacing:.08em;color:var(--ink)}
 .sigline i{width:7px;height:7px;border-radius:50%;background:var(--marigold)}
 .logo .mark{width:32px;height:32px;flex:none}
-.b4{color:#E8932A;font-weight:inherit}
-.side .b4{color:#F2A33A}
+.b4{color:#7C3AED;font-weight:inherit}
+.side .b4{color:#A78BFA}
 .open-link{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-size:15px;font-weight:600;color:var(--pine);border-bottom:1.5px solid var(--marigold);padding-bottom:2px;transition:gap .3s var(--ease)}
 .show:hover .open-link{gap:10px}
 
@@ -840,6 +840,99 @@ body.is-admin #admin{display:block}
   .canvas::after{right:auto;left:10px}
 }
 
+
+/* ================= make4yu palette: 60% forest green · 30% sand beige · 10% electric purple =================
+   Public site only (#site). The owner dashboard keeps its own look. */
+body:not(.is-admin){background:#0E261B}
+#site{
+  --forest:#0E261B; --forest-2:#123224; --forest-3:#18402F; --forest-deep:#0A1D14;
+  --sand:#EADFC8; --sand-card:#F2EAD9; --sand-2:#DCCFB3; --sand-mute:#BDB29A; --sand-dim:#8F8A76;
+  --violet:#8B5CF6; --violet-2:#7C3AED; --violet-soft:#E4DAFE; --violet-rgb:139,92,246;
+  --paper:var(--forest); --paper-2:var(--forest-2); --card:var(--sand-card);
+  --ink:var(--sand); --ink-2:var(--sand-mute); --ink-3:var(--sand-dim);
+  --pine:var(--violet); --pine-deep:var(--forest-3); --pine-soft:var(--violet-2);
+  --marigold:var(--violet); --marigold-deep:var(--violet-2); --marigold-soft:var(--violet-soft);
+  --sky:var(--sand-2); --ok:#5BD69A;
+  --line:rgba(234,223,200,.13); --line-2:rgba(234,223,200,.24);
+  color:var(--ink);
+  background:
+    radial-gradient(1100px 620px at 78% -8%, rgba(var(--violet-rgb),.28), transparent 62%),
+    radial-gradient(900px 700px at -10% 38%, rgba(24,64,47,.9), transparent 70%),
+    radial-gradient(rgba(234,223,200,.075) 1px, transparent 1.2px) 0 0/22px 22px,
+    var(--forest);
+}
+/* sand cards: dark-green ink inside (the 30%) */
+#site .pkg:not(.feature),#site .svc:not(.svc-ab),#site .step:not(:nth-child(4)),#site .contact,#site .work,#site .offer:not(:first-child),
+#site .avail,#site .browser,#site .frame,#site .badge,#site .tagc,#site .faq-item{
+  --ink:#14281E; --ink-2:#4D5A4F; --ink-3:#717A6C; --line:rgba(20,40,30,.13); --line-2:rgba(20,40,30,.22);
+  --paper:#E6DCC4; --paper-2:#E1D5BA; --card:var(--sand-card); --pine:#14281E; color:var(--ink)}
+#site .faq-item{background:var(--sand-card);border-radius:18px;padding:0 22px;margin-bottom:10px;border:0}
+#site .faq-item .faq-q{color:var(--ink)}
+#site .faq-item.open .faq-q i{background:var(--violet)}
+#site .faq-item.open .faq-q i::before,#site .faq-item.open .faq-q i::after{background:#fff}
+/* buttons & accents (the 10%) */
+#site .btn-wa,#site .pkg:not(.feature) .btn:hover{background:var(--violet);color:#fff;box-shadow:0 14px 34px -14px rgba(var(--violet-rgb),.9)}
+#site .btn-wa:hover{background:var(--violet-2)}
+#site .btn-ghost{color:var(--ink);border-color:var(--line-2)}
+#site .btn-ghost:hover{background:rgba(234,223,200,.08);border-color:var(--sand)}
+#site .contact .btn-ghost:hover{background:#fff}
+#site .btn-gold,#site .pkg.feature .btn{background:var(--violet);color:#fff}
+#site .pkg:not(.feature) .btn{background:#E1D5BA;color:#14281E}
+#site .nav.scrolled{background:rgba(14,38,27,.82);box-shadow:0 1px 0 var(--line)}
+#site .nav-links a{color:var(--sand)}
+#site .hero::before{background:radial-gradient(closest-side,rgba(var(--violet-rgb),.32),transparent 70%)}
+#site .rot{color:var(--violet);background:linear-gradient(transparent 80%,rgba(var(--violet-rgb),.35) 80% 94%,transparent 94%)}
+#site .strip{background:var(--forest-2)}
+#site .strip-track{color:var(--sand)}
+#site .dots i.on{background:var(--violet)}
+#site .toggle{background:var(--forest-2)}
+#site .toggle button{color:var(--sand-mute)}
+#site .toggle button.on{color:#fff}
+#site .filters button{color:var(--sand-mute)}
+#site .filters button.on{background:var(--violet);border-color:var(--violet);color:#fff}
+#site .open-link{color:var(--sand);border-bottom-color:var(--violet)}
+#site .work .open-link,#site .contact .open-link{color:#14281E}
+#site .svc>svg,#site .direct svg{color:var(--violet-2)}
+#site .tagc.sample{background:var(--violet-soft);color:#4C1D95}
+#site .badge.live{background:#D6EFE0;color:#1E6B45}
+#site .pkg .tag,#site .pill{background:var(--violet);color:#fff}
+#site .pkg.feature{background:var(--forest-3);color:var(--sand);border:1px solid rgba(var(--violet-rgb),.45);box-shadow:0 30px 70px -30px rgba(var(--violet-rgb),.55)}
+#site .pkg.free{background:var(--sand-card);border:1.5px dashed var(--violet)}
+#site .pkg.free .tag,#site .pkg.free .btn{background:#14281E!important;color:var(--sand)!important}
+#site .pkg.free .btn:hover{background:var(--violet)!important;color:#fff!important}
+#site .pkg li::before{background-color:var(--violet-soft)}
+#site .offer:first-child{background:var(--violet)}
+#site .care,#site .svc-ab,#site footer.foot{background:var(--forest-deep)}
+#site .care{border:1px solid var(--line)}
+#site .care::after{background:radial-gradient(closest-side,rgba(var(--violet-rgb),.3),transparent)}
+#site .care h2,#site .care-price,#site .care-item b,#site .svc-ab h3,#site .care-price b.sm,#site .foot-mega,#site .foot-row .wordmark{color:var(--sand)}
+#site .care,#site footer.foot,#site .svc-ab{color:var(--sand-mute)}
+#site .care-price b,#site .care-item svg{color:var(--violet)}
+#site .care-item{background:var(--forest-deep)}
+#site .care-item:hover{background:var(--forest-2)}
+#site .uptime,#site .ab{background:var(--forest-2)}
+#site .ticks i{background:#4FBF87}
+#site .svc-tag{background:rgba(var(--violet-rgb),.2);color:#C4B0FF}
+#site .ab-row b,#site .ab-row.win span{color:var(--sand)}
+#site .ab-row.win .ab-bar i{background:var(--violet)}
+#site .ab-bar i{background:#4E7F6A}
+#site .svc-ab{background:radial-gradient(520px circle at var(--mx,-400px) var(--my,-400px),rgba(var(--violet-rgb),.2),transparent 45%),var(--forest-deep)}
+#site .svc:not(.svc-ab){background:radial-gradient(420px circle at var(--mx,-300px) var(--my,-300px),rgba(var(--violet-rgb),.14),transparent 45%),var(--sand-card)}
+#site .step{background:var(--sand-card)}
+#site .step:nth-child(2){background:#E3D6BA}
+#site .step:nth-child(3){background:#D9CBAE}
+#site .step:nth-child(4){background:var(--violet);color:#fff}
+#site .foot-mega em,#site .foot-links a:hover,#site .sigline i,#site .kicker i,#site .strip-track span::after{color:var(--violet);background:var(--violet)}
+#site .foot-mega em{background:none}
+#site .contact{background:var(--sand-card)}
+#site .field input,#site .field select,#site .field textarea{background:#fff;border-color:rgba(20,40,30,.18)}
+#site .field input:focus,#site .field select:focus,#site .field textarea:focus{border-color:var(--violet)}
+#site .seg input:checked+span{background:var(--violet);border-color:var(--violet);color:#fff}
+#site .form-done{background:var(--violet-soft)}
+#site .progress{background:var(--violet)}
+#site :focus-visible{outline-color:var(--violet)}
+#site .b4{color:var(--violet)}
+@keyframes formNudge{0%{box-shadow:0 0 0 0 rgba(139,92,246,.55)}100%{box-shadow:0 0 0 22px rgba(139,92,246,0)}}
 </style>
 <style>
 .fitframe{position:relative;overflow:hidden;height:100%;background:linear-gradient(110deg,#EEF1EC 30%,#F7F8F5 50%,#EEF1EC 70%);background-size:300% 100%;animation:ffShimmer 1.6s linear infinite}
@@ -942,7 +1035,7 @@ window.fitFrames=function(root){
   <div class="progress" id="progress" aria-hidden="true"></div>
   <header class="nav" id="nav">
     <div class="wrap">
-      <a href="#top" class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="m4g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#245A4A"/><stop offset="1" stop-color="#163B31"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#m4g1)"/><path d="M8 24V9l8 9" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 18l8-9v15M16 18h10.5" fill="none" stroke="#F2A33A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark" data-brand></span></a>
+      <a href="#top" class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="m4g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2EAD9"/><stop offset="1" stop-color="#D9CBAE"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#m4g1)"/><path d="M8 24V9l8 9" fill="none" stroke="#0E261B" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 18l8-9v15M16 18h10.5" fill="none" stroke="#7C3AED" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark" data-brand></span></a>
       <nav class="nav-links">
         <a href="#work">Work</a>
         <a href="#services">Services</a>
@@ -1607,7 +1700,7 @@ function initAdmin(){
 }
 function renderLogin(){
   $("#admin").innerHTML=`<div class="login"><form class="login-card" id="loginForm">
-    <span class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="m4g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#245A4A"/><stop offset="1" stop-color="#163B31"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#m4g2)"/><path d="M8 24V9l8 9" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 18l8-9v15M16 18h10.5" fill="none" stroke="#F2A33A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${brand4(CFG.brand)}</span></span>
+    <span class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="m4g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2EAD9"/><stop offset="1" stop-color="#D9CBAE"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#m4g2)"/><path d="M8 24V9l8 9" fill="none" stroke="#0E261B" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 18l8-9v15M16 18h10.5" fill="none" stroke="#7C3AED" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${brand4(CFG.brand)}</span></span>
     <h1>Studio dashboard</h1>
     <p>${API.live?"Enter the admin key you set in your Apps Script.":"No backend is connected yet, so this opens with sample data stored in this browser."}</p>
     ${API.live?`<div class="field"><label for="ak">Admin key</label><input id="ak" type="password" required autocomplete="current-password"></div>`:""}
@@ -1664,7 +1757,7 @@ function shell(){
   const counts={leads:A.data.Leads.filter(l=>l.status==="new").length};
   $("#admin").innerHTML=`<div class="app">
     <aside class="side">
-      <span class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="m4g3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#245A4A"/><stop offset="1" stop-color="#163B31"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#m4g3)"/><path d="M8 24V9l8 9" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 18l8-9v15M16 18h10.5" fill="none" stroke="#F2A33A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${brand4(CFG.brand)}</span></span>
+      <span class="logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="m4g3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2EAD9"/><stop offset="1" stop-color="#D9CBAE"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#m4g3)"/><path d="M8 24V9l8 9" fill="none" stroke="#0E261B" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 18l8-9v15M16 18h10.5" fill="none" stroke="#7C3AED" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${brand4(CFG.brand)}</span></span>
       <nav id="tabs">${TABS.map(([k,l,ic])=>`<button data-tab="${k}">${ic}${l}${k==="leads"?`<span class="count" id="leadCount" ${counts.leads?"":"hidden"}>${counts.leads}</span>`:""}${k==="requests"?`<span class="count" id="reqCount" hidden></span>`:""}</button>`).join("")}</nav>
       <div class="side-foot"><a href="#" id="viewSite">View website</a><a href="#" id="logout">Lock dashboard</a></div>
     </aside>
