@@ -1339,7 +1339,7 @@ window.fitFrames=function(root){
       <div class="foot-row">
         <span class="wordmark" data-brand></span>
         <span>Websites, funnels and growth for people who are just getting started.</span>
-        <span class="foot-links"><a href="#contact" data-form="2 free samples" data-channel="whatsapp" data-track="cta_whatsapp:footer">WhatsApp</a><a href="#contact" data-form="2 free samples" data-channel="email" data-track="cta_email:footer">Email</a><a href="#admin">Owner login</a></span>
+        <span class="foot-links"><a href="#contact" data-form="2 free samples" data-channel="whatsapp" data-track="cta_whatsapp:footer">WhatsApp</a><a href="#contact" data-form="2 free samples" data-channel="email" data-track="cta_email:footer">Email</a></span>
       </div>
       <div class="foot-row small"><span>© <span id="yr"></span> <span data-brand></span>. All rights reserved.</span><span data-response></span></div>
     </div>
@@ -1350,7 +1350,7 @@ window.fitFrames=function(root){
   </a>
 </div>
 
-<!-- ======================= OWNER DASHBOARD (open with #admin) ======================= -->
+<!-- ======================= OWNER DASHBOARD (opens only from the private owner link) ======================= -->
 <div id="admin"></div>
 <div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -2545,9 +2545,18 @@ async function saveRow(sheet,row){
 async function delRow(sheet,id){try{await API.remove(sheet,id); A.data[sheet]=A.data[sheet].filter(x=>x.id!==id); toast("Deleted")}catch(x){toast("Couldn't delete: "+x.message,true)}}
 
 /* ---------------- router ---------------- */
-function route(){ if(location.hash.replace("#","").split("/")[0]==="admin") initAdmin(); }
-addEventListener("hashchange",()=>{ if(location.hash.startsWith("#admin")&&!document.body.classList.contains("is-admin")) initAdmin(); });
-if(location.hash.startsWith("#admin")) route(); else initSite();
+/* The owner dashboard is not linked anywhere and #admin no longer opens it. It opens only from the private
+   owner link: the page compares a SHA-256 fingerprint of the link's #code with OWNER_LINK_SHA, so the link
+   itself is never in this (public) code. Signing in still needs the admin key. */
+const OWNER_LINK_SHA="79933537555430167affbfa3e82fb8e26e3eda7ca2bbff41f55cb1e014c05bbb";
+async function isOwnerLink(){
+  const code=decodeURIComponent(location.hash.replace("#","").split("/")[0]||"");
+  if(code.length<16||!(window.crypto&&crypto.subtle)) return false;
+  try{ const d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(code));
+    return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join("")===OWNER_LINK_SHA; }catch(e){ return false; }
+}
+addEventListener("hashchange",async()=>{ if(!document.body.classList.contains("is-admin")&&await isOwnerLink()) initAdmin(); });
+(async()=>{ if(location.hash.length>16&&await isOwnerLink()) initAdmin(); else initSite(); })();
 })();
 </script>
 
