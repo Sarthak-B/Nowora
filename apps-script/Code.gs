@@ -540,7 +540,7 @@ function readFile_(repo, path, ref) {
 function siteFile_(c) {
   const repo = siteRepo_(c);
   let cfg = {};
-  try { const nj = readFile_(repo, 'nowora.json'); if (nj) cfg = JSON.parse(nj.text); } catch (e) {}
+  try { const nj = readFile_(repo, 'make4yu.json') || readFile_(repo, 'nowora.json'); if (nj) cfg = JSON.parse(nj.text); } catch (e) {}
   const tries = [cfg.entry, 'index.html', 'public/index.html', 'site/index.html', 'docs/index.html', 'src/index.html'].filter(Boolean);
   for (let i = 0; i < tries.length; i++) { const f = readFile_(repo, tries[i]); if (f) return { repo: repo, cfg: cfg, file: f }; }
   throw new Error("Couldn't find the website's index.html in its repository");
@@ -597,7 +597,7 @@ function siteRestore_(c, sha) {
 /* ============================== auto-registered client sites ============================== */
 
 /**
- * Called by the GitHub "discover" workflow for every repo that has a nowora.json file.
+ * Called by the GitHub "discover" workflow for every repo that has a make4yu.json file.
  * Adds (or updates) the showcase card and the client dashboard, and emails you the new
  * dashboard link + PIN the first time a site appears. Never overwrites what you edited.
  */
