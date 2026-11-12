@@ -2146,7 +2146,7 @@ function vClients(soft){
   </div>
   <div class="panel" id="storeSales" style="margin-top:18px"${storeSales.none?' hidden':''}>${storeSalesHtml()}</div>
   <div class="cl-bar"><div class="cl-filters">${[["all","All"],["live","Live"],["building","Building"],["care","Care plan"],["attention","Needs attention"]].map(([k,l])=>`<button data-f="${k}" class="${f===k?"on":""}">${l}</button>`).join("")}</div><input class="cl-search" id="clQ" placeholder="Search clients" value="${esc(A.clientQ||"")}"></div>
-  ${list.length?`<div class="cl-grid">${list.map(c=>clientCard(c,openReq(c))).join("")}</div>`:`<div class="panel"><div class="empty">${C.length?"No clients match.":"No clients yet. Sites in your GitHub with a nowora.json file appear here automatically, or add one by hand."}</div></div>`}`;
+  ${list.length?`<div class="cl-grid">${list.map(c=>clientCard(c,openReq(c))).join("")}</div>`:`<div class="panel"><div class="empty">${C.length?"No clients match.":"No clients yet. Sites in your GitHub with a make4yu.json file appear here automatically, or add one by hand."}</div></div>`}`;
   $$(".cl-filters button").forEach(b=>b.onclick=()=>{A.clientFilter=b.dataset.f;vClients()});
   const qi=$("#clQ"); qi.oninput=()=>{A.clientQ=qi.value;const pos=qi.selectionStart;vClients();const n=$("#clQ");n.focus();n.setSelectionRange(pos,pos)};
   $$(".cl-card").forEach(el=>el.onclick=e=>{const c=C.find(x=>x.id===el.dataset.id);
@@ -2215,7 +2215,7 @@ function clientCard(c,open){
 }
 async function removeClient(c){
   const reqs=(A.data.Requests||[]).filter(r=>r.clientId===c.id).length;
-  if(!confirm("Remove "+(c.business||"this client")+"?\n\n"+(c.portalKey?"Their dashboard link stops working. ":"")+(reqs?reqs+" change request"+(reqs>1?"s stay":" stays")+" in Requests. ":"")+"Their live website is not touched."+(c.repo?"\n\nNote: the repo "+c.repo+" still has a nowora.json file, so discovery may add it back. Delete that file from the repo to stop it.":""))) return;
+  if(!confirm("Remove "+(c.business||"this client")+"?\n\n"+(c.portalKey?"Their dashboard link stops working. ":"")+(reqs?reqs+" change request"+(reqs>1?"s stay":" stays")+" in Requests. ":"")+"Their live website is not touched."+(c.repo?"\n\nNote: the repo "+c.repo+" still has a make4yu.json file, so discovery may add it back. Delete that file from the repo to stop it.":""))) return;
   await delRow("Clients",c.id); if(A.clientView===c.id) A.clientView=null; vClients();
 }
 function ownerOpen(c,edit){

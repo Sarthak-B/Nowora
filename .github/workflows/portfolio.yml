@@ -1,7 +1,7 @@
 name: Client sites & previews
 
 # Every 10 minutes:
-#  1. finds your GitHub repos that have a nowora.json file and adds any new ones to make4yu
+#  1. finds your GitHub repos that have a make4yu.json file and adds any new ones to make4yu
 #     (showcase card + client dashboard, link and PIN emailed to you)
 #  2. captures a scrolling preview for every showcase link that needs one
 # Takes a few seconds when there's nothing new. Add a DISCOVER_TOKEN secret to include private repos.

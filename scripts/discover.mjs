@@ -1,5 +1,5 @@
 // Client-site discovery.
-// Looks through your GitHub repos for a `make4yu.json` file at the root (older `nowora.json` still works). Every repo that has one
+// Looks through your GitHub repos for a `make4yu.json` file at the root. Every repo that has one
 // is a client website: it's added to the make4yu showcase and gets a client dashboard
 // (link + PIN emailed to you) the first time it's seen. Nothing to add by hand.
 //
@@ -48,15 +48,10 @@ async function listRepos() {
 }
 
 async function readConfig(repo) {
-  // Prefer make4yu.json; fall back to the old nowora.json so existing client repos keep working.
-  const ref = encodeURIComponent(repo.default_branch);
-  for (const name of ['make4yu.json', 'nowora.json']) {
-    const f = await gh(`/repos/${repo.full_name}/contents/${name}?ref=${ref}`);
-    if (!f || !f.content) continue;
-    try { return JSON.parse(Buffer.from(f.content, 'base64').toString('utf8')); }
-    catch { throw new Error(`${name} in ${repo.name} is not valid JSON`); }
-  }
-  return null;
+  const f = await gh(`/repos/${repo.full_name}/contents/make4yu.json?ref=${encodeURIComponent(repo.default_branch)}`);
+  if (!f || !f.content) return null;
+  try { return JSON.parse(Buffer.from(f.content, 'base64').toString('utf8')); }
+  catch { throw new Error(`make4yu.json in ${repo.name} is not valid JSON`); }
 }
 
 async function fetchPage(url) {
