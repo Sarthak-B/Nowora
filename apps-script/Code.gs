@@ -1188,11 +1188,11 @@ function orderEmail_(c, fields, items, val, table) {
   } catch (e) { console.error('order email: ' + e); }
 }
 /* ============================== sending email as make4yu ==============================
- * Emails go out FROM noworasites@gmail.com (script property MAIL_FROM to change it) when that address is a
+ * Emails go out FROM make4yu@gmail.com (script property MAIL_FROM to change it) when that address is a
  * "Send mail as" alias of the Gmail account that owns this script (Gmail → Settings → Accounts and Import →
  * Send mail as → Add another email address). Until the alias is added, they go from this account with
- * Reply-To set to noworasites@gmail.com, so replies still land in the make4yu inbox. */
-function mailFrom_() { return prop_('MAIL_FROM') || 'noworasites@gmail.com'; }
+ * Reply-To set to make4yu@gmail.com, so replies still land in the make4yu inbox. */
+function mailFrom_() { return prop_('MAIL_FROM') || 'make4yu@gmail.com'; }
 function sendMail_(o) {
   const from = mailFrom_();
   try {
