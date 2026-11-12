@@ -700,6 +700,9 @@
     function siteBase(u) { u = String(u || ""); return u ? u.replace(/\/+$/, "") + "/" : ""; }
     const abs = src => /^(data:|blob:|https?:)/.test(src) ? src : S.base + String(src).replace(/^\.?\//, "");
     const cats = () => S.data.categories;
+    /* Collections are special sections a website declares in its catalogue (for example a "Winter section").
+       A product put in one shows up in that section of the website, and stays in the main shop too. */
+    const colls = () => Array.isArray(S.data.collections) ? S.data.collections.filter(c => c && c.id) : [];
     function drawProducts() {
       const el = $("#shProducts"); if (!el) return;
       if (o.readOnly) { el.innerHTML = ""; return; }
@@ -716,7 +719,7 @@
         '<div class="sh-grid"><button class="sh-add" id="shAdd">' + ic("plus", 28) + "Add a product<small style=\"font-weight:500;color:var(--ink-3)\">Upload photos — colours are detected for you</small></button>" +
         list.map(p => { const c0 = p.colours[0] || { photos: [] }, img = c0.photos[0], catName = (cats().find(c => c.id === p.category) || {}).name || p.category;
           return '<button class="sh-card" data-id="' + esc(p.id) + '"><span class="im">' + (img ? '<img src="' + esc(abs(img)) + '" alt="" loading="lazy">' : "") +
-            (p._new ? '<span class="sh-tag new">Not published</span>' : p._changed ? '<span class="sh-tag new">Edited</span>' : p.hidden ? '<span class="sh-tag">Hidden</span>' : productLeft(p) === 0 ? '<span class="sh-tag out">Sold out</span>' : "") + '</span><span class="bd"><b>' + esc(p.name) + '</b><span class="meta">' + esc(catName) + " · " + (tracked(p) ? '<span class="' + (productLeft(p) <= 3 ? "sh-low" : "") + '">' + productLeft(p) + " in stock</span>" : esc((p.sizes || []).join(" "))) + '</span><span class="pr">' + inr(p.price) +
+            (p._new ? '<span class="sh-tag new">Not published</span>' : p._changed ? '<span class="sh-tag new">Edited</span>' : p.hidden ? '<span class="sh-tag">Hidden</span>' : productLeft(p) === 0 ? '<span class="sh-tag out">Sold out</span>' : "") + '</span><span class="bd"><b>' + esc(p.name) + '</b><span class="meta">' + esc(catName) + (p.collection && colls().some(c => c.id === p.collection) ? " · " + esc((colls().find(c => c.id === p.collection) || {}).name || p.collection) : "") + " · " + (tracked(p) ? '<span class="' + (productLeft(p) <= 3 ? "sh-low" : "") + '">' + productLeft(p) + " in stock</span>" : esc((p.sizes || []).join(" "))) + '</span><span class="pr">' + inr(p.price) +
             '</span><span class="sh-dots">' + p.colours.map(c => '<i title="' + esc(c.name + (stockOf(p, c) === 0 ? " — sold out" : stockOf(p, c) !== null ? " — " + stockOf(p, c) + " left" : "")) + '" style="background:' + esc(c.hex) + (stockOf(p, c) === 0 ? ";opacity:.25" : "") + '"></i>').join("") + "</span></span></button>"; }).join("") +
         "</div>" + (newPhotos ? '<p class="sh-hint">' + newPhotos + " new photo" + (newPhotos === 1 ? "" : "s") + " will upload when you publish (up to " + MAX_NEW_PHOTOS + " at a time).</p>" : '<p class="sh-hint">Changes stay here until you press Publish. Your website updates about a minute later.</p>') + "</div>";
       $("#shCats").onclick = e => { const b = e.target.closest("button"); if (!b) return; S.cat = b.dataset.c; drawProducts(); };
@@ -767,6 +770,7 @@
           "</div><div>" +
             '<div class="sh-f"><label for="pName">Name</label><input type="text" id="pName" maxlength="70" placeholder="e.g. Oversized black hoodie" value="' + esc(p.name) + '"></div>' +
             '<div class="sh-f"><label for="pCat">Category ' + (g && !st.catTouched ? '<span class="sh-auto">' + ic("wand", 12) + " Auto from the name</span>" : "") + '</label><select id="pCat"><option value="">Choose…</option>' + catOpts.map(c => '<option value="' + esc(c.id) + '"' + (c.id === p.category ? " selected" : "") + ">" + esc(c.name) + (cats().some(x => x.id === c.id) ? "" : " (new)") + "</option>").join("") + '<option value="__new">+ New category…</option></select></div>' +
+            (colls().length ? '<div class="sh-f"><label for="pColl">Show in</label><select id="pColl"><option value="">Main shop only</option>' + colls().map(c => '<option value="' + esc(c.id) + '"' + (c.id === p.collection ? " selected" : "") + ">" + esc(c.name || c.id) + " (also stays in the shop)</option>").join("") + '</select><p class="sh-hint" style="margin-top:6px">Pick a section to feature this product there on your website.</p></div>' : "") +
             '<div class="sh-f"><label for="pPrice">Price (₹)</label><input type="number" id="pPrice" min="1" step="1" inputmode="numeric" placeholder="e.g. 1299" value="' + esc(p.price) + '"></div>' +
             '<div class="sh-f"><span class="lbl">Sizes</span><div class="sh-sizes" id="pSizes">' + allSizes().map(s => '<button type="button" class="' + (p.sizes.indexOf(s) >= 0 ? "on" : "") + '">' + esc(s) + "</button>").join("") + '<input id="pSizeAdd" placeholder="+ other size" maxlength="12"></div>' +
               '<div class="sh-presets">Quick pick: ' + PRESETS.map((x, i) => '<button type="button" data-preset="' + i + '">' + x[0] + "</button>").join(" · ") + ' · <button type="button" data-preset="none">None</button></div></div>' +
@@ -790,6 +794,7 @@
         p.desc = $m("#pDesc").value.trim();
         p.details = $m("#pDet").value.split("\n").map(x => x.trim()).filter(Boolean).slice(0, 8);
         p.hidden = !$m("#pShow").checked;
+        const coll = $m("#pColl"); if (coll) { if (coll.value) p.collection = coll.value; else delete p.collection; }
         const tr = $m("#pTrack"); if (tr) st.track = tr.checked;
         m.querySelectorAll("[data-st]").forEach(inp => { const c = p.colours[+inp.dataset.st]; if (!c) return; c.stock = c.stock || {}; const v = inp.value.trim(); c.stock[inp.dataset.z] = v === "" ? 0 : Math.max(0, Math.min(9999, Math.round(Number(v) || 0))); });
         if (st.track) p.colours.forEach(c => { c.stock = c.stock || {}; p.sizes.forEach(z => { if (c.stock[z] === undefined) c.stock[z] = 0; }); Object.keys(c.stock).forEach(z => { if (p.sizes.indexOf(z) < 0) delete c.stock[z]; }); });
@@ -890,10 +895,12 @@
         if (Array.isArray(live.dispatched)) data.dispatched = live.dispatched;
         const usedCats = new Set(S.data.products.map(p => p.category));
         data.categories = S.data.categories.filter(c => usedCats.has(c.id)).map(c => ({ id: c.id, name: c.name }));
+        if (colls().length) data.collections = colls().map(c => ({ id: c.id, name: c.name || c.id }));
         let k = 0;
         data.products = S.data.products.map(p => {
           const out = { id: p.id, name: p.name, category: p.category, price: p.price, sizes: p.sizes, weight: p.weight || WEIGHT[p.category] || 0.5 };
           if (p.hidden) out.hidden = true;
+          if (p.collection && colls().some(c => c.id === p.collection)) out.collection = p.collection;
           if (p.desc) out.desc = p.desc;
           if (p.details && p.details.length) out.details = p.details;
           out.colours = p.colours.map(c => ({ name: c.name, hex: c.hex, family: c.family, ...(c.stock ? { stock: liveStock(p, c) } : {}), photos: c.photos.map(ph => {
