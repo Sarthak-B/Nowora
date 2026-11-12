@@ -1,9 +1,9 @@
 // Client-site discovery.
-// Looks through your GitHub repos for a `nowora.json` file at the root. Every repo that has one
+// Looks through your GitHub repos for a `make4yu.json` file at the root (older `nowora.json` still works). Every repo that has one
 // is a client website: it's added to the make4yu showcase and gets a client dashboard
 // (link + PIN emailed to you) the first time it's seen. Nothing to add by hand.
 //
-// nowora.json (only "name" is needed; everything else is optional):
+// make4yu.json (only "name" is needed; everything else is optional):
 //   {
 //     "name": "52 Alive",
 //     "niche": "Streetwear brand",
@@ -48,10 +48,15 @@ async function listRepos() {
 }
 
 async function readConfig(repo) {
-  const f = await gh(`/repos/${repo.full_name}/contents/nowora.json?ref=${encodeURIComponent(repo.default_branch)}`);
-  if (!f || !f.content) return null;
-  try { return JSON.parse(Buffer.from(f.content, 'base64').toString('utf8')); }
-  catch { throw new Error(`nowora.json in ${repo.name} is not valid JSON`); }
+  // Prefer make4yu.json; fall back to the old nowora.json so existing client repos keep working.
+  const ref = encodeURIComponent(repo.default_branch);
+  for (const name of ['make4yu.json', 'nowora.json']) {
+    const f = await gh(`/repos/${repo.full_name}/contents/${name}?ref=${ref}`);
+    if (!f || !f.content) continue;
+    try { return JSON.parse(Buffer.from(f.content, 'base64').toString('utf8')); }
+    catch { throw new Error(`${name} in ${repo.name} is not valid JSON`); }
+  }
+  return null;
 }
 
 async function fetchPage(url) {
@@ -80,7 +85,7 @@ for (const repo of repos) {
   try { cfg = await readConfig(repo); } catch (e) { problems.push(e.message); continue; }
   if (!cfg) continue;
   const page = await resolveUrl(repo, cfg);
-  if (!page) { problems.push(`${repo.name}: no live website found yet (add "url" to nowora.json)`); continue; }
+  if (!page) { problems.push(`${repo.name}: no live website found yet (add "url" to make4yu.json)`); continue; }
   const html = page.html;
   const title = meta(html, /<meta[^>]+property=["']og:site_name["'][^>]+content=["']([^"']+)/i) || meta(html, /<title[^>]*>([^<]+)/i).split(/\s+[|—–·-]\s+/)[0];
   found.push({
@@ -100,7 +105,7 @@ for (const repo of repos) {
   });
 }
 
-console.log(`Scanned ${repos.length} repo(s); ${found.length} client site(s) with nowora.json.`);
+console.log(`Scanned ${repos.length} repo(s); ${found.length} client site(s) with make4yu.json.`);
 problems.forEach(p => console.log('! ' + p));
 if (DRY_RUN || !ENDPOINT || !KEY) {
   if (!DRY_RUN) console.log('Not configured (STUDIO_ENDPOINT / STUDIO_AUTOMATION_KEY missing) — nothing registered.');
