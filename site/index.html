@@ -319,6 +319,15 @@ form.lead.nudge{animation:formNudge 1.2s var(--ease) 2;border-radius:18px}
 .show-meta p{font-size:15px;color:var(--ink-2);margin-top:8px;max-width:540px}
 .tagc{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--paper-2);color:var(--pine)}
 .tagc.sample{background:var(--marigold-soft);color:#7A4A0C}
+.work-group{margin-bottom:56px}
+.work-group:last-child{margin-bottom:0}
+.work-group.empty{display:none}
+.group-head{display:flex;align-items:baseline;gap:14px;margin:0 0 26px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.group-head h3{font-family:var(--display);font-size:26px;letter-spacing:-.02em;line-height:1}
+.group-head .gh-sub{font-size:14.5px;color:var(--ink-2)}
+.group-head .gh-count{margin-left:auto;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--ink-3)}
+.group-head .gh-live{display:inline-flex;align-items:center;gap:8px}
+.group-head .gh-live::before{content:"";width:8px;height:8px;border-radius:50%;background:#22B573;box-shadow:0 0 0 0 rgba(34,181,115,.5);animation:ldPulse 1.8s infinite}
 
 /* services */
 .svc-grid{display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:18px}
@@ -896,6 +905,8 @@ body:not(.is-admin){background:#0C2218}
 #site .step .num{color:var(--sand);opacity:.12}
 #site .step .when,#site .badge,#site .tagc{background:rgba(230,218,193,.08);color:var(--sand-mute)}
 #site .tagc.sample{background:rgba(var(--violet-rgb),.16);color:var(--violet-3)}
+#site .group-head{border-color:rgba(230,218,193,.14)}
+#site .group-head .gh-sub{color:var(--sand-mute)}
 #site .badge.live{background:rgba(91,214,154,.14);color:#7FE0B0}
 
 /* ---- the 10%: purple accents ---- */
@@ -1196,12 +1207,21 @@ window.fitFrames=function(root){
     <div class="wrap">
       <div class="sec-head">
         <h2 class="reveal"><span class="mask"><span>Website showcase.</span></span><span class="mask"><span>Click any build to explore it.</span></span></h2>
-        <p>Real sites we designed and built — food, fashion, finance, property and product launches. Each one opens in a new tab as a full, working website you can scroll and click through.</p>
+        <p>Two kinds of work, kept separate so you know exactly what you’re looking at: <b>live client websites</b> that are online right now, and <b>sample builds</b> we designed to show the range. Each one opens as a full, working website you can scroll and click through.</p>
       </div>
       <div class="filters" id="filters">
         <button class="on" data-f="all">All work</button><button data-f="Local business">Local business</button><button data-f="Shops & brands">Shops &amp; brands</button><button data-f="Sales funnels">Sales funnels</button><button data-f="Services">Services</button>
       </div>
-      <div class="show-grid" id="workGrid"></div>
+      <div id="workGrid">
+        <div class="work-group" id="liveGroup">
+          <div class="group-head"><h3>Live client websites</h3><span class="gh-sub">Real businesses, online right now.</span><span class="gh-count gh-live" id="liveCount"></span></div>
+          <div class="show-grid" id="liveGrid"></div>
+        </div>
+        <div class="work-group" id="sampleGroup">
+          <div class="group-head"><h3>Sample builds</h3><span class="gh-sub">Concept sites we designed to show what’s possible.</span><span class="gh-count" id="sampleCount"></span></div>
+          <div class="show-grid" id="sampleGrid"></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1674,7 +1694,10 @@ function initSite(){
       <div class="show-meta"><div class="row">${(o.tags||[]).map(t=>`<span class="tagc">${esc(t)}</span>`).join("")}<span class="tagc sample">${o.sample?"Sample build":"Client work"}</span></div>
         <h3>${esc(o.title)}</h3><p>${esc(o.desc)}</p>${o.href?`<span class="open-link">${o.live&&o.embed?"Explore the live website":"Open the full website"} ${ICON.ext.replace('<svg','<svg width="16" height="16"')}</span>`:""}</div></a>`;
   const base=SHOWCASE.map(o=>Object.assign({},o,{img:THUMBS[o.slug],href:"work/"+o.slug+".html",sample:true}));
-  const drawWork=extra=>{$("#workGrid").innerHTML=base.concat(extra).map(card).join(""); applyFilter(); afterWork.forEach(f=>f());};
+  const drawWork=extra=>{const all=base.concat(extra);
+    $("#liveGrid").innerHTML=all.filter(o=>!o.sample).map(card).join("");
+    $("#sampleGrid").innerHTML=all.filter(o=>o.sample).map(card).join("");
+    applyFilter(); afterWork.forEach(f=>f());};
   /* showcase motion: reveal, tilt toward the pointer (desktop), auto-play previews when in view (phones) */
   afterWork.push(()=>addReveal(".show"));
   if(!reduced && matchMedia("(hover:hover)").matches){
@@ -1688,8 +1711,16 @@ function initSite(){
     afterWork.push(()=>$$(".show").forEach(x=>pio.observe(x)));
   }
   let filt="all";
-  const applyFilter=()=>$$(".show").forEach(el=>{const on=filt==="all"||el.dataset.tags.split("|").includes(filt);
-    if(on){el.classList.remove("gone");requestAnimationFrame(()=>el.classList.remove("out"))}else{el.classList.add("out");setTimeout(()=>{if(el.classList.contains("out"))el.classList.add("gone")},380)}});
+  const applyFilter=()=>{
+    $$(".show").forEach(el=>{const on=filt==="all"||el.dataset.tags.split("|").includes(filt);
+      if(on){el.classList.remove("gone");requestAnimationFrame(()=>el.classList.remove("out"))}else{el.classList.add("out");setTimeout(()=>{if(el.classList.contains("out"))el.classList.add("gone")},380)}});
+    [["liveGroup","liveCount"," live"],["sampleGroup","sampleCount",""]].forEach(([gid,cid,suf])=>{
+      const g=document.getElementById(gid); if(!g) return;
+      const vis=$$(".show",g).filter(el=>filt==="all"||el.dataset.tags.split("|").includes(filt)).length;
+      g.classList.toggle("empty",vis===0);
+      const c=document.getElementById(cid); if(c) c.textContent=vis?vis+suf:"";
+    });
+  };
   $("#filters").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;filt=b.dataset.f;$$("#filters button").forEach(x=>x.classList.toggle("on",x===b));applyFilter();track("work_click","Filter: "+filt)});
   drawWork([]);
   $("#workGrid").addEventListener("click",e=>{const a=e.target.closest(".show[data-live]"); if(!a||e.metaKey||e.ctrlKey||e.shiftKey||e.button) return; e.preventDefault(); openLive(a.dataset.live,a.dataset.title);});
