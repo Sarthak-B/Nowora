@@ -356,6 +356,7 @@ form.lead.nudge{animation:formNudge 1.2s var(--ease) 2;border-radius:18px}
 /* plans + offers */
 .pkg .tag{position:static;align-self:flex-start;margin-bottom:16px}
 .pkg .tag.ghost{visibility:hidden}
+.pkg .pkg-note{display:block;margin-top:6px;font-size:13px;opacity:.6}
 .pkg .was{display:block;margin:22px 0 -18px;font-family:var(--display);font-size:20px;font-weight:500;opacity:.55;text-decoration-thickness:2px}
 .pkg-for{min-height:72px}
 .pkg .btn{white-space:nowrap;font-size:15px;padding:0 16px}
@@ -1503,7 +1504,7 @@ function seed(){
 /* ---------------- shared content ---------------- */
 const PKGS=[
   {name:"Free samples",free:true,tag:"Start here",for:"Not sure yet? See it before you spend anything.",inr:"₹0",usd:"$0",sub:"no payment, no card",items:["2 homepage samples made for you","No advance, no obligation","Like one? We build it","Ready in 3–4 days"],cta:"Claim 2 free samples",form:true},
-  {name:"Starter",tag:"50% off your first site",for:"Students, freelancers, creators and first-time sellers.",inr:"₹4,999",was:"₹9,999",usd:"$75",wasUsd:"$149",sub:"one-time · first website only, then ₹9,999",items:["1–3 pages: portfolio, résumé, menu or shop","Hosted on a make4yu subdomain, no domain to buy","Looks great on every phone","WhatsApp button and contact form","Basic SEO and Google Maps","Live within a week"],cta:"Get Starter"},
+  {name:"Starter",tag:"50% off your first-ever website",for:"Students, freelancers, creators and first-time sellers.",inr:"₹4,999",was:"₹9,999",usd:"$75",wasUsd:"$149",sub:"one-time · your first-ever website",note:"Already running a business? Starter is ₹9,999.",noteUsd:"Already running a business? Starter is $149.",items:["1–3 pages: portfolio, résumé, menu or shop","Hosted on a make4yu subdomain, no domain to buy","Looks great on every phone","WhatsApp button and contact form","Basic SEO and Google Maps","Live within a week"],cta:"Get Starter"},
   {name:"Business",feature:true,tag:"Most picked",for:"Small businesses that take bookings or orders.",inr:"₹34,999",usd:"$549",sub:"one-time",inc:"Starter",items:["Your own .com or .in domain, first year included","5–8 pages instead of 1–3","WhatsApp orders or online booking","Analytics dashboard","Offers or blog page","Google Business Profile setup","Live in 10–14 days"],cta:"Get Business"},
   {name:"Growth",for:"Brands ready to sell online and scale.",inr:"₹49,999+",usd:"$799+",sub:"one-time",inc:"Business",items:["Landing pages and a sales funnel","Payments and checkout","Split testing on headline and offer","Conversion tracking","Help writing your copy"],cta:"Get Growth"}
 ];
@@ -1664,7 +1665,7 @@ function initSite(){
     <article class="pkg${p.feature?" feature":""}${p.free?" free":""}">
       <span class="tag${p.tag?"":" ghost"}">${p.tag||"—"}</span>
       <h3>${p.name}</h3><p class="pkg-for">${p.for}</p>
-      ${p.was?`<s class="was">${cur==="INR"?p.was:p.wasUsd}</s>`:""}<div class="price"><span>${cur==="INR"?p.inr:p.usd}</span></div><small style="opacity:.7;font-size:14px">${p.sub}</small>
+      ${p.was?`<s class="was">${cur==="INR"?p.was:p.wasUsd}</s>`:""}<div class="price"><span>${cur==="INR"?p.inr:p.usd}</span></div><small style="opacity:.7;font-size:14px">${p.sub}</small>${p.note?`<small class="pkg-note">${cur==="INR"?p.note:p.noteUsd}</small>`:""}
       ${p.inc?`<p class="pkg-inc">Everything in ${p.inc}, plus:</p>`:""}<ul${p.inc?' class="plus"':''}>${p.items.map(i=>`<li>${i}</li>`).join("")}</ul>
       <a class="btn" href="#contact" data-form="${p.free?"2 free samples":p.name}" data-track="package_click:${p.name}">${p.cta}</a>
     </article>`).join("");};
