@@ -576,7 +576,8 @@
     async function store(action, extra) {
       const r = await fetch(S.base + "api/store", { method: "POST", headers: { "Content-Type": "application/json", "x-store-key": getKey() }, body: JSON.stringify(Object.assign({ action: action }, extra || {})) });
       const d = await r.json().catch(() => null);
-      if (!d) { const e = new Error("Shipping isn't set up on this website"); e.missing = true; throw e; }
+      // A non-JSON reply from a server error (e.g. Cloudflare's own 502 page) is a temporary problem, not "no shipping here"
+      if (!d) { const e = new Error(r.status >= 500 ? "The courier service isn't answering right now" : "Shipping isn't set up on this website"); e.missing = r.status === 404; throw e; }
       if (d.badKey) setKey("");
       if (!r.ok || d.ok === false) { const e = new Error(d.error || "Something went wrong"); e.badKey = !!d.badKey; throw e; }
       return d;
