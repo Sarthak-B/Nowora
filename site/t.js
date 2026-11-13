@@ -100,7 +100,7 @@
   }
   function capture(form) {
     var mode = (form.getAttribute('data-make4yu') || '').toLowerCase();
-    if (mode === 'off' || mode === 'manual') return mode === 'manual';
+    if (mode === 'off' || mode === 'manual') return mode === 'manual' ? 'manual' : false;
     if (form.checkValidity && !form.checkValidity()) return false;
     var out = {}, filled = 0;
     [].forEach.call(form.elements, function (el) {
@@ -119,14 +119,15 @@
       if (v && type !== 'checkbox') filled++;
     });
     if (filled < 1) return false;
-    record(tableFor(form), out);
-    return true;
+    return { table: tableFor(form), out: out };
   }
   document.addEventListener('submit', function (e) {
-    var f = e.target;
+    var f = e.target, got = false;
+    // read the fields now: many sites clear the form straight after sending it
+    try { got = capture(f); } catch (x) {}
     setTimeout(function () {                       // let the site's own checks run first
-      var saved = false; try { saved = capture(f); } catch (x) {}
-      if (!saved && (f.getAttribute('data-make4yu') || '') !== 'manual') send('lead_submit', (f.getAttribute('name') || f.id || 'form').slice(0, 60));
+      if (got && got !== 'manual') { try { record(got.table, got.out); return; } catch (x) {} }
+      if (got !== 'manual') send('lead_submit', (f.getAttribute('name') || f.id || 'form').slice(0, 60));
     }, 0);
   }, true);
 

@@ -1,0 +1,9 @@
+# Local testing only (npx wrangler pages dev). The live project gets its D1 binding in the Cloudflare dashboard.
+name = "make4yu"
+pages_build_output_dir = "../site"
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "make4yu"
+database_id = "local-test"
