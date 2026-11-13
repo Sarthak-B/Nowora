@@ -1,6 +1,6 @@
 /* make4yu visitor stats for client websites.
    Add before </body> on the client's site:
-     <script src="https://make4yu.vercel.app/t.js" data-site="TRACKING_ID" defer></script>
+     <script src="https://make4yu.com/t.js" data-site="TRACKING_ID" defer></script>
    Counts page views, WhatsApp / call / email taps and form submissions. No cookies, no personal data. */
 (function () {
   var me = document.currentScript || document.querySelector('script[data-site][src*="t.js"]');
