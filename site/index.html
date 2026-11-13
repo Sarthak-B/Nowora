@@ -6,9 +6,9 @@
 <link rel="preload" as="image" href="work/thumbs/restaurant.jpg" fetchpriority="high">
 <title>make4yu — Make it happen</title>
 <meta name="description" content="make4yu builds websites, landing pages and online stores for students, creators and small businesses. Two free samples before you pay.">
-<link rel="icon" href="favicon.ico" sizes="32x32">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%229%22%20fill%3D%22%231D4A3D%22%2F%3E%3Cpath%20d%3D%22M10%2022V10l12%2012V10%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2225%22%20cy%3D%2225%22%20r%3D%222.6%22%20fill%3D%22%23F2A33A%22%2F%3E%3C%2Fsvg%3E">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#1D4A3D">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1407,7 +1407,7 @@ function toast(msg,err){const t=$("#toast");t.textContent=msg;t.className="toast
    Demo mode  -> localStorage in this browser (seeded with sample data)            */
 const SHEETS = ["Events","Leads","Prospects","Clients","Portfolio","Pitches","Automation","Requests"];
 const LOCAL = {
-  key:"nowora_demo_v1",
+  key:"make4yu_demo_v1",
   load(){let d; try{d=JSON.parse(localStorage.getItem(this.key)||"null")}catch(e){} if(!d){d=seed();this.save(d)} SHEETS.forEach(s=>d[s]=d[s]||[]); return d;},
   save(d){try{localStorage.setItem(this.key,JSON.stringify(d))}catch(e){toast("Browser storage is full — remove a few portfolio images.",true)}}
 };
@@ -2164,11 +2164,11 @@ function vClients(soft){
 
 /* ---------- client store sales: read from each client's Orders table (same data as their Shop tab) ---------- */
 A.sales=A.sales||{};
-function loadShopJs(){ if(window.NoworaShop) return Promise.resolve(); return loadShopJs.p=loadShopJs.p||new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="/client/shop.js?v=1";sc.onload=res;sc.onerror=()=>{loadShopJs.p=null;rej(new Error("Couldn't load the sales module"))};document.head.appendChild(sc);}); }
+function loadShopJs(){ if(window.Make4yuShop) return Promise.resolve(); return loadShopJs.p=loadShopJs.p||new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="/client/shop.js?v=10";sc.onload=res;sc.onerror=()=>{loadShopJs.p=null;rej(new Error("Couldn't load the sales module"))};document.head.appendChild(sc);}); }
 async function salesFor(c){
   const call=(a,x)=>API.post(Object.assign({action:a,key:ADMIN.key,portalKey:c.portalKey},x||{}));
-  const o=await NoworaShop.loadSales(call);
-  A.sales[c.id]=o?{m30:NoworaShop.summarise(o,30),all:NoworaShop.summarise(o,0),at:Date.now()}:{none:true,at:Date.now()};
+  const o=await Make4yuShop.loadSales(call);
+  A.sales[c.id]=o?{m30:Make4yuShop.summarise(o,30),all:Make4yuShop.summarise(o,0),at:Date.now()}:{none:true,at:Date.now()};
   return A.sales[c.id];
 }
 async function storeSales(force){

@@ -747,7 +747,7 @@ function parseMeta_(html, url, headers) {
 
   const xfo = (h['x-frame-options'] || '').toLowerCase();
   const fa = /frame-ancestors([^;]*)/i.exec(h['content-security-policy'] || '');
-  const embed = !/deny|sameorigin/.test(xfo) && !(fa && !/\*/.test(fa[1]) && !/nowora|make4yu/i.test(fa[1]));
+  const embed = !/deny|sameorigin/.test(xfo) && !(fa && !/\*/.test(fa[1]) && !/make4yu/i.test(fa[1]));
 
   return {
     url: url, title: title, description: description, niche: niche, tag: tag, h1: h1.slice(0, 120),
@@ -874,8 +874,9 @@ function clientData_(c, create) {
 function dbTables_(ss) {
   const out = [];
   ss.getSheets().forEach(sh => {
-    const m = sh.getDeveloperMetadata().find(x => x.getKey() === 'nowora_table');
+    const m = sh.getDeveloperMetadata().find(x => /_table$/.test(x.getKey()));
     if (!m) return;
+    if (m.getKey() !== 'make4yu_table') try { m.setKey('make4yu_table'); } catch (e) {}   // tables made before the rename
     let meta; try { meta = JSON.parse(m.getValue()); } catch (e) { return; }
     out.push({ sh: sh, md: m, id: meta.id, cols: meta.cols || [] });
   });
@@ -982,7 +983,7 @@ function dbSaveTable_(c, table) {
       if (dbTables_(ss).length >= DB_LIMIT.tables) throw new Error('You can have up to ' + DB_LIMIT.tables + ' tables');
       const sh = ss.insertSheet(dbTabName_(ss, table.name));
       const id = randomKey_(10);
-      sh.addDeveloperMetadata('nowora_table', JSON.stringify({ id: id, cols: cols }));
+      sh.addDeveloperMetadata('make4yu_table', JSON.stringify({ id: id, cols: cols }));
       dbStyle_(sh, cols);
       bumpRev_(c);
       return { ok: true, table: { id: id, name: sh.getName(), cols: cols, count: 0 } };
@@ -1058,7 +1059,7 @@ function dbRev_(c) {
 }
 
 /* ---------- forms on client websites → the client's database, in real time ---------- */
-// t.js sends every form a visitor submits (and sites can call nowora.record() for carts).
+// t.js sends every form a visitor submits (and sites can call make4yu.record() for carts).
 // The row lands in a table named after the form ("Orders", "Bookings", "Website enquiries"…);
 // the table and any new columns are created automatically. Order items reduce stock.
 function clientForm_(b) {
@@ -1243,9 +1244,9 @@ function dbEnsure_(ss, name, want) {
     if (all.length >= DB_LIMIT.tables) throw new Error('This site has too many tables');
     const cols = dbCleanCols_(want.slice(0, DB_LIMIT.columns));
     const sh = ss.insertSheet(dbTabName_(ss, name)), id = randomKey_(10);
-    sh.addDeveloperMetadata('nowora_table', JSON.stringify({ id: id, cols: cols }));
+    sh.addDeveloperMetadata('make4yu_table', JSON.stringify({ id: id, cols: cols }));
     dbStyle_(sh, cols);
-    return { sh: sh, id: id, cols: cols, md: sh.getDeveloperMetadata().find(m => m.getKey() === 'nowora_table') };
+    return { sh: sh, id: id, cols: cols, md: sh.getDeveloperMetadata().find(m => m.getKey() === 'make4yu_table') };
   }
   const have = t.cols.map(c => c.name.toLowerCase());
   const add = want.filter(w => have.indexOf(w.name.toLowerCase()) < 0).slice(0, Math.max(0, DB_LIMIT.columns - t.cols.length));
@@ -1457,12 +1458,13 @@ function clientTab_(c, create) {
   const ss = clientDb_(create); if (!ss) return null;
   const cache = CacheService.getScriptCache(), ck = 'ctab_' + c.id, sid = cache.get(ck);
   if (sid) { const hit = ss.getSheets().find(s => String(s.getSheetId()) === sid); if (hit) return hit; }
-  const found = ss.createDeveloperMetadataFinder().withKey('nowora_client').withValue(String(c.id))
-    .withLocationType(SpreadsheetApp.DeveloperMetadataLocationType.SHEET).find();
+  const found = ss.createDeveloperMetadataFinder().withValue(String(c.id))
+    .withLocationType(SpreadsheetApp.DeveloperMetadataLocationType.SHEET).find().filter(m => /_client$/.test(m.getKey()));
+  found.forEach(m => { if (m.getKey() !== 'make4yu_client') try { m.setKey('make4yu_client'); } catch (e) {} });   // tabs made before the rename
   let sh = found.length ? found[0].getLocation().getSheet() : null;
   if (!sh && create) {
     sh = ss.insertSheet(tabName_(c.business, ss), ss.getSheets().length);
-    sh.addDeveloperMetadata('nowora_client', String(c.id));
+    sh.addDeveloperMetadata('make4yu_client', String(c.id));
     styleTab_(sh, '_client', CLIENT_LOG);
     sh.setTabColor('#1D4A3D');
     sh.getRange(1, 1).setNote((c.business || 'Client') + ' — every visit, tap, enquiry, change request and website edit, newest at the bottom.' + (c.site ? '\nWebsite: ' + c.site : ''));
@@ -1505,7 +1507,7 @@ function retireClientTab_(c) {
   sh.setName(tabName_(String(c.business || 'Client').slice(0, 70) + ' (removed)', ss, sh));
   sh.setTabColor('#B5483A');
   ss.setActiveSheet(sh); ss.moveActiveSheet(ss.getSheets().length);
-  sh.getDeveloperMetadata().forEach(m => { if (m.getKey() === 'nowora_client') m.setKey('nowora_removed'); });
+  sh.getDeveloperMetadata().forEach(m => { if (/_client$/.test(m.getKey())) m.setKey('make4yu_removed'); });
   CacheService.getScriptCache().remove('ctab_' + c.id);
   refreshClientIndex_();
 }

@@ -13,7 +13,9 @@ import { api } from "./lib.mjs";
 import { pathToFileURL } from "node:url";
 
 const MODE = process.argv[2] || "alerts";
-const PROFILE = "wa-profile", STATE = PROFILE + "/nowora-alerts.json";
+const PROFILE = "wa-profile", STATE = PROFILE + "/make4yu-alerts.json";
+// Keep the sent-alerts history when the state file was saved under the studio's earlier name.
+try { if (!fs.existsSync(STATE)) { const old = fs.readdirSync(PROFILE).find(f => /-alerts\.json$/.test(f)); if (old) fs.renameSync(PROFILE + "/" + old, STATE); } } catch {}
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 const log = m => console.log("[whatsapp] " + m);
 const fail = m => { console.error("::error::" + m); process.exitCode = 1; };

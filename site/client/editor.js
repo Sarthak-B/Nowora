@@ -834,5 +834,5 @@ function close() {
   if (H.onClose) H.onClose();
 }
 
-window.NoworaEditor = { open: open, _E: function () { return E; }, _final: function () { return finalHtml(); } };
+window.Make4yuEditor = { open: open, _E: function () { return E; }, _final: function () { return finalHtml(); } };
 })();

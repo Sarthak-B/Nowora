@@ -6,7 +6,7 @@ import {test} from 'node:test';
 const ctx = {window: {}, document: {}, console};
 vm.createContext(ctx);
 vm.runInContext(readFileSync(new URL('../site/client/shop.js', import.meta.url), 'utf8'), ctx);
-const S = ctx.window.NoworaShop;
+const S = ctx.window.Make4yuShop;
 
 const cols = [{id: 'a', name: 'Name', type: 'text'}, {id: 'b', name: 'Items', type: 'longtext'}, {id: 'c', name: 'Total', type: 'money'}, {id: 'd', name: 'Status', type: 'choice'}];
 const day = n => new Date(Date.now() - n * 864e5).toISOString();
@@ -40,7 +40,7 @@ test('categories come from the product name, most specific kind first', () => {
 });
 
 test('the catalogue block is read and rewritten in place, safely escaped', () => {
-  const html = '<body><script type="application/json" id="nowora-products">{"categories":[],"products":[]}</script><p>rest</p></body>';
+  const html = '<body><script type="application/json" id="make4yu-products">{"categories":[],"products":[]}</script><p>rest</p></body>';
   const data = {categories: [{id: 'x', name: 'X'}], products: [{id: 'p', name: 'Tee </script><b>', price: 5, colours: []}]};
   const out = S.writeCatalogue(html, data);
   assert.ok(out.endsWith('<p>rest</p></body>'));

@@ -1378,7 +1378,7 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
         <p class="eyebrow">Book a consultation</p>
         <h2 id="book-title">Start with a free 30-minute call</h2>
         <p>Tell us what's on your mind. You'll review your details on the next page before anything is sent.</p>
-        <form class="start-card" id="start-form" action="#" data-nowora-wa method="get">
+        <form class="start-card" id="start-form" action="#" data-make4yu-wa method="get">
           <fieldset>
             <legend>I'm interested in</legend>
             <div class="chips">
@@ -1815,7 +1815,7 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
 
 <script>
 /* make4yu sample: enquiries from this demo form go to make4yu on WhatsApp */
-document.querySelectorAll('form[data-nowora-wa]').forEach(function(f){
+document.querySelectorAll('form[data-make4yu-wa]').forEach(function(f){
   f.addEventListener('submit',function(e){ e.preventDefault(); e.stopImmediatePropagation();
     var d=new FormData(f), parts=[];
     d.forEach(function(v,k){ if(v && typeof v==='string') parts.push(k+': '+v); });

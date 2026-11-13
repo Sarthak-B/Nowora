@@ -19,7 +19,7 @@ function run(fail) {
     }})}
   };
   vm.createContext(context); vm.runInContext(code,context);
-  let error; try {context.backupNowora();} catch (e) {error=e;}
+  let error; try {context.backupMake4yu();} catch (e) {error=e;}
   return {props,copied,released,manifest,error};
 }
 test('backs up each distinct source and records complete manifest', () => {
@@ -33,7 +33,7 @@ test('partial failure retains successful copies and never reports success', () =
 });
 test('restore fingerprint detects changes in values and table metadata', () => {
   const context={};vm.createContext(context);vm.runInContext(code,context);
-  const book=(value,meta)=>({getSheets:()=>[{getName:()=> 'Orders',getDataRange:()=>({getValues:()=>[[value]],getFormulas:()=>[['']],getNumberFormats:()=>[['@']]}),getDeveloperMetadata:()=>[{getKey:()=> 'nowora_table',getValue:()=>meta}]}]});
+  const book=(value,meta)=>({getSheets:()=>[{getName:()=> 'Orders',getDataRange:()=>({getValues:()=>[[value]],getFormulas:()=>[['']],getNumberFormats:()=>[['@']]}),getDeveloperMetadata:()=>[{getKey:()=> 'make4yu_table',getValue:()=>meta}]}]});
   const original=context.backupFingerprint_(book('saved','schema'));
   assert.equal(original,context.backupFingerprint_(book('saved','schema')));
   assert.notEqual(original,context.backupFingerprint_(book('changed','schema')));

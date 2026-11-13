@@ -6,7 +6,7 @@
   var me = document.currentScript || document.querySelector('script[data-site][src*="t.js"]');
   var cid = me && me.getAttribute('data-site');
   var END = (me && me.getAttribute('data-endpoint')) || 'https://script.google.com/macros/s/AKfycbwOFH3fuNlDOsOV59HZ4bmSYCZcsHMcNMtwc_qPF8Dn_-cOUN_NJVPoCoXx7WqWwWB7/exec';
-  if (!cid || window.__noworaT) return; window.__noworaT = 1;
+  if (!cid || window.__make4yuT) return; window.__make4yuT = 1;
   if (/^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname) && !me.hasAttribute('data-test')) return;
   // Not a real visitor: automated browsers (uptime checks, preview captures), bots, the make4yu editor's
   // preview (srcdoc) and copies of the site shown inside frames (showcase cards, dashboards, live viewer).
@@ -58,11 +58,11 @@
   }, true);
   /* ---------- forms → the client's make4yu database, in real time ----------
      Every form a visitor sends is saved as a row (one table per kind of form).
-     <form data-nowora-table="Bookings">   choose the table
-     <form data-nowora="off">              don't save this form
-     <form data-nowora="manual">           the site calls nowora.record() itself (carts)
-     <input data-nowora="off">             leave one field out
-     nowora.record("Orders", {Name: "…", Phone: "…"}, [{name:"Hoodie", size:"M", colour:"Black", qty:1, price:1299}])  */
+     <form data-make4yu-table="Bookings">   choose the table
+     <form data-make4yu="off">              don't save this form
+     <form data-make4yu="manual">           the site calls make4yu.record() itself (carts)
+     <input data-make4yu="off">             leave one field out
+     make4yu.record("Orders", {Name: "…", Phone: "…"}, [{name:"Hoodie", size:"M", colour:"Black", qty:1, price:1299}])  */
   var SKIP = /pass(word)?|card|cvv|cvc|otp|aadhaar|aadhar|pan ?(no|number)|account ?(no|number)|ifsc|upi ?pin/i;
   function post(body) {
     var b = JSON.stringify(body);
@@ -91,7 +91,7 @@
     return t.slice(0, 60);
   }
   function tableFor(form) {
-    var w = form.getAttribute('data-nowora-table'); if (w) return w;
+    var w = form.getAttribute('data-make4yu-table'); if (w) return w;
     var k = ((form.getAttribute('name') || '') + ' ' + (form.id || '') + ' ' + (form.className || '') + ' ' + (form.getAttribute('action') || '')).toLowerCase();
     if (/order|checkout|cart|buy/.test(k)) return 'Orders';
     if (/book|appoint|reserv|slot/.test(k)) return 'Bookings';
@@ -99,14 +99,14 @@
     return 'Website enquiries';
   }
   function capture(form) {
-    var mode = (form.getAttribute('data-nowora') || '').toLowerCase();
+    var mode = (form.getAttribute('data-make4yu') || '').toLowerCase();
     if (mode === 'off' || mode === 'manual') return mode === 'manual';
     if (form.checkValidity && !form.checkValidity()) return false;
     var out = {}, filled = 0;
     [].forEach.call(form.elements, function (el) {
       if (!el.name && !el.id) return;
       var type = (el.type || '').toLowerCase();
-      if (/^(submit|button|reset|image|file|hidden|password)$/.test(type) || el.disabled || el.getAttribute('data-nowora') === 'off') return;
+      if (/^(submit|button|reset|image|file|hidden|password)$/.test(type) || el.disabled || el.getAttribute('data-make4yu') === 'off') return;
       var label = labelFor(el, form); if (!label || SKIP.test(label) || SKIP.test(el.name || '')) return;
       if (type === 'radio') { if (!el.checked) return; var g = el.closest('fieldset'); var gl = g && g.querySelector('legend'); label = (gl && gl.textContent.trim()) || (el.name.replace(/_/g, ' ').replace(/^\w/, function (m) { return m.toUpperCase(); })); }
       var v;
@@ -126,11 +126,11 @@
     var f = e.target;
     setTimeout(function () {                       // let the site's own checks run first
       var saved = false; try { saved = capture(f); } catch (x) {}
-      if (!saved && (f.getAttribute('data-nowora') || '') !== 'manual') send('lead_submit', (f.getAttribute('name') || f.id || 'form').slice(0, 60));
+      if (!saved && (f.getAttribute('data-make4yu') || '') !== 'manual') send('lead_submit', (f.getAttribute('name') || f.id || 'form').slice(0, 60));
     }, 0);
   }, true);
 
-  window.nowora = { record: record };
-  var q = window.noworaQ || []; window.noworaQ = { push: function (a) { try { record.apply(null, a); } catch (e) {} } };
-  for (var i = 0; i < q.length; i++) window.noworaQ.push(q[i]);
+  window.make4yu = { record: record };
+  var q = window.make4yuQ || []; window.make4yuQ = { push: function (a) { try { record.apply(null, a); } catch (e) {} } };
+  for (var i = 0; i < q.length; i++) window.make4yuQ.push(q[i]);
 })();
