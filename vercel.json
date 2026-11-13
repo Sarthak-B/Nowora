@@ -12,25 +12,47 @@
   ],
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/",
       "has": [
         {
           "type": "host",
           "value": "make4yu.vercel.app"
         }
       ],
-      "destination": "https://make4yu.com/:path*",
+      "destination": "https://make4yu.com/",
       "permanent": true
     },
     {
-      "source": "/:path*",
+      "source": "/:path+",
+      "has": [
+        {
+          "type": "host",
+          "value": "make4yu.vercel.app"
+        }
+      ],
+      "destination": "https://make4yu.com/:path+",
+      "permanent": true
+    },
+    {
+      "source": "/",
       "has": [
         {
           "type": "host",
           "value": "nowora.vercel.app"
         }
       ],
-      "destination": "https://make4yu.com/:path*",
+      "destination": "https://make4yu.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path+",
+      "has": [
+        {
+          "type": "host",
+          "value": "nowora.vercel.app"
+        }
+      ],
+      "destination": "https://make4yu.com/:path+",
       "permanent": true
     }
   ]
