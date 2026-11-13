@@ -1,0 +1,18 @@
+# make4yu scheduled jobs (D1 trial). Deploy from the Cloudflare dashboard (Workers → Import a repository,
+# root directory "workers/cron"), or: cd workers/cron && npx wrangler deploy
+name = "make4yu-cron"
+main = "index.js"
+compatibility_date = "2026-11-01"
+
+[triggers]
+crons = ["* * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "make4yu"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+# Optional: daily backup files
+# [[r2_buckets]]
+# binding = "BACKUPS"
+# bucket_name = "make4yu-backups"
