@@ -280,6 +280,7 @@
 .sh-dirty{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--amber)}
 .sh-dirty i{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
 .sh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+@media (max-width:600px){.sh-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.sh-add{min-height:0;padding:18px 10px;font-size:14px}.sh-add small{display:none}}
 .sh-card{text-align:left;border-radius:16px;overflow:hidden;background:rgba(255,255,255,.03);border:1px solid var(--line);transition:border-color .25s,transform .35s var(--ease);display:flex;flex-direction:column}
 .sh-card:hover{border-color:rgba(var(--neon-rgb),.5);transform:translateY(-2px)}
 .sh-card .im{position:relative;aspect-ratio:4/5;background:#fff;overflow:hidden}
@@ -349,6 +350,37 @@
 .sh-foot .sp{flex:1}
 .sh-err{color:var(--rose);font-size:13.5px;font-weight:600}
 .sh-stock{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+/* product sheet v2: numbered steps, stock steppers, phone layout */
+.sh-step-h{display:flex;align-items:center;gap:9px;margin:4px 0 12px;font-family:var(--display);font-size:16px;font-weight:700;letter-spacing:-.01em}
+.sh-step-h i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:800;background:rgba(var(--neon-rgb),.14);color:var(--neon);border:1px solid rgba(var(--neon-rgb),.35)}
+.sh-step-h+.sh-f{margin-top:0}
+.sh-sep{height:1px;background:var(--line);margin:6px 0 18px}
+.sh-seg2{display:inline-grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);margin-bottom:10px}
+.sh-seg2 button{height:34px;padding:0 14px;border-radius:999px;font-weight:700;font-size:13px;color:var(--ink-2);transition:background .25s,color .25s}
+.sh-seg2 button.on{background:var(--neon);color:#0A0F0D}
+.sh-stk{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;background:rgba(255,255,255,.02)}
+.sh-stk-h{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.sh-stk-h i{width:16px;height:16px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
+.sh-stk-h b{font-size:14px}.sh-stk-h small{color:var(--ink-3);font-size:12.5px}
+.sh-stk-h .sh-stk-all{margin-left:auto;width:96px;height:32px;border-radius:9px;border:1px dashed var(--line-2);background:transparent;color:var(--ink);font-size:12.5px;padding:0 9px}
+.sh-stk-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.sh-stk-c{display:grid;gap:5px;font-size:12px;font-weight:700;color:var(--ink-2)}
+.sh-stk-c.zero .sh-num{border-color:rgba(255,120,120,.35)}
+.sh-num{display:grid;grid-template-columns:32px minmax(0,1fr) 32px;align-items:center;height:38px;border-radius:10px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);overflow:hidden}
+.sh-num button{height:100%;font-size:17px;font-weight:700;color:var(--ink-2)}
+.sh-num button:hover{background:rgba(var(--neon-rgb),.12);color:var(--neon)}
+.sh-num input{width:100%;height:100%;min-width:0;border:0;background:transparent;text-align:center;font-size:15px;font-weight:700;color:var(--ink);-moz-appearance:textfield}
+.sh-num input::-webkit-outer-spin-button,.sh-num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.sh-stk-tot{font-size:13px;color:var(--ink-2);margin:2px 0 6px}.sh-stk-tot b{color:var(--ink)}
+.sh-sheet{overflow-x:hidden}
+.sh-body>div{min-width:0}
+.sh-f input[type=text],.sh-f input[type=number],.sh-f select,.sh-f textarea{width:100%;min-width:0}
+.sh-f .sh-num input[type=number]{height:100%;border:0;border-radius:0;background:transparent;padding:0;text-align:center;font-weight:700}
+.sh-f .sh-num:focus-within{border-color:var(--neon)}
+.sh-f .sh-stk-h input.sh-stk-all{width:104px;height:32px;margin-left:auto;border-radius:9px;border:1px dashed var(--line-2);background:transparent;padding:0 10px;font-size:13px}
+@media (max-width:420px){.sh-f .sh-stk-h input.sh-stk-all{width:100%;margin-left:0}}
+.sh-foot .btn{white-space:nowrap}
+@media (max-width:760px){.sh-body{grid-template-columns:1fr;gap:6px;padding:16px}.sh-foot{flex-wrap:wrap;padding:12px 16px}.sh-foot .sh-err{order:-1;flex-basis:100%}.sh-photos{grid-template-columns:repeat(3,minmax(0,1fr))}.sh-modal{padding:8px}.sh-sheet{max-height:calc(100svh - 16px)}}
 .sh-stock table{border-collapse:collapse;width:100%;font-size:13px}
 .sh-stock th,.sh-stock td{padding:6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
 .sh-stock tbody tr:last-child th,.sh-stock tbody tr:last-child td{border-bottom:0}
@@ -445,7 +477,10 @@
     if (!document.getElementById("nw-shop-css")) { const st = document.createElement("style"); st.id = "nw-shop-css"; st.textContent = CSS; document.head.appendChild(st); }
     const root = o.root, call = o.call, toast = o.toast || (m => console.log(m));
     const S = { range: 30, orders: null, cat: "all", data: o.html ? readCatalogue(o.html) : null, dirty: 0, rev: "", base: siteBase(o.site) };
-    root.innerHTML = '<div class="sh"><div id="shBoot"></div><div id="shShip"></div><div id="shSales"></div><div id="shProducts"></div></div>';
+    // products can live in their own section of the dashboard (o.productsRoot), or under the orders
+    const proot = o.productsRoot || null;
+    root.innerHTML = '<div class="sh"><div id="shBoot"></div><div id="shShip"></div><div id="shSales"></div>' + (proot ? "" : '<div id="shProducts"></div>') + "</div>";
+    if (proot) proot.innerHTML = '<div class="sh"><div id="shProducts"></div></div>';
     S.booting = true;
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     const reduced = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } };
@@ -492,7 +527,7 @@
       S.anim = false;
       setTimeout(() => { root.querySelectorAll(".sh-in").forEach(x => x.classList.remove("sh-in")); }, 1800);
     }
-    const $ = s => root.querySelector(s);
+    const $ = s => root.querySelector(s) || (proot && proot.querySelector(s));
 
     /* ---------------- sales ---------------- */
     async function refreshSales() {
@@ -727,7 +762,7 @@
       P.forEach(p => (p.colours || []).forEach(c => { if (!c.stock) return; (p.sizes || []).forEach(z => { const n = Number(c.stock[z]) || 0; if (n <= 0) out.push(p.name + " " + c.name + " " + z); else if (n <= 2) low.push(p.name + " " + c.name + " " + z + " (" + n + ")"); }); }));
       if (out.length || low.length) $("#shCats").insertAdjacentHTML("afterend", '<span class="sh-stocknote" title="' + esc(out.concat(low).join("\n")) + '">' + (out.length ? '<b>' + out.length + " sold out</b>" : "") + (out.length && low.length ? " · " : "") + (low.length ? low.length + " running low" : "") + "</span>");
       $("#shAdd").onclick = () => editProduct(null);
-      root.querySelectorAll(".sh-card").forEach(b => b.onclick = () => editProduct(S.data.products.find(p => p.id === b.dataset.id)));
+      el.querySelectorAll(".sh-card").forEach(b => b.onclick = () => editProduct(S.data.products.find(p => p.id === b.dataset.id)));
       const pub = $("#shPub"); if (pub) pub.onclick = publish;
       const undo = $("#shUndo"); if (undo) undo.onclick = () => { if (!confirm("Discard your unpublished product changes?")) return; S.data = JSON.parse(JSON.stringify(S.saved)); S.dirty = 0; drawProducts(); };
     }
@@ -761,6 +796,7 @@
         const catOpts = cats().slice(); if (p.category && !catOpts.some(c => c.id === p.category)) catOpts.push({ id: p.category, name: (g && g.id === p.category ? g.name : p.category) });
         m.innerHTML = '<div class="sh-sheet"><div class="sh-sh"><h3>' + (isNew ? "Add a product" : "Edit product") + '</h3><span class="sp"></span><button class="sh-x" data-x aria-label="Close">' + ic("x") + "</button></div>" +
           '<div class="sh-body"><div>' +
+            '<div class="sh-step-h"><i>1</i>Photos &amp; colours</div>' +
             '<div class="sh-f"><span class="lbl">Photos</span><label class="sh-drop" id="pDrop"><input type="file" accept="image/*" multiple hidden id="pFile">' + ic("img") + "<b>Upload photos</b><span>Drop them here or tap to choose. Each photo's colour is detected, and photos of the same colour are grouped.</span></label>" +
             '<div class="sh-busy" id="pBusy">' + (st.busy ? '<span class="sh-spin"></span>' + esc(st.busy) : "") + "</div></div>" +
             '<div class="sh-colours">' + p.colours.map((c, ci) => '<div class="sh-col" data-ci="' + ci + '"><div class="sh-col-h"><i style="background:' + esc(c.hex) + '"></i><input value="' + esc(c.name) + '" data-cname aria-label="Colour name"><select data-cfam aria-label="Colour group for filters">' + FAMILIES.map(f => '<option' + (f === c.family ? " selected" : "") + ">" + f + "</option>").join("") + "</select></div>" +
@@ -768,23 +804,29 @@
                 '<span class="acts"><select data-move="' + ci + ":" + pi + '" title="Move to another colour"><option value="">Colour…</option>' + p.colours.map((x, xi) => xi === ci ? "" : '<option value="' + xi + '">' + esc(x.name) + "</option>").join("") + '<option value="new">New colour</option></select>' +
                 '<button type="button" data-main="' + ci + ":" + pi + '" title="Make this the main photo">' + ic("star") + '</button><button type="button" data-rm="' + ci + ":" + pi + '" title="Remove photo">' + ic("trash") + "</button></span></div>").join("") + "</div></div>").join("") + "</div>" +
           "</div><div>" +
+            '<div class="sh-step-h"><i>2</i>Name &amp; price</div>' +
             '<div class="sh-f"><label for="pName">Name</label><input type="text" id="pName" maxlength="70" placeholder="e.g. Oversized black hoodie" value="' + esc(p.name) + '"></div>' +
             '<div class="sh-f"><label for="pCat">Category ' + (g && !st.catTouched ? '<span class="sh-auto">' + ic("wand", 12) + " Auto from the name</span>" : "") + '</label><select id="pCat"><option value="">Choose…</option>' + catOpts.map(c => '<option value="' + esc(c.id) + '"' + (c.id === p.category ? " selected" : "") + ">" + esc(c.name) + (cats().some(x => x.id === c.id) ? "" : " (new)") + "</option>").join("") + '<option value="__new">+ New category…</option></select></div>' +
             (colls().length ? '<div class="sh-f"><label for="pColl">Show in</label><select id="pColl"><option value="">Main shop only</option>' + colls().map(c => '<option value="' + esc(c.id) + '"' + (c.id === p.collection ? " selected" : "") + ">" + esc(c.name || c.id) + " (also stays in the shop)</option>").join("") + '</select><p class="sh-hint" style="margin-top:6px">Pick a section to feature this product there on your website.</p></div>' : "") +
             '<div class="sh-f"><label for="pPrice">Price (₹)</label><input type="number" id="pPrice" min="1" step="1" inputmode="numeric" placeholder="e.g. 1299" value="' + esc(p.price) + '"></div>' +
+            '<div class="sh-sep"></div><div class="sh-step-h"><i>3</i>Sizes &amp; stock</div>' +
             '<div class="sh-f"><span class="lbl">Sizes</span><div class="sh-sizes" id="pSizes">' + allSizes().map(s => '<button type="button" class="' + (p.sizes.indexOf(s) >= 0 ? "on" : "") + '">' + esc(s) + "</button>").join("") + '<input id="pSizeAdd" placeholder="+ other size" maxlength="12"></div>' +
               '<div class="sh-presets">Quick pick: ' + PRESETS.map((x, i) => '<button type="button" data-preset="' + i + '">' + x[0] + "</button>").join(" · ") + ' · <button type="button" data-preset="none">None</button></div></div>' +
-            '<div class="sh-f"><span class="lbl">Stock <label class="sh-toggle" style="margin-left:auto;text-transform:none;letter-spacing:0;font-size:13px"><input type="checkbox" id="pTrack"' + (st.track ? " checked" : "") + "> Track stock</label></span>" +
-              (st.track ? (p.colours.length && p.sizes.length ? '<div class="sh-stock"><table><thead><tr><th></th>' + p.sizes.map(z => "<th>" + esc(z) + "</th>").join("") + "</tr></thead><tbody>" +
-                p.colours.map((c, ci) => '<tr><th><i style="background:' + esc(c.hex) + '"></i>' + esc(c.name) + "</th>" + p.sizes.map(z => '<td><input type="number" min="0" max="9999" step="1" inputmode="numeric" data-st="' + ci + '" data-z="' + esc(z) + '" value="' + esc(c.stock && c.stock[z] !== undefined ? c.stock[z] : "") + '" placeholder="0" aria-label="' + esc(c.name + " " + z + " in stock") + '"></td>').join("") + "</tr>").join("") +
-                '</tbody></table></div><p class="sh-hint" style="margin-top:6px">How many of each you have. A size at 0 disappears from your website; when a colour runs out it disappears too. Dispatched website orders are taken off automatically.</p>'
+            '<div class="sh-f"><span class="lbl">Stock</span><input type="checkbox" id="pTrack" hidden' + (st.track ? " checked" : "") + '>' +
+              '<div class="sh-seg2" id="pTrackSeg" role="group" aria-label="Stock"><button type="button" data-t="0" class="' + (st.track ? "" : "on") + '">Always in stock</button><button type="button" data-t="1" class="' + (st.track ? "on" : "") + '">Count stock</button></div>' +
+              (st.track ? (p.colours.length && p.sizes.length ? '<div class="sh-stk-tot" id="pStkTot"></div>' +
+                p.colours.map((c, ci) => '<div class="sh-stk" data-ci="' + ci + '"><div class="sh-stk-h"><i style="background:' + esc(c.hex) + '"></i><b>' + esc(c.name) + '</b><small data-left="' + ci + '"></small><input class="sh-stk-all" type="number" min="0" inputmode="numeric" placeholder="Set all…" data-all="' + ci + '" aria-label="' + esc("Set every size of " + c.name + " to") + '"></div>' +
+                  '<div class="sh-stk-g">' + p.sizes.map(z => { const v = c.stock && c.stock[z] !== undefined ? c.stock[z] : ""; return '<label class="sh-stk-c' + (!(+v) ? " zero" : "") + '"><span>' + esc(z) + '</span><span class="sh-num"><button type="button" data-dec aria-label="One less">−</button><input type="number" min="0" max="9999" step="1" inputmode="numeric" data-st="' + ci + '" data-z="' + esc(z) + '" value="' + esc(v) + '" placeholder="0" aria-label="' + esc(c.name + " " + z + " in stock") + '"><button type="button" data-inc aria-label="One more">+</button></span></label>'; }).join("") + "</div></div>").join("") +
+                '<p class="sh-hint" style="margin-top:2px">A size at 0 disappears from your website, and a colour with nothing left disappears too. Website orders you send are taken off automatically.</p>'
                 : '<p class="sh-hint">Add photos and sizes first, then set how many of each you have.</p>')
-              : '<p class="sh-hint" style="margin-top:0">Off: this product always shows as available. Switch on to set how many of each size and colour you have — sold-out sizes then disappear from your website by themselves.</p>') + "</div>" +
+              : '<p class="sh-hint" style="margin-top:0">Every size always shows as available. Choose <b>Count stock</b> to set how many of each size and colour you have — sold-out sizes then disappear from your website by themselves.</p>') + "</div>" +
+            '<div class="sh-f"><label for="pWeight">Parcel weight <span style="text-transform:none;letter-spacing:0;color:var(--ink-3);font-weight:500">kg, for the courier</span></label><input type="number" id="pWeight" min="0.05" max="30" step="0.05" inputmode="decimal" value="' + esc(p.weight || WEIGHT[p.category] || 0.5) + '"></div>' +
+            '<div class="sh-sep"></div><div class="sh-step-h"><i>4</i>Description</div>' +
             '<div class="sh-f"><label for="pDesc">Short description <span style="text-transform:none;letter-spacing:0;color:var(--ink-3);font-weight:500">optional</span></label><textarea id="pDesc" maxlength="300" placeholder="One or two lines shoppers see on the product page">' + esc(p.desc) + "</textarea></div>" +
             '<div class="sh-f"><label for="pDet">Details <span style="text-transform:none;letter-spacing:0;color:var(--ink-3);font-weight:500">optional, one per line</span></label><textarea id="pDet" maxlength="600" placeholder="Fleece lined&#10;Two zip pockets">' + esc((p.details || []).join("\n")) + "</textarea></div>" +
             '<label class="sh-toggle"><input type="checkbox" id="pShow"' + (p.hidden ? "" : " checked") + "> Show on my website</label>" +
           "</div></div>" +
-          '<div class="sh-foot">' + (!isNew ? '<button class="btn danger sm" id="pDel">' + ic("trash") + "Delete</button>" : "") + '<span class="sh-err" id="pErr">' + esc(st.err) + '</span><span class="sp"></span><button class="btn ghost sm" data-x>Cancel</button><button class="btn sm" id="pSave">' + (isNew ? "Add product" : "Save changes") + "</button></div></div>";
+          '<div class="sh-foot">' + (!isNew ? '<button class="btn danger sm" id="pDel">' + ic("trash") + "Delete</button><button class=\"btn ghost sm\" id=\"pDup\" title=\"Make a copy to start a similar product\">" + ic("plus") + "Duplicate</button>" : "") + '<span class="sh-err" id="pErr">' + esc(st.err) + '</span><span class="sp"></span><button class="btn ghost sm" data-x>Cancel</button><button class="btn sm" id="pSave">' + (isNew ? "Add product" : "Save changes") + "</button></div></div>";
         wire();
       }
       const $m = s => m.querySelector(s);
@@ -795,6 +837,7 @@
         p.details = $m("#pDet").value.split("\n").map(x => x.trim()).filter(Boolean).slice(0, 8);
         p.hidden = !$m("#pShow").checked;
         const coll = $m("#pColl"); if (coll) { if (coll.value) p.collection = coll.value; else delete p.collection; }
+        const wt = $m("#pWeight"); if (wt) { const w = Math.round(Number(wt.value) * 100) / 100; if (w > 0 && w <= 30) p.weight = w; }
         const tr = $m("#pTrack"); if (tr) st.track = tr.checked;
         m.querySelectorAll("[data-st]").forEach(inp => { const c = p.colours[+inp.dataset.st]; if (!c) return; c.stock = c.stock || {}; const v = inp.value.trim(); c.stock[inp.dataset.z] = v === "" ? 0 : Math.max(0, Math.min(9999, Math.round(Number(v) || 0))); });
         if (st.track) p.colours.forEach(c => { c.stock = c.stock || {}; p.sizes.forEach(z => { if (c.stock[z] === undefined) c.stock[z] = 0; }); Object.keys(c.stock).forEach(z => { if (p.sizes.indexOf(z) < 0) delete c.stock[z]; }); });
@@ -816,6 +859,20 @@
           draw(); };
         $m("#pSizes").onclick = e => { const b = e.target.closest("button"); if (!b) return; readFields(); const s = b.textContent, i = p.sizes.indexOf(s); if (i >= 0) p.sizes.splice(i, 1); else p.sizes.push(s); draw(); };
         const trk = $m("#pTrack"); if (trk) trk.onchange = () => { readFields(); draw(); };
+        const seg = $m("#pTrackSeg"); if (seg) seg.onclick = e => { const b = e.target.closest("button"); if (!b || !trk) return; const on = b.dataset.t === "1"; if (on === trk.checked) return; trk.checked = on; readFields(); draw(); };
+        const totals = () => { let all = 0; p.colours.forEach((c, ci) => { let n = 0; m.querySelectorAll('[data-st="' + ci + '"]').forEach(i => { const v = Math.max(0, Math.round(Number(i.value) || 0)); n += v; i.closest(".sh-stk-c").classList.toggle("zero", !v); }); all += n;
+            const l = m.querySelector('[data-left="' + ci + '"]'); if (l) l.textContent = n ? n + " in stock" : "none in stock"; });
+          const t = $m("#pStkTot"); if (t) t.innerHTML = "Total: <b>" + all + "</b> piece" + (all === 1 ? "" : "s") + " across " + p.colours.length + " colour" + (p.colours.length === 1 ? "" : "s"); };
+        m.querySelectorAll(".sh-num").forEach(box => { const inp = box.querySelector("input");
+          box.querySelectorAll("button").forEach(b => b.onclick = () => { const v = Math.max(0, Math.min(9999, (Math.round(Number(inp.value) || 0)) + (b.hasAttribute("data-inc") ? 1 : -1))); inp.value = v; totals(); });
+          inp.oninput = totals; });
+        m.querySelectorAll("[data-all]").forEach(inp => { const set = () => { const v = inp.value.trim(); if (v === "") return; const n = Math.max(0, Math.min(9999, Math.round(Number(v) || 0))); m.querySelectorAll('[data-st="' + inp.dataset.all + '"]').forEach(x => x.value = n); inp.value = ""; totals(); };
+          inp.onchange = set; inp.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); set(); } }; });
+        totals();
+        const dup = $m("#pDup"); if (dup) dup.onclick = () => { readFields(); const c = JSON.parse(JSON.stringify(p)); c.id = ""; c.name = (p.name + " (copy)").slice(0, 70); delete c._new; delete c._changed;
+          c.colours.forEach(x => { if (x.stock) Object.keys(x.stock).forEach(z => x.stock[z] = 0); });
+          let id = slug(c.name) || "product", n = 2, base = id; while (S.data.products.some(x => x.id === id)) id = base + "-" + n++; c.id = id; c._new = true; c.hidden = true;
+          S.data.products.push(c); close(); bump(); toast("Copy made (hidden until you're ready) — opening it"); setTimeout(() => editProduct(c), 320); };
         $m("#pSizeAdd").onkeydown = e => { if (e.key !== "Enter") return; e.preventDefault(); const v = e.target.value.trim().slice(0, 12); if (v && p.sizes.indexOf(v) < 0) p.sizes.push(v); readFields(); draw(); const a = $m("#pSizeAdd"); a.focus(); };
         m.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { readFields(); p.sizes = b.dataset.preset === "none" ? [] : PRESETS[+b.dataset.preset][1].slice(); draw(); });
         const drop = $m("#pDrop"), file = $m("#pFile");

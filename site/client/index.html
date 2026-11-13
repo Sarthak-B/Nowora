@@ -118,6 +118,30 @@ svg{display:block}
 .today span{font-size:12.5px;color:var(--ink-3)}
 .today .td.hot{border-color:rgba(var(--neon-rgb),.55);background:rgba(var(--neon-rgb),.08)}.today .td.hot b,.today .td.hot span{color:var(--neon)}
 .today .td.warn b{color:var(--amber)}
+.livebox{display:grid;gap:4px;margin:18px 0 6px}.livebox b{font-family:var(--display);font-size:18px}.livebox span{color:var(--ink-2);font-size:14px}
+.checks.autos li{color:var(--ink)}
+/* store layout */
+.qa{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;max-width:640px}
+.qa-b{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.035);font-weight:700;font-size:14px;color:var(--ink);cursor:pointer;text-decoration:none;transition:border-color .25s,transform .3s var(--spring),background .25s}
+.qa-b svg{width:16px;height:16px;color:var(--neon)}
+.qa-b:hover{border-color:rgba(var(--neon-rgb),.6);transform:translateY(-2px);background:rgba(var(--neon-rgb),.06)}
+.is-store #overview .hero-grid{align-items:start}
+.is-store .toolbar.in-traffic{margin:0 0 16px}
+.is-store .toolbar.in-traffic #share,.is-store .toolbar.in-traffic [data-edit]{display:none}
+.is-store #traffic .grid.halves{display:none}
+.tabs a[hidden],.botnav a[hidden]{display:none!important}
+.is-store #kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+.is-store #kpis>.kpi:nth-child(3),.is-store #mtabs [data-m="leads"]{display:none}
+@media (max-width:640px){.is-store #kpis{grid-template-columns:1fr}}
+details.recs{margin-top:16px;border:1px solid var(--line-2);border-radius:22px;background:rgba(255,255,255,.025);overflow:hidden}
+details.recs summary{display:flex;align-items:center;gap:14px;padding:18px 22px;cursor:pointer;list-style:none}
+details.recs summary::-webkit-details-marker{display:none}
+details.recs summary>svg{width:20px;height:20px;color:var(--neon);flex:none}
+details.recs summary span{display:grid;gap:2px}details.recs summary b{font-family:var(--display);font-size:17px}details.recs summary small{color:var(--ink-3);font-size:13px}
+details.recs .chev{margin-left:auto;width:10px;height:10px;border-right:2px solid var(--ink-2);border-bottom:2px solid var(--ink-2);transform:rotate(45deg);transition:transform .3s var(--spring)}
+details.recs[open] .chev{transform:rotate(225deg)}
+details.recs #dbRoot{padding:0 14px 16px}
+@media (max-width:600px){.qa-b{flex:1 1 calc(50% - 8px);justify-content:center}}
 @media (max-width:600px){.today{grid-template-columns:1fr}}
 .now{position:relative;overflow:hidden;min-width:0;border-radius:var(--r);padding:24px;background:radial-gradient(circle at 85% 0%,rgba(var(--neon-rgb),.18),transparent 55%),linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid rgba(var(--neon-rgb),.22);box-shadow:0 0 60px -30px rgba(var(--neon-rgb),.6)}
 .now-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -454,6 +478,9 @@ var CFG = {
   seller: { name: "make4yu", line: "Website design, build & care", place: "India", email: "make4yu@gmail.com", phone: "+91 63979 88191", web: "make4yu.com", gstin: "" }
 };
 var CHECKS = ["Business details, logo and brand colours","Page list and content (text and photos)","Reference sites you like","Domain registered in your name","WhatsApp, booking, forms and payments set up","Agreement signed and 50% advance","Go-live date agreed"];
+var AUTOS = ["Your website is checked every few hours, and we\'re alerted if it ever goes down","Visitors and WhatsApp taps are counted on this dashboard as they happen","Changes you publish go live on your website in about a minute"];
+var AUTOS_STORE = ["New orders are sent to your WhatsApp straight away","Each order is saved to your records with the customer\'s details"];
+var AUTOS_SHIP = ["Customers get their tracking link on WhatsApp","Stock goes down by itself when you send an order"];
 var STAGES = [["onboarding","Getting started"],["building","Being built"],["live","Live"]];
 var TYPES = ["Text or photo change","New section or page","Something isn't working","Other"];
 var RANGES = [[7,"7 days"],[30,"30 days"],[90,"90 days"]];
@@ -482,6 +509,7 @@ var I = {
   dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></svg>',
   share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>',
   out:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>',
+  tag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>',
   pen:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   print:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg>'
 };
@@ -615,11 +643,11 @@ function render(){
 
   $("#app").innerHTML=(c.owner?'<div class="ownerbar">Owner view — this is exactly what '+esc(c.business)+' sees. You can edit their website from here.</div>':'')+(DEMO?'<div class="demo">Demo dashboard with sample numbers — your clients see their own website here.</div>':'')+
   '<header class="top"><div class="wrap"><span class="brand">'+MARK+'<span>make<b class="b4">4</b>yu</span><small>'+esc(c.business)+'</small></span>'+
-    '<nav class="tabs" id="tabs"><span class="ind"></span><a href="#overview">Home</a><a href="#shop" hidden>Orders</a><a href="#traffic">Visitors</a><a href="#website">Website</a><a href="#database">Records</a><a href="#project">My plan</a><a href="#requests">Ask us</a></nav>'+
+    '<nav class="tabs" id="tabs"><span class="ind"></span><a href="#overview">Home</a><a href="#shop" hidden>Orders</a><a href="#products" hidden>Products</a><a href="#traffic">Visitors</a><a href="#website">Website</a><a href="#database">Records</a><a href="#requests">Help</a></nav>'+
     '<span class="sp"></span><span class="live"><i class="dot up"></i><span>Live</span></span>'+(ro?'<span class="chip" title="'+(planOff()?'Your care plan isn\'t active, so changes are switched off. You can still see and download everything.':'You can see and download everything. Changes are switched off.')+'">'+I.eye+(planOff()?'Care plan off':'View-only')+'</span>':'')+
     (ro?'':'<button class="icon-btn" data-edit title="Edit my website">'+I.pen+'</button>')+
     '<button class="icon-btn" id="print" title="Download report (PDF)">'+I.print+'</button><button class="icon-btn" id="out" title="Sign out">'+I.out+'</button></div></header>'+
-  '<nav class="botnav" id="botnav"><a href="#overview">'+I.grid+'Home</a><a href="#shop" hidden>'+I.bag+'Orders</a><a href="#traffic">'+I.chart+'Visitors</a><a href="#website">'+I.globe+'Website</a><a href="#database">'+I.db+'Records</a><a href="#project">'+I.flag+'My plan</a><a href="#requests">'+I.chat+'Ask us</a></nav>'+
+  '<nav class="botnav" id="botnav"><a href="#overview">'+I.grid+'Home</a><a href="#shop" hidden>'+I.bag+'Orders</a><a href="#products" hidden>'+I.tag+'Products</a><a href="#traffic">'+I.chart+'Visitors</a><a href="#website">'+I.globe+'Website</a><a href="#database">'+I.db+'Records</a><a href="#requests">'+I.chat+'Help</a></nav>'+
   '<main class="wrap">'+
   '<section id="overview" class="hero"><div class="hero-grid"><div><span class="eyebrow">'+esc(c.business)+' · client dashboard</span><h1>'+h1+'</h1>'+
     (c.site?'<a class="site-link" href="'+esc(c.site)+'" target="_blank" rel="noopener">'+esc(host)+' '+I.ext.replace("<svg",'<svg width="14" height="14"')+'</a>':'<span class="site-link">Your web address appears here once it\'s live</span>')+
@@ -631,6 +659,7 @@ function render(){
     '<div class="grid kpis" id="kpis"></div></section>'+
 
   '<section id="shop" class="sec" hidden><div class="sec-title in"><h3>Your <em>orders.</em></h3><p>Send new orders, see what you\'ve sold, and add or change your products — all from here.</p></div><div id="shopRoot"></div></section>'+
+  '<section id="products" class="sec" hidden><div class="sec-title in"><h3>Your <em>products.</em></h3><p>Add products, change prices, sizes and stock. Press Publish and your website updates in about a minute.</p></div><div id="productsRoot"></div></section>'+
 
   '<section id="traffic" class="sec"><div class="sec-title in"><h3>Who\'s <em>visiting.</em></h3><p>Tap a source to see only those visitors everywhere on this page.</p></div>'+
     '<div class="grid two"><div class="card in"><h2>Over time<span class="sp"></span><label class="cmp"><input type="checkbox" id="cmp">Compare</label></h2><div class="metric-tabs" id="mtabs" style="margin-top:12px">'+METRICS.map(function(m){return '<button data-m="'+m[0]+'">'+m[1]+'</button>'}).join("")+'</div><div class="chart" id="chart"><div class="tip" id="tip"></div></div></div>'+
@@ -645,7 +674,7 @@ function render(){
 
   '<section id="database" class="sec"><div class="sec-title in"><h3>Your <em>database.</em></h3><p>Keep customers, orders, products — anything you track — in one place. Add, change or delete whenever you need.</p></div><div id="dbRoot"><div class="card"><div class="empty" style="margin:0">Loading your database…</div></div></div></section>'+
 
-  '<section id="project" class="sec"><div class="sec-title in"><h3>Your project, <em>step by step.</em></h3><p>Where things stand, what\'s been paid and what your care plan covers.</p></div><div class="grid two" id="projectGrid"></div></section>'+
+  '<section id="project" class="sec"><div class="sec-title in"><h3>Your plan &amp; <em>payments.</em></h3><p>What\'s been paid, what your care plan covers and what runs for you automatically.</p></div><div class="grid two" id="projectGrid"></div></section>'+
 
   '<section id="requests" class="sec"><div class="sec-title in"><h3>Need a change? <em>Just ask.</em></h3><p>Send it here with a photo if you like. You\'ll see our reply and progress right below.</p></div>'+
     '<div class="grid req-grid">'+(ro?'<div class="card req-form in"><h2>New request</h2><p style="color:var(--ink-2)">'+(planOff()?'Change requests come with the make4yu care plan, and it isn\'t active right now.':'Your dashboard is view-only right now, so new requests are switched off.')+' Message make4yu on WhatsApp below if you need anything — your earlier requests and our replies are still here.</p></div>':'<form class="card req-form in" id="rf"><h2>New request</h2><div class="types" id="types">'+TYPES.map(function(x){return '<button type="button" class="'+(x===S.type?"on":"")+'">'+esc(x)+'</button>'}).join("")+'</div>'+
@@ -657,6 +686,7 @@ function render(){
   '<div class="help in"><div><h3>Prefer to <em style="font-style:normal;color:var(--neon)">talk?</em></h3><p>Message make4yu directly — we usually reply within a few hours.</p></div><div class="acts"><a class="btn" target="_blank" rel="noopener" href="'+waLink("Hi make4yu, it's "+(first||"")+" from "+c.business+". ")+'">'+I.wa+'WhatsApp make4yu</a></div></div>'+
   '<div class="foot"><span>© '+new Date().getFullYear()+' make4yu · Make it happen</span><span id="updated"></span></div></main>';
 
+  var mn=$("main.wrap"); mn.insertBefore($("#requests"),$("#project"));
   wire(); drawAll(true); drawProject(); drawRequests(); drawHealth(); initPreview(); initQR(); motion(); initDB(); initShop();
 }
 
@@ -848,13 +878,16 @@ function drawProject(){
   var ren=c.renewal?new Date(c.renewal):null, left=ren?Math.max(0,Math.ceil((ren-new Date())/864e5)):null;
   $("#projectGrid").innerHTML='<div class="card in"><h2>Progress<span class="sp"></span><small>'+(paused?"Paused":STAGES[stage][1])+'</small></h2>'+
     '<div class="timeline"><span class="fill" id="tfill"></span>'+STAGES.map(function(s,i){var done=i<stage||(i===stage&&s[0]==="live");return '<div class="tstep '+(done?"done":i===stage&&!paused?"now":"")+'"><i>'+(done?I.check:i+1)+'</i>'+s[1]+'</div>'}).join("")+'</div>'+
-    '<div class="ringrow"><svg class="ring" viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42"/><circle class="fg" id="ring" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9"/></svg><div><b class="num" data-count="'+pct+'" data-suf="%">0%</b><span>of the setup checklist done</span></div></div>'+
-    '<ul class="checks">'+CHECKS.map(function(x,i){var ok=ck.indexOf(i)>-1;return '<li class="'+(ok?"ok":"")+'"><i>'+(ok?I.check:"")+'</i>'+esc(x)+'</li>'}).join("")+'</ul></div>'+
+    (c.status==="live"?
+      '<div class="livebox"><b>Your website is live'+(c.delivered?' since '+fmtDate(c.delivered):'')+'.</b><span>Here\'s what runs for you automatically:</span></div><ul class="checks autos" id="autoList">'+
+        AUTOS.map(function(x){return '<li class="ok"><i>'+I.check+'</i>'+x+'</li>'}).join("")+'</ul>'
+    :'<div class="ringrow"><svg class="ring" viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42"/><circle class="fg" id="ring" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9"/></svg><div><b class="num" data-count="'+pct+'" data-suf="%">0%</b><span>of the setup checklist done</span></div></div>'+
+    '<ul class="checks">'+CHECKS.map(function(x,i){var ok=ck.indexOf(i)>-1;return '<li class="'+(ok?"ok":"")+'"><i>'+(ok?I.check:"")+'</i>'+esc(x)+'</li>'}).join("")+'</ul>')+'</div>'+
     '<div class="card in"><h2>Payments<span class="sp"></span><small>'+esc(c.package||"")+(c.package?" plan":"")+'</small></h2>'+
       (price?'<div class="pay">'+payRow(half,"First 50% — to start","Paid before we begin building",c.advancePaid==="yes")+payRow(price-half,"Second 50% — when you're happy","Only after you approve the finished website",c.balancePaid==="yes")+'</div>':'<div class="empty">Your project price appears here once it\'s confirmed.</div>')+
       '<div class="care">'+(c.carePlan==="yes"&&left!==null?'<div class="days"><svg viewBox="0 0 96 96"><circle class="bg" cx="48" cy="48" r="42"/><circle class="fg" id="dring" cx="48" cy="48" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9" data-frac="'+Math.min(1,left/30)+'"/></svg><div><b>'+left+'</b><small>days to renewal</small></div></div>':'')+
       '<div><span class="eyebrow" style="color:var(--mint)">Care plan</span>'+
-      (c.carePlan==="yes"?'<div class="amt">'+inr(c.careFee)+'<small> / month</small></div><p style="font-size:12.5px;color:var(--ink-3);margin:2px 0 8px">Your care plan price is set by how much maintenance your site needs.</p><ul><li>Hosting, SSL and backups</li><li>Uptime checks every few minutes</li><li>Small text and photo changes</li><li>Edit your website yourself</li><li>This live dashboard</li></ul>'+(ren?'<p>Renews on <b style="color:var(--ink)">'+fmtDate(c.renewal)+'</b></p>':''):
+      (c.carePlan==="yes"?'<div class="amt">'+inr(c.careFee)+'<small> / month</small></div><p style="font-size:12.5px;color:var(--ink-3);margin:2px 0 8px">Your care plan price is set by how much maintenance your site needs.</p><ul><li>Hosting, SSL and backups</li><li>Uptime checks every few hours</li><li>Small text and photo changes</li><li>Edit your website yourself</li><li>This live dashboard</li></ul>'+(ren?'<p>Renews on <b style="color:var(--ink)">'+fmtDate(c.renewal)+'</b></p>':''):
         '<div class="amt" style="font-size:22px;margin-top:6px">Not active yet</div><p>Your first month of care is free after launch, then from ₹1,999/month for hosting, backups, uptime checks, small changes — and editing your website yourself. The exact price depends on how much maintenance your site needs.</p>')+'</div></div>'+
       ((price||(c.carePlan==="yes"&&+c.careFee))?'<div class="inv-btns">'+(price?'<button class="btn ghost sm" data-inv="project">'+I.dl+'Project invoice</button>':'')+(c.carePlan==="yes"&&+c.careFee?'<button class="btn ghost sm" data-inv="care">'+I.dl+'Care plan invoice</button>':'')+'</div>':'')+'</div>';
   $$("[data-inv]",$("#projectGrid")).forEach(function(b){b.onclick=function(){printInvoice(b.dataset.inv)}});
@@ -969,8 +1002,9 @@ function wire(){
   // nav scroll-spy
   var links=$$("#tabs a,#botnav a"), ind=$("#tabs .ind");
   var setActive=function(id){links.forEach(function(a){a.classList.toggle("on",a.getAttribute("href")==="#"+id)});var a=$('#tabs a[href="#'+id+'"]');if(a&&ind){ind.style.left=a.offsetLeft+"px";ind.style.width=a.offsetWidth+"px";ind.style.opacity=1}};
-  var secs=["overview","shop","traffic","website","database","project","requests"].map(function(id){return document.getElementById(id)});
-  var spy=function(){var y=scrollY+innerHeight*.35,cur="overview";secs.forEach(function(s){if(s&&s.offsetTop<=y)cur=s.id});if(innerHeight+scrollY>=document.documentElement.scrollHeight-4)cur="requests";setActive(cur)};
+  var tabOf={project:"requests"};
+  var spy=function(){var y=scrollY+innerHeight*.35,cur="overview",secs=$$("main.wrap > section").filter(function(x){return !x.hidden});secs.forEach(function(s){if(s.offsetTop<=y)cur=s.id});if(innerHeight+scrollY>=document.documentElement.scrollHeight-4&&secs.length)cur=secs[secs.length-1].id;setActive(tabOf[cur]||cur)};
+  S.spy=spy;
   addEventListener("scroll",spy,{passive:true}); spy(); setTimeout(spy,400);
   // card spotlight
   if(fine&&!reduced) document.addEventListener("pointermove",function(e){var c=e.target.closest&&e.target.closest(".card");if(!c)return;var r=c.getBoundingClientRect();c.style.setProperty("--mx",(e.clientX-r.left)+"px");c.style.setProperty("--my",(e.clientY-r.top)+"px")},{passive:true});
@@ -998,7 +1032,7 @@ function openEditor(){
   var go=function(){window.Make4yuEditor.open({call:call,toast:toast,key:KEY,onClose:function(){}})};
   if(window.Make4yuEditor) return go();
   toast("Opening the editor…");
-  var sc=document.createElement("script");sc.src="/client/editor.js?v=2";sc.onload=go;sc.onerror=function(){toast("The editor couldn't load — check your connection")};document.head.appendChild(sc);
+  var sc=document.createElement("script");sc.src="/client/editor.js?v=3";sc.onload=go;sc.onerror=function(){toast("The editor couldn't load — check your connection")};document.head.appendChild(sc);
 }
 
 /* ---------- client database (loads when it is near the screen) ---------- */
@@ -1008,6 +1042,7 @@ function initDB(){
     var mount=function(){window.Make4yuDB.mount({root:root,call:call,toast:toast,demo:DEMO,owner:!!(S.data.client&&S.data.client.owner),business:S.data.client.business,readOnly:isRO()})};
     if(window.Make4yuDB) return mount();
     var sc=document.createElement("script");sc.src="/client/db.js?v=4";sc.onload=mount;sc.onerror=function(){initDB.on=0;root.innerHTML='<div class="card"><div class="empty" style="margin:0">The database couldn\'t load — check your connection and refresh.</div></div>'};document.head.appendChild(sc);};
+  initDB.go=go;
   if(!("IntersectionObserver" in window)) return go();
   var io=new IntersectionObserver(function(es){if(es.some(function(e){return e.isIntersecting})){io.disconnect();go()}},{rootMargin:"800px 0px"}); io.observe(root);
   $$('a[href="#database"]').forEach(function(a){a.addEventListener("click",go)});
@@ -1016,6 +1051,7 @@ function initDB(){
 /* ---------- today: the 3 things a shop owner cares about, at the top ---------- */
 addEventListener("make4yu:shop",function(e){
   var d=e.detail||{}, el=$("#today"); if(!el) return;
+  if(d.onTheWay!=null) addAutos(AUTOS_SHIP);
   var send=d.toSend, low=(d.low||[]).length, out=(d.out||[]).length;
   el.hidden=false;
   el.innerHTML='<a class="td'+(send?' hot':'')+'" href="#shop" data-go="orders"><small>Orders to send</small><b>'+(send==null?'…':send)+'</b><span>'+(send?(d.canSend?'Tap to send them →':'New orders waiting'):'All caught up ✓')+'</span></a>'+
@@ -1033,12 +1069,48 @@ function initShop(){
     var html=r[0], hasCat=!!(html&&/id=["']make4yu-products["']/.test(html));
     if(!hasCat&&!r[1]) return;
     var go=function(){ $("#shop").hidden=false; $$('a[href="#shop"]').forEach(function(a){a.hidden=false});
-      window.Make4yuShop.mount({root:root,call:call,toast:toast,owner:!!c.owner,business:c.business,site:c.site,editable:hasCat&&!isRO(),html:hasCat?html:null,readOnly:isRO()});
+      var showProducts=hasCat&&!isRO(); if(showProducts){$("#products").hidden=false;$$('a[href="#products"]').forEach(function(a){a.hidden=false})}
+      storeMode();
+      window.Make4yuShop.mount({root:root,productsRoot:showProducts?$("#productsRoot"):null,call:call,toast:toast,owner:!!c.owner,business:c.business,site:c.site,editable:hasCat&&!isRO(),html:hasCat?html:null,readOnly:isRO()});
+      $$(".sec-title",$("#products")).forEach(function(x){x.classList.add("vis")});
       $$(".sec-title",$("#shop")).forEach(function(x){x.classList.add("vis")}); dispatchEvent(new Event("scroll")); };
     if(window.Make4yuShop) return go();
-    var sc=document.createElement("script");sc.src="/client/shop.js?v=10";sc.onload=go;sc.onerror=function(){initShop.on=0};document.head.appendChild(sc);
+    var sc=document.createElement("script");sc.src="/client/shop.js?v=11";sc.onload=go;sc.onerror=function(){initShop.on=0};document.head.appendChild(sc);
   });
 }
+
+/* ---------- store layout: what a shop owner needs, in the order they need it ----------
+   Home (today + quick actions) → Orders → Products → Website → Visitors → Help & plan.
+   Website stats move to Visitors, and the raw records sit at the bottom of Orders. */
+function storeMode(){
+  if(storeMode.on) return; storeMode.on=1;
+  document.documentElement.classList.add("is-store");
+  var mn=$("main.wrap"), end=$(".help",mn);
+  ["shop","products","website","traffic","requests","project"].forEach(function(id){var x=$("#"+id);if(x)mn.insertBefore(x,end)});
+  // website stats: from Home to Visitors
+  var tb=$(".toolbar",$("#overview")), k=$("#kpis"), tt=$("#traffic .sec-title");
+  if(tb&&tt){tt.after(tb);tb.after(k);tb.classList.add("in-traffic")}
+  // records: a tidy fold at the bottom of Orders instead of its own section
+  var db=$("#dbRoot"); if(db){var d=document.createElement("details");d.className="recs";
+    d.innerHTML='<summary>'+I.db+'<span><b>All records</b><small>Every order and payment as a table — search, edit or download</small></span><i class="chev"></i></summary>';
+    $("#shop").appendChild(d); d.appendChild(db); $("#database").hidden=true; $$('a[href="#database"]').forEach(function(a){a.hidden=true});
+    d.addEventListener("toggle",function(){if(d.open&&initDB.go)initDB.go()})}
+  // quick actions under Today
+  var ro=isRO(), qa=document.createElement("div"); qa.className="qa"; qa.id="qa";
+  qa.innerHTML=(ro?'':'<button type="button" class="qa-b" data-qa="add">'+I.tag+'<span>Add a product</span></button>')+
+    '<a class="qa-b" href="#shop">'+I.bag+'<span>Orders</span></a>'+
+    (ro?'':'<button type="button" class="qa-b" data-edit>'+I.pen+'<span>Edit website</span></button>')+
+    '<button type="button" class="qa-b" data-qa="share">'+I.share+'<span>Share my store</span></button>';
+  $("#today").after(qa);
+  $$("[data-edit]",qa).forEach(function(b){b.onclick=openEditor});
+  qa.addEventListener("click",function(e){var b=e.target.closest("[data-qa]");if(!b)return;
+    if(b.dataset.qa==="share") return $("#share").click();
+    if(b.dataset.qa==="add"){var go=function(){var a=$("#shAdd");if(a){a.scrollIntoView({block:"center",behavior:reduced?"auto":"smooth"});setTimeout(function(){a.click()},reduced?0:450)}else setTimeout(go,300)};if(location.hash!=="#products")history.pushState(history.state,"","#products");go()}});
+  addAutos(AUTOS_STORE);
+  if(S.spy) setTimeout(S.spy,50);
+  dispatchEvent(new Event("resize"));
+}
+function addAutos(list){var ul=$("#autoList");if(!ul)return;list.forEach(function(x){if(ul.textContent.indexOf(x.replace(/\\'/g,"'"))>=0)return;var li=document.createElement("li");li.className="ok";li.innerHTML="<i>"+I.check+"</i>"+x;ul.appendChild(li)})}
 
 /* ---------- live polling ---------- */
 function startPolling(){
@@ -1102,7 +1174,7 @@ function lockedEditor(why){
 }
 
 /* ---------- start ---------- */
-addEventListener("hashchange",function(){if(!/^#(overview|shop|traffic|website|database|project|requests)$/.test(location.hash))location.reload()});
+addEventListener("hashchange",function(){if(!/^#(overview|shop|products|traffic|website|database|project|requests)$/.test(location.hash))location.reload()});
 var remembered=KEY?saved():"";
 if(OWNER_KEY&&KEY&&!DEMO){loading();call("portal").then(function(j){boot(j.data);if(AUTO_EDIT)setTimeout(openEditor,600)}).catch(function(x){login("Owner view failed: "+x.message)})}
 else if(remembered){S.pin=remembered;loading();call("portal").then(function(j){boot(j.data)}).catch(function(x){forget();login(/PIN|valid/i.test(x.message)?"Please enter your PIN again.":x.message)})}

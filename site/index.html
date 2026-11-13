@@ -2186,7 +2186,7 @@ function vClients(soft){
 
 /* ---------- client store sales: read from each client's Orders table (same data as their Shop tab) ---------- */
 A.sales=A.sales||{};
-function loadShopJs(){ if(window.Make4yuShop) return Promise.resolve(); return loadShopJs.p=loadShopJs.p||new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="/client/shop.js?v=10";sc.onload=res;sc.onerror=()=>{loadShopJs.p=null;rej(new Error("Couldn't load the sales module"))};document.head.appendChild(sc);}); }
+function loadShopJs(){ if(window.Make4yuShop) return Promise.resolve(); return loadShopJs.p=loadShopJs.p||new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="/client/shop.js?v=11";sc.onload=res;sc.onerror=()=>{loadShopJs.p=null;rej(new Error("Couldn't load the sales module"))};document.head.appendChild(sc);}); }
 async function salesFor(c){
   const call=(a,x)=>API.post(Object.assign({action:a,key:ADMIN.key,portalKey:c.portalKey},x||{}));
   const o=await Make4yuShop.loadSales(call);
