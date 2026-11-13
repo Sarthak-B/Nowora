@@ -995,26 +995,26 @@ function openEditor(){
   if(planOff()) return lockedEditor("no-plan");
   if(isRO()) return lockedEditor("off");
   if(!DEMO&&!c.editable){return lockedEditor(c.editReason)}
-  var go=function(){window.NoworaEditor.open({call:call,toast:toast,key:KEY,onClose:function(){}})};
-  if(window.NoworaEditor) return go();
+  var go=function(){window.Make4yuEditor.open({call:call,toast:toast,key:KEY,onClose:function(){}})};
+  if(window.Make4yuEditor) return go();
   toast("Opening the editor…");
-  var sc=document.createElement("script");sc.src="/client/editor.js?v=1";sc.onload=go;sc.onerror=function(){toast("The editor couldn't load — check your connection")};document.head.appendChild(sc);
+  var sc=document.createElement("script");sc.src="/client/editor.js?v=2";sc.onload=go;sc.onerror=function(){toast("The editor couldn't load — check your connection")};document.head.appendChild(sc);
 }
 
 /* ---------- client database (loads when it is near the screen) ---------- */
 function initDB(){
   var root=$("#dbRoot"); if(!root) return;
   var go=function(){ if(initDB.on) return; initDB.on=1;
-    var mount=function(){window.NoworaDB.mount({root:root,call:call,toast:toast,demo:DEMO,owner:!!(S.data.client&&S.data.client.owner),business:S.data.client.business,readOnly:isRO()})};
-    if(window.NoworaDB) return mount();
-    var sc=document.createElement("script");sc.src="/client/db.js?v=3";sc.onload=mount;sc.onerror=function(){initDB.on=0;root.innerHTML='<div class="card"><div class="empty" style="margin:0">The database couldn\'t load — check your connection and refresh.</div></div>'};document.head.appendChild(sc);};
+    var mount=function(){window.Make4yuDB.mount({root:root,call:call,toast:toast,demo:DEMO,owner:!!(S.data.client&&S.data.client.owner),business:S.data.client.business,readOnly:isRO()})};
+    if(window.Make4yuDB) return mount();
+    var sc=document.createElement("script");sc.src="/client/db.js?v=4";sc.onload=mount;sc.onerror=function(){initDB.on=0;root.innerHTML='<div class="card"><div class="empty" style="margin:0">The database couldn\'t load — check your connection and refresh.</div></div>'};document.head.appendChild(sc);};
   if(!("IntersectionObserver" in window)) return go();
   var io=new IntersectionObserver(function(es){if(es.some(function(e){return e.isIntersecting})){io.disconnect();go()}},{rootMargin:"800px 0px"}); io.observe(root);
   $$('a[href="#database"]').forEach(function(a){a.addEventListener("click",go)});
 }
 
 /* ---------- today: the 3 things a shop owner cares about, at the top ---------- */
-addEventListener("nowora:shop",function(e){
+addEventListener("make4yu:shop",function(e){
   var d=e.detail||{}, el=$("#today"); if(!el) return;
   var send=d.toSend, low=(d.low||[]).length, out=(d.out||[]).length;
   el.hidden=false;
@@ -1030,13 +1030,13 @@ function initShop(){
   var htmlP=c.editable?call("site_source").then(function(j){return j.site&&j.site.html||null}).catch(function(){return null}):Promise.resolve(null);
   var ordersP=call("db_get",{tableId:""}).then(function(j){return (j.tables||[]).some(function(t){return /^(orders?|website orders|checkout)$/i.test(String(t.name).trim())})}).catch(function(){return false});
   Promise.all([htmlP,ordersP]).then(function(r){
-    var html=r[0], hasCat=!!(html&&/id=["']nowora-products["']/.test(html));
+    var html=r[0], hasCat=!!(html&&/id=["']make4yu-products["']/.test(html));
     if(!hasCat&&!r[1]) return;
     var go=function(){ $("#shop").hidden=false; $$('a[href="#shop"]').forEach(function(a){a.hidden=false});
-      window.NoworaShop.mount({root:root,call:call,toast:toast,owner:!!c.owner,business:c.business,site:c.site,editable:hasCat&&!isRO(),html:hasCat?html:null,readOnly:isRO()});
+      window.Make4yuShop.mount({root:root,call:call,toast:toast,owner:!!c.owner,business:c.business,site:c.site,editable:hasCat&&!isRO(),html:hasCat?html:null,readOnly:isRO()});
       $$(".sec-title",$("#shop")).forEach(function(x){x.classList.add("vis")}); dispatchEvent(new Event("scroll")); };
-    if(window.NoworaShop) return go();
-    var sc=document.createElement("script");sc.src="/client/shop.js?v=9";sc.onload=go;sc.onerror=function(){initShop.on=0};document.head.appendChild(sc);
+    if(window.Make4yuShop) return go();
+    var sc=document.createElement("script");sc.src="/client/shop.js?v=10";sc.onload=go;sc.onerror=function(){initShop.on=0};document.head.appendChild(sc);
   });
 }
 

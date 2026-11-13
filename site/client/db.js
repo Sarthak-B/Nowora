@@ -1,5 +1,5 @@
 /* make4yu client database — tables the client manages from their dashboard.
-   Loaded on demand by /client/index.html:  NoworaDB.mount({root, call, toast, demo, owner, business})
+   Loaded on demand by /client/index.html:  Make4yuDB.mount({root, call, toast, demo, owner, business})
    Storage: the client's own Google Sheet (one tab per table), through the Apps Script backend. */
 (function () {
   "use strict";
@@ -531,5 +531,5 @@
     return { reload: () => load(S.tableId, true), stop: () => clearInterval(timer) };
   }
 
-  window.NoworaDB = { mount: mount };
+  window.Make4yuDB = { mount: mount };
 })();

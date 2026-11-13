@@ -27,7 +27,7 @@ const TOKEN = PRIVATE_TOKEN || process.env.GITHUB_TOKEN || '';
 
 async function gh(path) {
   const res = await fetch('https://api.github.com' + path, {
-    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'nowora-discover', ...(TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {}) }
+    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'make4yu-discover', ...(TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {}) }
   });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`GitHub ${res.status} for ${path.split('?')[0]}`);
@@ -56,7 +56,7 @@ async function readConfig(repo) {
 
 async function fetchPage(url) {
   try {
-    const res = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(15000), headers: { 'User-Agent': 'Mozilla/5.0 nowora-discover' } });
+    const res = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(15000), headers: { 'User-Agent': 'Mozilla/5.0 make4yu-discover' } });
     const type = res.headers.get('content-type') || '';
     if (!res.ok || !type.includes('html')) return null;
     return { url: res.url || url, html: (await res.text()).slice(0, 400000) };

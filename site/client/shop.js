@@ -1,17 +1,17 @@
 /* make4yu shop — the store part of a client dashboard.
    Loaded on demand by /client/index.html (and the owner dashboard, for sales only).
 
-   NoworaShop.mount({root, call, toast, owner, business, site, editable, html})
+   Make4yuShop.mount({root, call, toast, owner, business, site, editable, html})
        Sales (from the "Orders" table in the client's database) + the product editor.
    Orders → Ship now: lists Shiprocket orders through the website's /api/store (52 Alive) and books courier,
        pickup and label. No key to paste. Read-only clients can look, not ship.
-   NoworaShop.loadSales(call)          → Promise<{table, rows} | null>
-   NoworaShop.summarise(orders, days)  → totals, daily series, top products, recent orders
-   NoworaShop.detectColour(src)        → Promise<{name, hex, family, lab}>
-   NoworaShop.readCatalogue(html)      → catalogue object or null
+   Make4yuShop.loadSales(call)          → Promise<{table, rows} | null>
+   Make4yuShop.summarise(orders, days)  → totals, daily series, top products, recent orders
+   Make4yuShop.detectColour(src)        → Promise<{name, hex, family, lab}>
+   Make4yuShop.readCatalogue(html)      → catalogue object or null
 
    Where products live: inside the client's own website, in
-     <script type="application/json" id="nowora-products">{ categories: [...], products: [...] }</script>
+     <script type="application/json" id="make4yu-products">{ categories: [...], products: [...] }</script>
    The site renders its shop from that block. Publishing goes through the same site_publish action as
    the website editor: new photos are committed to images/uploads/ and the page is updated, so the site
    redeploys on its own. No extra backend actions are needed. */
@@ -20,7 +20,7 @@
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const inr = n => "₹" + Math.round(Number(n) || 0).toLocaleString("en-IN");
   const ago = t => { const s = (Date.now() - new Date(t).getTime()) / 1000; if (!(s >= -60)) return ""; if (s < 60) return "just now"; if (s < 3600) return Math.floor(s / 60) + " min ago"; if (s < 86400) return Math.floor(s / 3600) + " h ago"; const d = Math.floor(s / 86400); return d === 1 ? "yesterday" : d + " days ago"; };
-  const BLOCK_RE = /<script[^>]*id=["']nowora-products["'][^>]*>([\s\S]*?)<\/script>/i;
+  const BLOCK_RE = /<script[^>]*id=["']make4yu-products["'][^>]*>([\s\S]*?)<\/script>/i;
   const MAX_NEW_PHOTOS = 30;   // site_publish takes up to 30 photos per publish
 
   /* ============================== colour detection ============================== */
@@ -165,7 +165,7 @@
   function writeCatalogue(html, data) {
     const json = JSON.stringify(data, null, 1).replace(/<\//g, "<\\/");
     if (!BLOCK_RE.test(html)) throw new Error("Your website isn't set up for the product editor yet — ask make4yu to switch it on.");
-    return html.replace(BLOCK_RE, () => '<script type="application/json" id="nowora-products">\n' + json + "\n</script>");
+    return html.replace(BLOCK_RE, () => '<script type="application/json" id="make4yu-products">\n' + json + "\n</script>");
   }
 
   /* ============================== stock ============================== */
@@ -736,7 +736,7 @@
     function announce() {
       const sm = summarise(S.orders, 30), L = S.ship.orders, low = [], out = [];
       if (S.data) S.data.products.forEach(p => (p.colours || []).forEach(c => { if (!c.stock) return; (p.sizes || []).forEach(z => { const k = Number(c.stock[z]) || 0; (k <= 0 ? out : k <= 2 ? low : []).push(p.name + " " + c.name + " " + z); }); }));
-      dispatchEvent(new CustomEvent("nowora:shop", { detail: { toSend: L ? L.filter(x => x.stage === "new").length : sm ? sm.nWaiting : null,
+      dispatchEvent(new CustomEvent("make4yu:shop", { detail: { toSend: L ? L.filter(x => x.stage === "new").length : sm ? sm.nWaiting : null,
         onTheWay: L ? L.filter(x => x.stage === "ready" || x.stage === "transit").length : null, sold: sm ? sm.confirmed : 0, waiting: sm ? sm.waiting : 0, orders: sm ? sm.orders : 0, low: low, out: out, canSend: !o.readOnly && !!L } }));
     }
 
@@ -938,5 +938,5 @@
     return { setCatalogue(html) { S.data = readCatalogue(html); if (S.data) S.saved = JSON.parse(JSON.stringify(S.data)); drawProducts(); }, refreshSales: refreshSales };
   }
 
-  window.NoworaShop = { mount: mount, loadSales: loadSales, summarise: summarise, detectColour: detectColour, readCatalogue: readCatalogue, writeCatalogue: writeCatalogue, guessCategory: guessCategory, nearestColour: lab => nearest(lab), hexLab: hexLab };
+  window.Make4yuShop = { mount: mount, loadSales: loadSales, summarise: summarise, detectColour: detectColour, readCatalogue: readCatalogue, writeCatalogue: writeCatalogue, guessCategory: guessCategory, nearestColour: lab => nearest(lab), hexLab: hexLab };
 })();

@@ -1,10 +1,10 @@
-/** Private recovery snapshots. Run backupNowora manually before migrations.
+/** Private recovery snapshots. Run backupMake4yu manually before migrations.
  * Copies preserve sheet contents, formatting and metadata. Originals are untouched.
  * No automatic deletion: review storage and retention before enabling a schedule.
  * Restore by reviewing a copy, then copying verified data back under maintenance.
  * Script properties, credentials and uploaded media are not included.
  */
-function backupNowora() {
+function backupMake4yu() {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {

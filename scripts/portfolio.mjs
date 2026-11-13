@@ -76,7 +76,7 @@ if (DRY_RUN) { console.log(JSON.stringify(results, null, 2)); process.exit(0); }
 let sha = '';
 if (done.length) {
   const git = c => execSync(c, { stdio: ['ignore', 'pipe', 'inherit'] }).toString().trim();
-  git('git config user.name "nowora-bot"');
+  git('git config user.name "make4yu-bot"');
   git('git config user.email "41898282+github-actions[bot]@users.noreply.github.com"');
   git(`git add ${done.map(r => r.file).join(' ')}`);
   git(`git commit -m "Portfolio: capture ${done.length} website preview${done.length > 1 ? 's' : ''}"`);
