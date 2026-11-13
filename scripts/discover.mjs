@@ -9,7 +9,7 @@
 //     "niche": "Streetwear brand",
 //     "description": "One line for the showcase card.",
 //     "tag": "Shops & brands",            // Local business | Shops & brands | Sales funnels | Services
-//     "url": "https://52-alive.pages.dev", // left out → repo homepage, then <repo>.make4yu.com / <repo>.pages.dev / GitHub Pages
+//     "url": "https://52alive.make4yu.com", // left out → repo homepage, then <repo>.make4yu.com / <repo>.pages.dev / GitHub Pages
 //     "slug": "52-alive",                  // dashboard link name; left out → made from the name
 //     "status": "live",                    // live | building
 //     "showcase": true, "dashboard": true, // set false to skip either
@@ -65,7 +65,7 @@ async function fetchPage(url) {
 
 async function resolveUrl(repo, cfg) {
   const n = repo.name.toLowerCase();
-  const tries = [cfg.url, repo.homepage, `https://${n}.pages.dev`, `https://${n}.make4yu.com`, `https://${repo.owner.login.toLowerCase()}.github.io/${repo.name}/`, `https://${n}.netlify.app`]
+  const tries = [cfg.url, repo.homepage, `https://${n}.make4yu.com`, `https://${n}.pages.dev`, `https://${repo.owner.login.toLowerCase()}.github.io/${repo.name}/`, `https://${n}.netlify.app`]
     .filter(Boolean).map(u => (/^https?:\/\//i.test(u) ? u : 'https://' + u));
   for (const u of [...new Set(tries)]) { const page = await fetchPage(u); if (page) return page; }
   return null;
