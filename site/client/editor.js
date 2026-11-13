@@ -86,6 +86,7 @@ var CSS = `
 .nwe-crumb button{color:#3DFFC5;font-weight:700;font-size:12px;padding:0}
 .nwe-group{padding:12px 14px;border-top:1px solid rgba(234,242,238,.06)}
 .nwe-group>label,.nwe-lbl{display:block;font-size:12px;font-weight:700;color:#A3B3AC;margin-bottom:6px}
+.nwe-auto{display:block;font-size:11px;font-weight:600;color:#7CB800;margin-top:2px}
 .nwe-in,.nwe-ta,.nwe-select{width:100%;border-radius:10px;border:1px solid rgba(234,242,238,.14);background:rgba(0,0,0,.35);padding:9px 11px;font-size:14px;color:#EAF2EE;transition:border-color .2s,box-shadow .2s}
 .nwe-ta{min-height:84px;resize:vertical;line-height:1.45}
 .nwe-in:focus,.nwe-ta:focus,.nwe-select:focus{outline:none;border-color:#C6FF3D;box-shadow:0 0 0 3px rgba(198,255,61,.12)}
@@ -235,10 +236,15 @@ function sections() {
 function isSection(el) { return sections().indexOf(el) >= 0; }
 function secName(el) {
   var id = el.id || "", h = el.querySelector("h1,h2,h3");
-  if (el.tagName === "HEADER") return "Top bar"; if (el.tagName === "NAV") return "Menu";
-  if (/menu|drawer/i.test(el.getAttribute("class") || "") && !h) return "Phone menu";
+  var cls = el.getAttribute("class") || "";
+  if (el.tagName === "HEADER") return "Top bar";
+  if (/mobile|menu|drawer/i.test(cls + " " + (el.getAttribute("aria-label") || "")) && !h) return "Phone menu";
+  if (el.tagName === "NAV") return "Menu";
+  if (/ribbon|marquee|ticker|strip/i.test(cls)) return "Scrolling text strip";
   if (el.tagName === "FOOTER") return "Footer";
   if (h && h.textContent.trim()) return h.textContent.trim().replace(/\s+/g, " ").slice(0, 34);
+  var al = el.getAttribute("aria-label"); if (al) return al.charAt(0).toUpperCase() + al.slice(1, 34);
+  if (el.getAttribute("aria-hidden") === "true" && el.textContent.trim()) return "Transition: " + el.textContent.trim().replace(/\s+/g, " ").slice(0, 22);
   if (id) return id.replace(/[-_]/g, " ").replace(/\b\w/g, function (m) { return m.toUpperCase(); });
   var c = (el.getAttribute("class") || "").split(/\s+/)[0]; return c ? c.replace(/[-_]/g, " ") : el.tagName.toLowerCase();
 }
@@ -415,7 +421,10 @@ function draftKey() { return "nw_draft_" + (H.key || "demo"); }
 function saveDraft() { try { if (E.dirty) localStorage.setItem(draftKey(), JSON.stringify({ sha: E.sha, html: serialize(), ts: Date.now() })); else localStorage.removeItem(draftKey()); } catch (e) { /* storage full: drafts are a convenience only */ } }
 function readDraft() { try { return JSON.parse(localStorage.getItem(draftKey()) || "null"); } catch (e) { return null; } }
 function askDraft(d, cb) {
-  modal('<h3>Continue where you left off?</h3><p>You have unpublished changes from ' + new Date(d.ts).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) + '.' + (d.sha !== E.sha ? " Your website has been updated since then, so check everything before publishing." : "") + '</p><div class="nwe-row"><button class="nwe-btn" data-r="0">Start fresh</button><button class="nwe-btn primary" data-r="1">Continue editing</button></div>',
+  var when = new Date(d.ts).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+  modal(d.sha !== E.sha && d.sha
+    ? '<h3>Your website has been updated</h3><p>Your website changed after your unpublished edits from ' + when + ', so the editor now shows the newest version. Your old draft is based on the earlier version: keeping it would undo the newer changes when you publish.</p><div class="nwe-row"><button class="nwe-btn" data-r="1">Keep my old draft anyway</button><button class="nwe-btn primary" data-r="0">Use the newest version</button></div>'
+    : '<h3>Continue where you left off?</h3><p>You have unpublished changes from ' + when + '.</p><div class="nwe-row"><button class="nwe-btn" data-r="0">Start fresh</button><button class="nwe-btn primary" data-r="1">Continue editing</button></div>',
     function (card, done) { $$("[data-r]", card).forEach(function (b) { b.onclick = function () { done(); if (b.dataset.r === "0") { try { localStorage.removeItem(draftKey()); } catch (e) {} } cb(b.dataset.r === "1"); }; }); });
 }
 
@@ -580,7 +589,7 @@ function renderLeft() {
     var list = sections(), selM = model(E.sel), selSec = selM ? list.filter(function (s) { return s === selM || s.contains(selM); })[0] : null;
     pane.innerHTML = '<div class="nwe-h">Your page, top to bottom</div>' + list.map(function (s, i) {
       var hid = s.hasAttribute("data-nw-hidden");
-      return '<div class="nwe-sec' + (s === selSec ? " on" : "") + (hid ? " off" : "") + '" data-id="' + s.getAttribute(NW) + '"><i>' + (i + 1) + '</i><span>' + esc(secName(s)) + '</span>' +
+      return '<div class="nwe-sec' + (s === selSec ? " on" : "") + (hid ? " off" : "") + '" data-id="' + s.getAttribute(NW) + '"><i>' + (i + 1) + '</i><span>' + esc(secName(s)) + (s.hasAttribute("hidden") && !hid ? '<small class="nwe-auto">Appears by itself when needed</small>' : '') + '</span>' +
         '<button class="nwe-mini" data-s="hide" title="' + (hid ? "Show" : "Hide") + '">' + (hid ? ICO.eyeoff : ICO.eye) + '</button><button class="nwe-mini" data-s="up" title="Move up">' + ICO.up + '</button><button class="nwe-mini" data-s="down" title="Move down">' + ICO.down + '</button><button class="nwe-mini" data-s="dup" title="Duplicate">' + ICO.dup + '</button><button class="nwe-mini" data-s="del" title="Delete">' + ICO.del + '</button></div>';
     }).join("") + '<div class="nwe-hint" style="margin:12px 4px">Hidden sections stay in your page but visitors don\'t see them.</div>';
     $$(".nwe-sec", pane).forEach(function (row) {
