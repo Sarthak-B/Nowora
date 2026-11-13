@@ -1075,7 +1075,7 @@ function initShop(){
       $$(".sec-title",$("#products")).forEach(function(x){x.classList.add("vis")});
       $$(".sec-title",$("#shop")).forEach(function(x){x.classList.add("vis")}); dispatchEvent(new Event("scroll")); };
     if(window.Make4yuShop) return go();
-    var sc=document.createElement("script");sc.src="/client/shop.js?v=11";sc.onload=go;sc.onerror=function(){initShop.on=0};document.head.appendChild(sc);
+    var sc=document.createElement("script");sc.src="/client/shop.js?v=12";sc.onload=go;sc.onerror=function(){initShop.on=0};document.head.appendChild(sc);
   });
 }
 
