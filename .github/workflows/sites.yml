@@ -1,0 +1,36 @@
+name: Hosted sites
+
+# Copies every client site listed in hosted.json into site/_sites/ so the make4yu Cloudflare
+# project serves it at <name>.make4yu.com. Runs every 10 minutes; only commits when a site changed
+# (each commit makes Cloudflare redeploy make4yu.com).
+on:
+  schedule:
+    - cron: '4-59/10 * * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [site-updated]
+  push:
+    branches: [main]
+    paths: [hosted.json]
+
+permissions:
+  contents: write
+
+concurrency: { group: hosted-sites, cancel-in-progress: false }
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy client sites
+        run: node scripts/sync-sites.mjs
+      - name: Save changes
+        run: |
+          git add -A site/_sites
+          if git diff --cached --quiet; then echo "No site changed."; exit 0; fi
+          git config user.name "make4yu-bot"
+          git config user.email "make4yu-bot@users.noreply.github.com"
+          git commit -m "Update hosted client sites"
+          git pull --rebase --quiet && git push
