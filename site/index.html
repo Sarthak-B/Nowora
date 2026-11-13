@@ -1019,7 +1019,8 @@ body:not(.is-admin){background:#0C2218}
 #site .tour-live{margin-left:auto;font-style:normal;display:inline-flex;align-items:center;gap:7px;color:var(--sand-mute)}
 #site .tour-live i{width:7px;height:7px;border-radius:50%;background:var(--violet);box-shadow:0 0 0 0 rgba(var(--violet-rgb),.6);animation:tourPulse 2.4s var(--soft) infinite}
 @keyframes tourPulse{0%{box-shadow:0 0 0 0 rgba(var(--violet-rgb),.55)}100%{box-shadow:0 0 0 10px rgba(var(--violet-rgb),0)}}
-#site .tour-video{position:relative;padding-top:56.25%;border-radius:0 0 27px 27px;overflow:hidden}
+#site .tour .tour-frame{max-width:max(320px,calc((100vh - 170px)*4/3));margin-left:auto;margin-right:auto}
+#site .tour-video{position:relative;padding-top:75%;border-radius:0 0 27px 27px;overflow:hidden}
 #site .tour-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 #site .tour-sound{position:absolute;left:24px;bottom:24px;z-index:2;display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 20px;border-radius:999px;
   background:linear-gradient(135deg,#9A6BFF,var(--violet-2));color:#fff;font-weight:600;font-size:15px;box-shadow:0 14px 34px -12px rgba(var(--violet-rgb),.9);
@@ -1210,7 +1211,7 @@ window.fitFrames=function(root){
       <div class="tour-frame">
         <div class="tour-bar"><i></i><i></i><i></i><span>make<b class="b4">4</b>yu · product tour</span><em class="tour-live"><i></i>2 min</em></div>
         <div class="tour-video" id="tourVideo">
-          <iframe id="tourFrame" title="make4yu product tour" data-src="https://player.vimeo.com/video/1245332857?badge=0&amp;autopause=0&amp;app_id=58479&amp;muted=1&amp;loop=1&amp;title=0&amp;byline=0&amp;portrait=0&amp;dnt=1&amp;playsinline=1" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe>
+          <iframe id="tourFrame" title="make4yu product tour" data-src="https://player.vimeo.com/video/1246550795?badge=0&amp;autopause=0&amp;app_id=58479&amp;muted=1&amp;loop=1&amp;title=0&amp;byline=0&amp;portrait=0&amp;dnt=1&amp;playsinline=1" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe>
           <button type="button" class="tour-sound" id="tourSound" data-track="tour_sound">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
             Play with sound
