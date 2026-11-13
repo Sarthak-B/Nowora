@@ -95,3 +95,8 @@ Open your private owner link (`yoursite/#<owner-code>` — only a SHA-256 finger
 ---
 
 © 2026 make4yu. All rights reserved. This code is shared to show my work; it is not licensed for reuse.
+
+
+---
+
+**© 2026 make4yu. All rights reserved.** This code is shown for portfolio viewing only. Copying, reusing or redistributing any part of it is not permitted. See [LICENSE](LICENSE).
