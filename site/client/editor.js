@@ -23,6 +23,9 @@ var CSS = `
 .nwe-title{min-width:0;display:flex;flex-direction:column;line-height:1.15;margin-right:auto}
 .nwe-title b{font-family:"Bricolage Grotesque",sans-serif;font-size:15px}
 .nwe-title span{font-size:12px;color:#6B7C75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+.nwe-title span.has-page{display:block!important;max-width:none}
+@media (max-width:600px){.nwe-title:has(.has-page) b{display:none}.nwe-page{margin-top:0;max-width:150px}.nwe-top:has(.has-page) #nweDev{display:none}}
+.nwe-page{margin-top:3px;height:28px;max-width:220px;border-radius:8px;border:1px solid rgba(198,255,61,.45);background:#0E1613;color:#C6FF3D;font-weight:700;font-size:12.5px;padding:0 8px;cursor:pointer}
 .nwe-seg{display:inline-flex;padding:3px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(234,242,238,.12)}
 .nwe-seg button{height:30px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:700;color:#A3B3AC;transition:all .25s}
 .nwe-seg button.on{background:#C6FF3D;color:#0A0F0D;box-shadow:0 0 14px -3px rgba(198,255,61,.7)}
@@ -157,7 +160,8 @@ var ICO = {
 /* ---------------- helpers ---------------- */
 function toast(m) { H.toast(m); }
 function uid() { return "n" + (E.next++).toString(36); }
-function tagAll(root) { (root.nodeType === 1 ? [root].concat($$("*", root)) : $$("*", root)).forEach(function (el) { if (!el.hasAttribute(NW) || root.nodeType === 1) el.setAttribute(NW, uid()); }); }
+// line breaks are never edited on their own, and sites' scripts often split text on a plain <br>
+function tagAll(root) { (root.nodeType === 1 ? [root].concat($$("*", root)) : $$("*", root)).forEach(function (el) { if (/^(BR|WBR)$/.test(el.tagName)) { el.removeAttribute(NW); return; } if (!el.hasAttribute(NW) || root.nodeType === 1) el.setAttribute(NW, uid()); }); }
 function model(id) { return id ? E.doc.querySelector("[" + NW + '="' + id + '"]') : null; }
 function views(id) { var d = E.frame && E.frame.contentDocument; return d ? $$("[" + NW + '="' + id + '"]', d) : []; }
 function view(id) { var v = views(id); for (var i = 0; i < v.length; i++) { var r = v[i].getBoundingClientRect(); if (r.width || r.height) return v[i]; } return v[0] || null; }
@@ -275,11 +279,11 @@ function open(host) {
   load();
 }
 
-async function load() {
+async function load(page) {
   try {
-    var j = await H.call("site_source");
-    var s = j.site; E.site = s;
-    $("#nweHost").textContent = (s.url || "").replace(/^https?:\/\//, "").replace(/\/$/, "") + " · " + s.path;
+    var j = await H.call("site_source", page ? { path: page } : {});
+    var s = j.site; E.site = s; E.sel = null; E.dirty = false; E.next = 1;
+    pageMenu(s);
     E.doctype = (/^\s*<!doctype[^>]*>/i.exec(s.html) || ["<!doctype html>"])[0].trim() + "\n";
     E.sha = s.sha; E.path = s.path;
     var draft = readDraft();
@@ -292,6 +296,20 @@ async function load() {
     $("#nweLoading").innerHTML = '<div class="nwe-empty"><b>The editor couldn\'t open</b>' + esc(x.message) + '<br><br><button class="nwe-btn" id="nweClose2">Back to dashboard</button></div>';
     $("#nweClose2").onclick = close;
   }
+}
+/* every page of the website, not just the home page */
+function pageMenu(s) {
+  var host = (s.url || "").replace(/^https?:\/\//, "").replace(/\/$/, ""), el = $("#nweHost");
+  var draw = function () {
+    var ps = E.pages || [];
+    if (ps.length < 2) { el.textContent = host + " · " + s.path; return; }
+    el.classList.add("has-page");
+    el.innerHTML = '<select class="nwe-page" id="nwePage" aria-label="Page to edit">' + ps.map(function (p) { return '<option value="' + esc(p.path) + '"' + (p.path === s.path ? " selected" : "") + '>' + esc(p.name) + " page</option>"; }).join("") + "</select>";
+    $("#nwePage").onchange = function () { var to = this.value; saveDraft(); $("#nweLoading").classList.remove("gone"); load(to); };
+  };
+  if (E.pages) return draw();
+  el.textContent = host + " · " + s.path;
+  if (H.call) H.call("site_pages").then(function (j) { E.pages = j.pages || []; draw(); }).catch(function () { /* older backend: home page only */ });
 }
 function syncNext() { var max = 0; $$("[" + NW + "]", E.doc).forEach(function (el) { var n = parseInt(String(el.getAttribute(NW)).slice(1), 36); if (n > max) max = n; }); E.next = max + 1; }
 function finishLoad(fromDraft) {
@@ -307,7 +325,7 @@ var EDIT_CSS = '<style id="nw-editor-only">.intro,.preloader,.loader,#preloader,
   'html{scroll-behavior:auto!important}a,button,summary,label{cursor:default!important}[contenteditable=true]{outline:none;cursor:text!important;caret-color:#7CB800}</style>';
 function previewHtml() {
   var html = serialize();
-  var base = (E.site.url || location.origin + "/").replace(/[?#].*$/, ""); if (!/\/$/.test(base)) base += "/";
+  var base = (E.site.pageUrl || E.site.url || location.origin + "/").replace(/[?#].*$/, ""); if (!/\/$/.test(base)) base += "/";
   var inject = '<base href="' + esc(base) + '">' + (E.mode === "edit" ? EDIT_CSS : "");
   return html.replace(/<head([^>]*)>/i, function (m) { return m + inject; });
 }
@@ -417,7 +435,7 @@ function status() {
   $("#nwePub").disabled = !E.dirty;
   $("#nweUndo").disabled = E.hi <= 0; $("#nweRedo").disabled = E.hi >= E.hist.length - 1;
 }
-function draftKey() { return "nw_draft_" + (H.key || "demo"); }
+function draftKey() { return "nw_draft_" + (H.key || "demo") + (E.path && E.pages && E.pages[0] && E.path !== E.pages[0].path ? ":" + E.path : ""); }
 function saveDraft() { try { if (E.dirty) localStorage.setItem(draftKey(), JSON.stringify({ sha: E.sha, html: serialize(), ts: Date.now() })); else localStorage.removeItem(draftKey()); } catch (e) { /* storage full: drafts are a convenience only */ } }
 function readDraft() { try { return JSON.parse(localStorage.getItem(draftKey()) || "null"); } catch (e) { return null; } }
 function askDraft(d, cb) {
@@ -519,7 +537,7 @@ function inspector() {
   var sp = $("#nweSplit"); if (sp) sp.onclick = function (e) { var b = e.target.closest("button"); if (!b) return; apply(function () { if (b.dataset.v === "1") m.setAttribute("data-split", ""); else m.removeAttribute("data-split"); }, true); };
 }
 function wireX(box) { $$("[data-x]", box).forEach(function (b) { b.onclick = function () { $("#nweRight").classList.remove("open"); $("#nweLeft").classList.remove("open"); setMob(""); }; }); }
-function absUrl(src) { try { return new URL(src, E.site.url || location.href).href; } catch (e) { return src; } }
+function absUrl(src) { try { return new URL(src, E.site.pageUrl || E.site.url || location.href).href; } catch (e) { return src; } }
 
 /* animations: the site's own engine when it has one (data-reveal), otherwise make4yu's tiny runtime */
 var ENGINE_ANIMS = [["none", "None"], ["", "Fade up"], ["fade", "Fade in"], ["scale", "Zoom in"], ["left", "From left"], ["right", "From right"], ["clip", "Wipe up"]];
@@ -788,12 +806,12 @@ async function history() {
   modal('<h3>Version history</h3><p>Every time the website was published. Restore any version — it becomes the live site.</p><div id="nweVers"><div class="nwe-spin"></div></div><div class="nwe-row"><button class="nwe-btn" data-c>Close</button></div>', async function (card, done) {
     $("[data-c]", card).onclick = done;
     try {
-      var j = await H.call("site_versions"), v = j.versions || [];
+      var j = await H.call("site_versions", { path: E.path }), v = j.versions || [];
       $("#nweVers").innerHTML = v.length ? v.map(function (x, i) { return '<div class="nwe-ver"><div><b>' + esc(x.message) + '</b><small>' + new Date(x.date).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) + (i === 0 ? " · live now" : "") + '</small></div>' + (i ? '<button class="nwe-btn" data-sha="' + esc(x.sha) + '">Restore</button>' : '') + '</div>'; }).join("") : '<p>No versions yet.</p>';
       $$("[data-sha]", card).forEach(function (b) { b.onclick = async function () {
         if (!confirm("Restore this version? It replaces what's live now.")) return;
         b.disabled = true; b.textContent = "Restoring…";
-        try { await H.call("site_restore", { sha: b.dataset.sha }); done(); toast("Restored — your site updates in about a minute"); try { localStorage.removeItem(draftKey()); } catch (e) {} E.tokens = null; load(); }
+        try { await H.call("site_restore", { sha: b.dataset.sha, path: E.path }); done(); toast("Restored — your site updates in about a minute"); try { localStorage.removeItem(draftKey()); } catch (e) {} E.tokens = null; load(); }
         catch (x) { toast(x.message); b.disabled = false; b.textContent = "Restore"; }
       }; });
     } catch (x) { $("#nweVers").innerHTML = '<p>' + esc(x.message) + '</p>'; }

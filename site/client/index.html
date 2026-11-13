@@ -1036,7 +1036,7 @@ function openEditor(){
   var go=function(){window.Make4yuEditor.open({call:call,toast:toast,key:KEY,onClose:function(){}})};
   if(window.Make4yuEditor) return go();
   toast("Opening the editor…");
-  var sc=document.createElement("script");sc.src="/client/editor.js?v=3";sc.onload=go;sc.onerror=function(){toast("The editor couldn't load — check your connection")};document.head.appendChild(sc);
+  var sc=document.createElement("script");sc.src="/client/editor.js?v=4";sc.onload=go;sc.onerror=function(){toast("The editor couldn't load — check your connection")};document.head.appendChild(sc);
 }
 
 /* ---------- client database (loads when it is near the screen) ---------- */
