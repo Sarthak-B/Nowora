@@ -150,10 +150,11 @@ function doPost(e) {
       case 'portal':             return json_({ ok: true, data: portal_(portalClient_(body), +body.since || 0) });
       case 'portal_request':     return json_(portalRequest_(writable_(portalClient_(body)), body.request));
       /* ---- website editor (client portal) ---- */
-      case 'site_source':        return json_({ ok: true, site: siteSource_(portalClient_(body)) });
+      case 'site_source':        return json_({ ok: true, site: siteSource_(portalClient_(body), body.path) });
+      case 'site_pages':         return json_({ ok: true, pages: sitePages_(portalClient_(body)) });
       case 'site_publish':       return json_(sitePublish_(writable_(portalClient_(body)), body));
-      case 'site_versions':      return json_({ ok: true, versions: siteVersions_(portalClient_(body)) });
-      case 'site_restore':       return json_(siteRestore_(writable_(portalClient_(body)), body.sha));
+      case 'site_versions':      return json_({ ok: true, versions: siteVersions_(portalClient_(body), body.path) });
+      case 'site_restore':       return json_(siteRestore_(writable_(portalClient_(body)), body.sha, body.path));
       /* ---- client database (portal link + PIN) ---- */
       case 'db_get':             return json_(dbGet_(portalClient_(body), body.tableId));
       case 'db_rev':             return json_({ ok: true, rev: dbRev_(portalClient_(body)) });
@@ -537,20 +538,44 @@ function readFile_(repo, path, ref) {
   return { path: f.path, sha: f.sha, text: text };
 }
 
-function siteFile_(c) {
+function siteFile_(c, page) {
   const repo = siteRepo_(c);
   let cfg = {};
   try { const nj = readFile_(repo, 'make4yu.json'); if (nj) cfg = JSON.parse(nj.text); } catch (e) {}
   const tries = [cfg.entry, 'index.html', 'public/index.html', 'site/index.html', 'docs/index.html', 'src/index.html'].filter(Boolean);
-  for (let i = 0; i < tries.length; i++) { const f = readFile_(repo, tries[i]); if (f) return { repo: repo, cfg: cfg, file: f }; }
-  throw new Error("Couldn't find the website's index.html in its repository");
+  let entry = null;
+  for (let i = 0; i < tries.length; i++) { const f = readFile_(repo, tries[i]); if (f) { entry = f; break; } }
+  if (!entry) throw new Error("Couldn't find the website's index.html in its repository");
+  const root = entry.path.indexOf('/') >= 0 ? entry.path.slice(0, entry.path.lastIndexOf('/') + 1) : '';
+  // another page of the same website (e.g. public/winter/index.html): only .html files inside the site's folder
+  if (page && page !== entry.path) {
+    page = String(page);
+    if (!/^[\w./-]+\.html$/.test(page) || page.indexOf('..') >= 0 || page.indexOf(root) !== 0) throw new Error('That page is not part of this website');
+    const f = readFile_(repo, page); if (!f) throw new Error("That page couldn't be found — it may have been removed");
+    return { repo: repo, cfg: cfg, file: f, root: root };
+  }
+  return { repo: repo, cfg: cfg, file: entry, root: root };
 }
 
-function siteSource_(c) {
-  const s = siteFile_(c);
+/** Every page of the website (each .html file in the site's folder) for the editor's page menu. */
+function sitePages_(c) {
+  const s = siteFile_(c), base = String(c.site || '').replace(/[?#].*$/, '').replace(/\/?$/, '/');
+  const tree = gh_('get', '/repos/' + s.repo + '/git/trees/HEAD?recursive=1') || {};
+  const skip = /(^|\/)(node_modules|\.github|_sites|dist|build|vendor)\//;
+  return (tree.tree || []).filter(x => x.type === 'blob' && /\.html$/i.test(x.path) && x.path.indexOf(s.root) === 0 && !skip.test(x.path) && !/(^|\/)404\.html$/i.test(x.path))
+    .slice(0, 60).map(x => {
+      const rel = x.path.slice(s.root.length), url = base + rel.replace(/(^|\/)index\.html$/i, '$1');
+      const name = rel === 'index.html' ? 'Home' : rel.replace(/\/index\.html$/i, '').replace(/\.html$/i, '').split('/').pop().replace(/[-_]+/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
+      return { path: x.path, url: url, name: name, home: x.path === s.file.path };
+    }).sort((a, b) => (b.home - a.home) || a.path.localeCompare(b.path));
+}
+
+function siteSource_(c, page) {
+  const s = siteFile_(c, page);
   let niche = s.cfg.niche || '';
   if (!niche) { try { niche = parseMeta_(s.file.text, c.site || 'https://example.com', {}).niche; } catch (e) {} }
-  return { repo: s.repo, path: s.file.path, sha: s.file.sha, html: s.file.text, url: c.site, niche: niche, name: s.cfg.name || c.business };
+  const base = String(c.site || '').replace(/[?#].*$/, '').replace(/\/?$/, '/'), rel = s.file.path.slice(s.root.length);
+  return { repo: s.repo, path: s.file.path, sha: s.file.sha, html: s.file.text, url: c.site, pageUrl: base + rel.replace(/(^|\/)index\.html$/i, '$1'), niche: niche, name: s.cfg.name || c.business };
 }
 
 function sitePublish_(c, body) {
@@ -576,15 +601,15 @@ function sitePublish_(c, body) {
   return { ok: true, sha: res.content.sha, commit: res.commit.sha, url: res.commit.html_url };
 }
 
-function siteVersions_(c) {
-  const s = siteFile_(c);
+function siteVersions_(c, page) {
+  const s = siteFile_(c, page);
   const list = gh_('get', '/repos/' + s.repo + '/commits?per_page=15&path=' + encodeURIComponent(s.file.path)) || [];
   return list.map(x => ({ sha: x.sha, date: x.commit.author.date, message: String(x.commit.message || '').split('\n')[0].slice(0, 120), current: false }));
 }
 
-function siteRestore_(c, sha) {
+function siteRestore_(c, sha, page) {
   if (!/^[0-9a-f]{7,40}$/i.test(String(sha || ''))) return { ok: false, error: 'Pick a version to restore' };
-  const s = siteFile_(c);
+  const s = siteFile_(c, page);
   const old = readFile_(s.repo, s.file.path, sha);
   if (!old) return { ok: false, error: "That version couldn't be found" };
   const res = gh_('put', '/repos/' + s.repo + '/contents/' + s.file.path.split('/').map(encodeURIComponent).join('/'),
