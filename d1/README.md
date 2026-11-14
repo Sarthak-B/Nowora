@@ -32,3 +32,9 @@ npx wrangler d1 execute make4yu --local -c d1/wrangler.local.toml --persist-to /
 npx wrangler pages dev site --d1 DB=local-test --persist-to /tmp/m4y --port 8788
 node scripts/d1-seed.mjs
 ```
+
+## Clients moved from Sheets (bridge)
+A client with `bridge = 'apps-script'` keeps their account, PIN, change requests, website editing and the
+new-order email in Apps Script; their visits, orders, payments and records live in D1. Move one from their
+dashboard: `https://make4yu.com/client/<key>?move=cloudflare`. Needs the Pages secret `AUTOMATION_KEY`
+(same value as Apps Script's). To undo: delete their row from `clients` in D1.
