@@ -10,7 +10,7 @@ crons = ["* * * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "make4yu"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "b1107a06-f67e-484e-a919-765459eb8f7a"
 
 # Optional: daily backup files
 # [[r2_buckets]]
