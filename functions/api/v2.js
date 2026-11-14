@@ -2,6 +2,7 @@
 // GET  /api/v2?a=<clientId>&p=<path> — a stored photo (change-request attachments).
 import * as M from "../../lib/m4y.js";
 import { seedTests } from "../../lib/seed.js";
+import * as B from "../../lib/bridge.js";
 
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" };
 const json = (o, s) => new Response(JSON.stringify(o), { status: s || 200, headers: Object.assign({ "Content-Type": "application/json", "Cache-Control": "no-store" }, CORS) });
@@ -16,18 +17,35 @@ export async function onRequestGet({ request, env }) {
   return f ? new Response(f.data, { headers: { "Content-Type": f.type, "Cache-Control": "private, max-age=86400" } }) : new Response("Not found", { status: 404 });
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, waitUntil }) {
   if (!env.DB) return json({ ok: false, error: "D1 isn't connected to this project yet" });
   let b; try { b = JSON.parse(await request.text()); } catch (e) { return json({ ok: false, error: "Invalid JSON" }); }
   const origin = new URL(request.url).origin;
   try {
-    const pc = () => M.portalClient(env, b), w = async () => M.writable(await pc());
+    // bridged clients (account in Sheets, data in D1): Apps Script checks the PIN and keeps requests and editing
+    let bc, who;
+    const pc = async () => { if (!who) { bc = await B.bridgedClient(env, b); who = bc || await M.portalClient(env, b); } return who; }, w = async () => M.writable(await pc());
+    if (B.FORWARD.includes(b.action) && await pc() && bc) return json(await B.callScript(env, b, 28000));
     switch (b.action) {
       /* public: the t.js snippet on client sites */
       case "ctrack": return json(await M.clientTrack(env, b.event));
-      case "cform": return json(await M.clientForm(env, b));
+      case "cform": return json(await M.clientForm(env, b, async o => {
+        // the new-order email still comes from Apps Script (Gmail) for bridged clients
+        if (o.kind === "order" && o.c.bridge === "apps-script" && env.AUTOMATION_KEY)
+          waitUntil(B.callScript(env, { action: "order_email", key: env.AUTOMATION_KEY, trackId: o.c.trackId, fields: o.fields, items: o.items, val: o.val, table: o.table }).catch(e => console.error("[order_email]", e.message)));
+      }));
       /* client dashboard */
-      case "portal": return json({ ok: true, data: await M.portal(env, await pc(), +b.since || 0) });
+      case "portal": {
+        const c = await pc(), data = await M.portal(env, c, +b.since || 0);
+        if (c._sync) { data.client = Object.assign(c._sync.client, { kind: "store", backend: "d1" }); data.requests = c._sync.requests; }
+        else if (c.bridge === "apps-script") data.requests = [];            // Apps Script unreachable: show the rest
+        return json({ ok: true, data });
+      }
+      case "d1_import": return json(await B.importStep(env, b));
+      case "order_alerts": {
+        if (!env.AUTOMATION_KEY || b.key !== env.AUTOMATION_KEY) return json({ ok: false, error: "Wrong automation key" }, 403);
+        return json({ ok: true, orders: await B.orderAlerts(env, b.since) });
+      }
       case "portal_request": return json(await M.portalRequest(env, await w(), b.request, origin));
       case "site_source": return json({ ok: true, site: await M.siteSource(env, await pc()) });
       case "site_publish": return json(await M.sitePublish(env, await w(), b));

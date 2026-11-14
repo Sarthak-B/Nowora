@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS clients (
   edit_access TEXT DEFAULT 'auto',      -- auto | on | off
   wa_alerts TEXT DEFAULT 'on',
   repo TEXT, repo_sha TEXT,            -- optional: website kept in a GitHub repo, pulled in by the scheduled Worker
+  bridge TEXT,                          -- 'apps-script': account, requests and editing stay in Sheets; data lives here
   created TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
 
