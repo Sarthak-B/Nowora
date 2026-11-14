@@ -151,6 +151,10 @@ function doPost(e) {
       case 'portal_request':     return json_(portalRequest_(writable_(portalClient_(body)), body.request));
       /* ---- website editor (client portal) ---- */
       case 'site_source':        return json_({ ok: true, site: siteSource_(portalClient_(body), body.path) });
+      /* ---- clients whose data lives on Cloudflare D1: Apps Script stays the bridge ---- */
+      case 'portal_sync':        return json_(portalSync_(portalClient_(body)));
+      case 'export_client':      return json_(exportClient_(portalClient_(body)));
+      case 'order_email':        requireAutomation_(body); return json_(orderEmailFromD1_(body));
       case 'site_pages':         return json_({ ok: true, pages: sitePages_(portalClient_(body)) });
       case 'site_publish':       return json_(sitePublish_(writable_(portalClient_(body)), body));
       case 'site_versions':      return json_({ ok: true, versions: siteVersions_(portalClient_(body), body.path) });
@@ -421,6 +425,35 @@ function compactEvents_(c, since) {
   const T = dict(), R = dict(), D = dict(), P = dict(), V = dict();
   const rows = ev.map(e => [Math.round(new Date(e.ts).getTime() / 1000), T.at(e.type), R.at(e.ref || 'direct'), D.at(e.device || 'desktop'), P.at(e.path || '/'), V.at(e.vid)]);
   return { types: T.list, refs: R.list, devices: D.list, paths: P.list, vids: V.list, rows: rows };
+}
+
+/** Account details and change requests only (no stats) — used by the D1 backend on every dashboard refresh. */
+function portalSync_(c) {
+  const p = { client: {
+      business: c.business, name: c.name, site: c.site, status: c.status, package: c.package, price: c.price,
+      delivered: c.delivered, carePlan: c.carePlan, careFee: c.careFee, renewal: c.renewal,
+      uptime: c.uptime, responseMs: c.responseMs, lastCheck: c.lastCheck,
+      advancePaid: c.advancePaid, balancePaid: c.balancePaid, tracking: !!c.trackId, checklist: c.checklist, editable: canEdit_(c), editReason: editReason_(c), readOnly: readOnly_(c), owner: !!c._owner, id: c._owner ? c.id : undefined, portalKey: c.portalKey
+    },
+    requests: readAll_('Requests').filter(r => r.clientId === c.id).sort((a, b) => b.ts < a.ts ? -1 : 1).slice(0, 30)
+      .map(r => ({ id: r.id, ts: r.ts, type: r.type, message: r.message, status: r.status, reply: r.reply, updated: r.updated, attachment: r.attachment })) };
+  return { ok: true, data: p, account: { id: c.id, trackId: c.trackId, phone: c.phone, email: c.email, notes: c.notes, portalKey: c.portalKey, owner: !!c._owner } };
+}
+
+/** Everything of one client for the move to D1: every database table with its rows, and 180 days of visits. */
+function exportClient_(c) {
+  const ss = clientData_(c, false), tables = [];
+  if (ss) dbTables_(ss).forEach(t => tables.push({ name: t.sh.getName(), cols: t.cols, rows: dbRead_(t) }));
+  const ev = clientEvents_(c).map(e => [Math.round(new Date(e.ts).getTime() / 1000), e.type, e.label || '', e.ref || '', e.device || '', e.path || '', e.vid || '']);
+  return { ok: true, tables: tables, events: ev };
+}
+
+/** The new-order email, for an order saved on D1 (the D1 backend sends the client's tracking ID and the order). */
+function orderEmailFromD1_(b) {
+  const c = readAll_('Clients').find(x => x.trackId && x.trackId === String(b.trackId || ''));
+  if (!c) return { ok: false, error: 'Unknown site' };
+  orderEmail_(c, b.fields || [], b.items || [], b.val || {}, String(b.table || 'Orders'));
+  return { ok: true };
 }
 
 function portalRequest_(c, r) {

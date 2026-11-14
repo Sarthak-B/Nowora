@@ -9,7 +9,7 @@
  * The logged-in browser profile and the list of orders already sent live in ./wa-profile; the workflow encrypts
  * it before caching. Never prints customer details: the repo is public. */
 import fs from "node:fs";
-import { api } from "./lib.mjs";
+import { api, KEY } from "./lib.mjs";
 import { pathToFileURL } from "node:url";
 
 const MODE = process.argv[2] || "alerts";
@@ -30,7 +30,12 @@ async function pending() {
   const st = readState() || { v: 2, since: new Date(Date.now() - 30 * 60000).toISOString(), sent: [], tries: {} };   // first run: only the last 30 minutes
   if (st.v !== 2) { Object.keys(st.tries || {}).forEach(k => { if (!st.sent.includes(k)) st.sent.push(k); }); st.tries = {}; st.v = 2; }   // the old check retried messages that had gone out
   const from = new Date(new Date(st.since).getTime() - 6 * 3600e3).toISOString();                    // overlap, so a slow sheet never loses one
-  const { orders } = await api({ action: "order_alerts", since: from });
+  let { orders } = await api({ action: "order_alerts", since: from }); orders = orders || [];
+  // clients moved to Cloudflare D1 keep their orders there (same shape); a D1 hiccup never blocks the Sheets ones
+  try {
+    const r = await fetch("https://make4yu.com/api/v2", { method: "POST", body: JSON.stringify({ action: "order_alerts", key: KEY, since: from }) });
+    const j = await r.json(); if (j.ok) orders.push(...(j.orders || [])); else log("D1 orders skipped: " + j.error);
+  } catch (e) { log("D1 orders skipped: " + e.message); }
   const todo = (orders || []).filter(o => !st.sent.includes(o.client + ":" + o.id) || (customerMessage(o) && !st.sent.includes("cust:" + o.client + ":" + o.id)));
   return { st, todo };
 }

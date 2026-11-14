@@ -628,6 +628,24 @@ function boot(data){
   S.data=data; ingest(data.events,false);
   try{S.seenReplies=JSON.parse(localStorage.getItem("nw_seen_"+KEY)||"{}")}catch(e){S.seenReplies={}}
   render(); startPolling();
+  if(/move=cloudflare/.test(location.search+location.hash)&&!window.M4Y_API&&!DEMO) setTimeout(moveToD1,800);
+}
+/* one-time move of this client's data from Google Sheets to Cloudflare D1 (open the dashboard with ?move=cloudflare) */
+async function moveToD1(){
+  if(!confirm("Move "+S.data.client.business+"'s visits, orders and records to Cloudflare now? It takes under a minute. Keep this tab open.")) return;
+  var box=document.createElement("div");box.className="demo";box.style.cssText="position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:999;max-width:92vw";document.body.appendChild(box);
+  var say=function(t){box.textContent=t};
+  var d1=async function(part,extra){var r=await fetch("/api/v2",{method:"POST",body:JSON.stringify(Object.assign({action:"d1_import",part:part,portalKey:KEY},OWNER_KEY?{key:OWNER_KEY}:{pin:S.pin},extra||{}))});var j=await r.json();if(!j.ok)throw new Error(j.error||"Move failed");return j};
+  try{
+    say("Reading everything from Google Sheets…");
+    var x=await call("export_client"), ev=x.events||[], tb=x.tables||[], rows=0;
+    await d1("start");
+    for(var i=0;i<ev.length;i+=2000){say("Copying visits "+Math.min(i+2000,ev.length)+" / "+ev.length+"…");await d1("events",{events:ev.slice(i,i+2000)})}
+    for(var k=0;k<tb.length;k++){say("Copying "+tb[k].name+" ("+tb[k].rows.length+" rows)…");rows+=(await d1("table",{table:tb[k],pos:k})).rows}
+    say("Switching over…"); await d1("finish");
+    say("Done — "+ev.length+" visits and "+rows+" records in "+tb.length+" tables are on Cloudflare. Reloading…");
+    setTimeout(function(){location.href=location.pathname},2500);
+  }catch(e){say("The move stopped: "+e.message+". Nothing switched — your dashboard still runs on Google Sheets. You can try again.");}
 }
 /* view-only: you switched their editing access off — they can look and download, nothing else */
 /* care plan off (or paused) on a live site: everything the plan includes switches off by itself —
